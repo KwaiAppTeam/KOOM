@@ -27,7 +27,7 @@ You just need to init KOOM,  and it will take care of other things for you. Adva
 
 ```gradle
 dependencies {
-    implementation 'com.kwai.koom:java-oom:1.0.0'
+    implementation 'com.kwai.koom:java-oom:1.0.3'
 }
 ```
 

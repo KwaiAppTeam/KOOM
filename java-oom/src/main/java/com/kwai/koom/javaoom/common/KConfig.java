@@ -72,6 +72,8 @@ public class KConfig {
       this.heapPollInterval = KConstants.HeapThreshold.POLL_INTERVAL;
       this.rootDir = KGlobalConfig.getApplication().getCacheDir()
           .getAbsolutePath() + File.separator + KOOM_DIR;
+      File dir = new File(rootDir);
+      if (!dir.exists()) dir.mkdirs();
       this.processName = KGlobalConfig.getApplication().getPackageName();
     }
 

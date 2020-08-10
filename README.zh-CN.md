@@ -12,7 +12,7 @@ KOOM(Kwai OOM, Kill OOM)是快手性能优化团队在处理移动端OOM问题�
 
 ```gradle
 dependencies {
-    implementation 'com.kwai.koom:java-oom:1.0.0'
+    implementation 'com.kwai.koom:java-oom:1.0.3'
 }
 ```
 
