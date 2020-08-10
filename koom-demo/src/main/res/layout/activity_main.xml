@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+  xmlns:tools="http://schemas.android.com/tools"
+  android:layout_width="match_parent"
+  android:layout_height="match_parent"
+  tools:context="com.kwai.koom.demo.MainActivity">
+
+  <Button
+    android:id="@+id/btn_report_leak"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:text="@string/test_report_leak"
+    android:layout_centerInParent="true" />
+
+  <TextView
+    android:id="@+id/tv_report_status"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:text=""
+    android:layout_centerInParent="true"
+    android:textSize="18sp"
+    android:paddingLeft="60dp"
+    android:paddingRight="60dp" />
+
+</RelativeLayout>

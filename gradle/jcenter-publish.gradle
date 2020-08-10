@@ -1,0 +1,10 @@
+apply plugin: 'com.novoda.bintray-release'
+
+publish {
+    userOrg = "androidinternal"
+    groupId = "com.kwai.koom"
+    artifactId = "${project.getName()}"
+    publishVersion = '1.0.0'
+    repository = "KOOM"
+    desc = "KOOM"
+}

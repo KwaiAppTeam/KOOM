@@ -1,0 +1,4 @@
+<resources>
+  <string name="app_name">OOM Killer</string>
+  <string name="test_report_leak">Test Report Leak</string>
+</resources>

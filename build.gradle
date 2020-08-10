@@ -1,0 +1,65 @@
+buildscript {
+    ext.versions = [
+        'compileSdkVersion': 29,
+        'buildToolsVersion': '30.0.1',
+        'minSdkVersion'    : 19,
+        'targetSdkVersion' : 26,
+        'kotlin'           : '1.3.50',
+    ]
+
+    ext.deps = [
+        gson               : 'com.google.code.gson:gson:2.8.2',
+        androidGradlePlugin: "com.android.tools.build:gradle:3.5.2",
+        androidx           : [
+            annotation      : 'androidx.annotation:annotation:1.0.2',
+            appcompat       : 'androidx.appcompat:appcompat:1.1.0',
+            core            : 'androidx.core:core:1.0.1',
+            fragment        : 'androidx.fragment:fragment:1.0.0',
+            constraintlayout: 'androidx.constraintlayout:constraintlayout:1.1.3',
+            test            : [
+                core    : 'androidx.test:core:1.0.0',
+                espresso: 'androidx.test.espresso:espresso-core:3.2.0',
+                ext     : 'androidx.test.ext:junit:1.1.1',
+                rules   : 'androidx.test:rules:1.1.0',
+                runner  : 'androidx.test:runner:1.1.0',
+            ],
+        ],
+        material           : 'com.google.android.material:material:1.1.0',
+        android_support    : 'com.android.support:support-v4:28.0.0',
+        junit              : 'junit:junit:4.12',
+        kotlin             : [
+            gradlePlugin: "org.jetbrains.kotlin:kotlin-gradle-plugin:${versions.kotlin}",
+            stdlib      : "org.jetbrains.kotlin:kotlin-stdlib:${versions.kotlin}"
+        ],
+        okio               : 'com.squareup.okio:okio:2.2.2',
+        okio_1x            : 'com.squareup.okio:okio:1.0.0',
+    ]
+
+    repositories {
+        maven { url 'https://plugins.gradle.org/m2/' }
+        jcenter()
+        google()
+        maven { url 'https://maven.google.com' }
+    }
+    dependencies {
+        classpath "com.android.tools.build:gradle:3.4.3"
+        classpath 'com.novoda:bintray-release:0.9'
+
+        // NOTE: Do not place your application dependencies here; they belong
+        // in the individual module build.gradle files
+
+        classpath deps.kotlin.gradlePlugin
+        classpath deps.androidGradlePlugin
+    }
+}
+
+allprojects {
+    repositories {
+        jcenter()
+        google()
+    }
+}
+
+task clean(type: Delete) {
+    delete rootProject.buildDir
+}
