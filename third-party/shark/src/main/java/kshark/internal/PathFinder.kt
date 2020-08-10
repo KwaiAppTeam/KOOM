@@ -555,7 +555,7 @@ class PathFinder(
     if (!enableSameInstanceThreshold) return false
     if (graphObject.instanceClassName.startsWith("java.util")
         || graphObject.instanceClassName.startsWith("android.util")
-        || graphObject.instanceClassName.startsWith("java.lang")
+        || graphObject.instanceClassName.startsWith("java.lang.String")
     //|| graphObject.instanceClassName.startsWith("kotlin.collections")
     //|| graphObject.instanceClassName.startsWith("com.google.common")
     )
