@@ -78,6 +78,11 @@ public void listenReportGenerateStatus() {
     });
 }
 ```
+
+### Custom Feature
+
+See [wiki](https://github.com/KwaiAppTeam/KOOM/wiki/Advanced-Custom-Feature)
+
 ## Performance
 Randomly dump hprof of real users online, and the time consumed by normal dump and for dump blocking users is as follows:
 

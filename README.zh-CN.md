@@ -59,6 +59,10 @@ public void listenReportGenerateStatus() {
 }
 ```
 
+### 自定义需求
+
+查看[wiki](https://github.com/KwaiAppTeam/KOOM/wiki/Advanced-Custom-Feature)
+
 ### 镜像采集性能对比
 随机采集线上真实用户的内存镜像，普通dump和fork子进程dump阻塞用户使用的耗时如下：
 
