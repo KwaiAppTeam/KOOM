@@ -23,6 +23,11 @@ You just need to init KOOM,  and it will take care of other things for you. Adva
 
 
 ## Getting started
+
+### First look of koom-demo
+
+Try to run the koom-demo project first, and have a general understanding of the functionality provided by KOOM.
+
 ### Gradle dependencies
 
 ```gradle
