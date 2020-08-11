@@ -8,6 +8,11 @@ KOOM(Kwai OOM, Kill OOM)是快手性能优化团队在处理移动端OOM问题�
 
 
 ## KOOM 指南
+
+### 运行demo
+
+首先建议跑通一下项目自带demo(koom-demo项目)，对KOOM提供的基础功能和概念有一个大致的了解。
+
 ### 依赖接入
 
 ```gradle
