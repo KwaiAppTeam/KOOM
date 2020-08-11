@@ -7,6 +7,7 @@ import android.app.Application;
 import com.kwai.koom.javaoom.KOOM;
 import com.kwai.koom.javaoom.common.KConfig;
 import com.kwai.koom.javaoom.common.KLog;
+import com.kwai.koom.javaoom.dump.ForkJvmHeapDumper;
 
 /**
  * Copyright 2020 Kwai, Inc. All rights reserved.
@@ -82,6 +83,12 @@ public class KOOMApplication extends Application {
   //Example of set custom koom root dir.
   public void customRootDir() {
     KOOM.getInstance().setRootDir(this.getCacheDir().getAbsolutePath());
+  }
+
+  //Example of dump hprof directly
+  public void customDump() {
+    //Same with StandardHeapDumper StripHprofHeapDumper
+    new ForkJvmHeapDumper().dump("absolute-path");
   }
 
 }
