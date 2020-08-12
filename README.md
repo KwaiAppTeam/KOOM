@@ -1,5 +1,4 @@
 [![license](https://img.shields.io/badge/license-Apache--2.0-brightgreen.svg)](https://github.com/KwaiAppTeam/KOOM/blob/master/LICENSE)
-[![Release Version](https://img.shields.io/badge/release-1.0.0-brightgreen.svg)](https://github.com/KwaiAppTeam/KOOM/releases)
 [![Platform](https://img.shields.io/badge/Platform-Android-brightgreen.svg)](https://github.com/KwaiAppTeam/KOOM/wiki/home)
 # KOOM
 An OOM killer on mobile platform by Kwai. 
@@ -81,7 +80,15 @@ public void listenReportGenerateStatus() {
 
 ### Custom Feature
 
-See [wiki](https://github.com/KwaiAppTeam/KOOM/wiki/Advanced-Custom-Feature)
+See wiki [Advanced Custom Feature](https://github.com/KwaiAppTeam/KOOM/wiki/Advanced-Custom-Feature)
+
+### Compatibility
+
+See wiki [Compatibility](https://github.com/KwaiAppTeam/KOOM/wiki/Compatibility)
+
+### FAQ
+
+See wiki [FAQ](https://github.com/KwaiAppTeam/KOOM/wiki/FAQ)
 
 ## Performance
 Randomly dump hprof of real users online, and the time consumed by normal dump and for dump blocking users is as follows:
