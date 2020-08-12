@@ -38,16 +38,13 @@ buildscript {
     repositories {
         maven { url 'https://plugins.gradle.org/m2/' }
         jcenter()
+        mavenCentral()
         google()
+        maven { url 'http://maven.aliyun.com/nexus/content/groups/public/' }
         maven { url 'https://maven.google.com' }
     }
     dependencies {
-        classpath "com.android.tools.build:gradle:3.4.3"
         classpath 'com.novoda:bintray-release:0.9'
-
-        // NOTE: Do not place your application dependencies here; they belong
-        // in the individual module build.gradle files
-
         classpath deps.kotlin.gradlePlugin
         classpath deps.androidGradlePlugin
     }
@@ -55,6 +52,7 @@ buildscript {
 
 allprojects {
     repositories {
+        maven { url 'http://maven.aliyun.com/nexus/content/groups/public/' }
         jcenter()
         google()
     }
