@@ -106,7 +106,7 @@ Check out the [CHANGELOG.md](./CHANGELOG.md) for details of change history.
 ## Contributing
 If you are interested in contributing, check out the [CONTRIBUTING.md](./CONTRIBUTING.md)
 
-## FAQ & Feedback
+## Feedback
 Welcome report [issues](https://github.com/KwaiAppTeam/KOOM/issues) or contact us in WeChat group.
 
 <img src=./doc/images/wechat.png/>
