@@ -101,4 +101,4 @@ KOOM 以 Apache-2.0 证书开源，详情参见 [LICENSE](./LICENSE)。
 ## 问题 & 反馈
 欢迎提 [issues](https://github.com/KwaiAppTeam/KOOM/issues) 提问反馈，或者加入微信群。
 
-<img src=./doc/images/wechat.png/>。
+<img src=./doc/images/wechat2.png/>。
