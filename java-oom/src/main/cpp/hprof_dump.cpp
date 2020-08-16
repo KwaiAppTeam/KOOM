@@ -556,10 +556,10 @@ ssize_t hook_write(int fd, const void *buf, size_t count) {
   hookWriteSerialNum++;
 
   if (total_write != count) {
-    __android_log_print(ANDROID_LOG_ERROR, "HprofDump", "total_write != count");
+    __android_log_print(ANDROID_LOG_INFO, "HprofDump", "hook write, hprof strip happens");
   }
 
-  return total_write;
+  return count;
 }
 
 void (*suspendVM)();
