@@ -22,6 +22,8 @@ import com.kwai.koom.javaoom.monitor.TriggerReason;
 import com.kwai.koom.javaoom.report.HeapReportUploader;
 import com.kwai.koom.javaoom.report.HprofUploader;
 
+import java.io.File;
+
 /**
  * Copyright 2020 Kwai, Inc. All rights reserved.
  * <p>
@@ -125,8 +127,13 @@ class KOOMInternal implements HeapDumpListener, HeapAnalysisListener {
     KGlobalConfig.setSoLoader(soLoader);
   }
 
-  public void setRootDir(String rootDir) {
+  public boolean setRootDir(String rootDir) {
+    File dir = new File(rootDir);
+    if (!dir.exists()) {
+      return false;
+    }
     KGlobalConfig.setRootDir(rootDir);
+    return true;
   }
 
   public String getReportDir() {
