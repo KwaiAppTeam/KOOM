@@ -31,7 +31,7 @@ Try to run the koom-demo project first, and have a general understanding of the 
 
 ```gradle
 dependencies {
-    implementation 'com.kwai.koom:java-oom:1.0.4'
+    implementation 'com.kwai.koom:java-oom:1.0.5'
 }
 ```
 
@@ -78,6 +78,14 @@ public void listenReportGenerateStatus() {
 }
 ```
 
+### JAVA8 Requirements
+```gradle
+compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+```
+
 ### Custom Feature
 
 See wiki [Advanced Custom Feature](https://github.com/KwaiAppTeam/KOOM/wiki/Advanced-Custom-Feature)
@@ -109,5 +117,5 @@ If you are interested in contributing, check out the [CONTRIBUTING.md](./CONTRIB
 ## Feedback
 Welcome report [issues](https://github.com/KwaiAppTeam/KOOM/issues) or contact us in WeChat group.
 
-<img src=./doc/images/wechat2.png/>
+<img src=./doc/images/wechat3.jpeg/>
 
