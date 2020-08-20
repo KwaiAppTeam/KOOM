@@ -82,7 +82,8 @@ public class KOOMApplication extends Application {
 
   //Example of set custom koom root dir.
   public void customRootDir() {
-    KOOM.getInstance().setRootDir(this.getCacheDir().getAbsolutePath());
+    //Be careful with case when res is false which means dir is not valid.
+    boolean res = KOOM.getInstance().setRootDir(this.getCacheDir().getAbsolutePath());
   }
 
   //Example of dump hprof directly

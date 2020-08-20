@@ -88,7 +88,15 @@ public class HeapAnalysisTrigger implements KTrigger {
       heapAnalysisListener.onHeapAnalysisTrigger();
     }
 
-    doAnalysis(KGlobalConfig.getApplication());
+    try {
+      doAnalysis(KGlobalConfig.getApplication());
+    } catch (Exception e) {
+      KLog.e(TAG, "doAnalysis failed");
+      e.printStackTrace();
+      if (heapAnalysisListener != null) {
+        heapAnalysisListener.onHeapAnalyzeFailed();
+      }
+    }
   }
 
   private KTriggerStrategy strategy;

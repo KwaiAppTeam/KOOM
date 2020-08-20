@@ -116,12 +116,13 @@ public class KOOM {
   }
 
   /**
-   * Get root dir.
+   * Set custom root dir.
    *
    * @param rootDir root dir
+   * @return return false if root dir is invalid.
    */
-  public void setRootDir(String rootDir) {
-    internal.setRootDir(rootDir);
+  public boolean setRootDir(String rootDir) {
+    return internal.setRootDir(rootDir);
   }
 
   /**

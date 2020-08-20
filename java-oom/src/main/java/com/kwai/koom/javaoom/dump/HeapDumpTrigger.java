@@ -102,7 +102,15 @@ public class HeapDumpTrigger implements KTrigger {
       heapDumpListener.onHeapDumpTrigger(reason.dumpReason);
     }
 
-    doHeapDump(reason.dumpReason);
+    try {
+      doHeapDump(reason.dumpReason);
+    } catch (Exception e) {
+      KLog.e(TAG, "doHeapDump failed");
+      e.printStackTrace();
+      if (heapDumpListener != null) {
+        heapDumpListener.onHeapDumpFailed();
+      }
+    }
 
     KVData.addTriggerTime(KGlobalConfig.getRunningInfoFetcher().appVersion());
   }

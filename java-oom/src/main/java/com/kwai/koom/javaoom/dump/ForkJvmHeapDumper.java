@@ -7,6 +7,8 @@ import com.kwai.koom.javaoom.KOOMEnableChecker;
 import com.kwai.koom.javaoom.common.KGlobalConfig;
 import com.kwai.koom.javaoom.common.KLog;
 
+import java.io.IOException;
+
 
 /**
  * Copyright 2020 Kwai, Inc. All rights reserved.
@@ -53,6 +55,11 @@ public class ForkJvmHeapDumper implements HeapDumper {
       return false;
     }
 
+    if (!KOOMEnableChecker.get().isSpaceEnough()) {
+      KLog.e(TAG, "dump failed caused by disk space not enough!");
+      return false;
+    }
+
     boolean dumpRes = false;
     try {
       int pid = trySuspendVMThenFork();
@@ -67,8 +74,9 @@ public class ForkJvmHeapDumper implements HeapDumper {
         KLog.i(TAG, "hprof pid:" + pid + " dumped: " + path);
       }
 
-    } catch (Exception e) {
+    } catch (IOException e) {
       e.printStackTrace();
+      KLog.e(TAG, "dump failed caused by IOException!");
     }
     return dumpRes;
   }
