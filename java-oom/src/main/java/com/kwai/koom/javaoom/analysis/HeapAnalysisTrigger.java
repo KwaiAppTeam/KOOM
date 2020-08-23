@@ -2,8 +2,6 @@ package com.kwai.koom.javaoom.analysis;
 
 import android.app.Application;
 import android.util.Log;
-import androidx.lifecycle.Lifecycle;
-import androidx.lifecycle.OnLifecycleEvent;
 
 import com.kwai.koom.javaoom.common.KGlobalConfig;
 import com.kwai.koom.javaoom.common.KLog;
@@ -117,13 +115,11 @@ public class HeapAnalysisTrigger implements KTrigger {
   private volatile boolean isForeground;
   private TriggerReason reTriggerReason;
 
-  @OnLifecycleEvent(Lifecycle.Event.ON_STOP)
   public void onBackground() {
     KLog.i(TAG, "onBackground");
     isForeground = false;
   }
 
-  @OnLifecycleEvent(Lifecycle.Event.ON_START)
   public void onForeground() {
     KLog.i(TAG, "onForeground");
     isForeground = true;

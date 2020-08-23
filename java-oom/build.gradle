@@ -51,8 +51,6 @@ dependencies {
     implementation deps.kotlin.stdlib
     implementation deps.gson
     implementation deps.okio
-    api 'androidx.lifecycle:lifecycle-extensions:2.2.0'
-
 }
 
 apply from: rootProject.file('gradle/jcenter-publish.gradle')

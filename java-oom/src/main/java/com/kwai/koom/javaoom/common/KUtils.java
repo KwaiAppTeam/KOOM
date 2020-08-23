@@ -17,7 +17,6 @@ import android.content.Context;
 import android.os.Build;
 import android.os.StatFs;
 import android.text.TextUtils;
-import androidx.annotation.RequiresApi;
 
 /**
  * Copyright 2020 Kwai, Inc. All rights reserved.
@@ -53,7 +52,6 @@ public class KUtils {
         Locale.CHINESE).format(new Date());
   }
 
-  @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN_MR2)
   public static float getSpaceInGB(String dir) {
     StatFs statFs = new StatFs(dir);
     long blockSize = statFs.getBlockSizeLong();

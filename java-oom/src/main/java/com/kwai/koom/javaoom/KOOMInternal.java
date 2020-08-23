@@ -4,7 +4,6 @@ import android.app.Application;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.util.Log;
-import androidx.lifecycle.ProcessLifecycleOwner;
 
 import com.kwai.koom.javaoom.analysis.HeapAnalysisListener;
 import com.kwai.koom.javaoom.analysis.HeapAnalysisTrigger;
@@ -18,6 +17,7 @@ import com.kwai.koom.javaoom.common.KSoLoader;
 import com.kwai.koom.javaoom.common.KUtils;
 import com.kwai.koom.javaoom.dump.HeapDumpListener;
 import com.kwai.koom.javaoom.dump.HeapDumpTrigger;
+import com.kwai.koom.javaoom.lifecyle.KLifeCycleObserver;
 import com.kwai.koom.javaoom.monitor.TriggerReason;
 import com.kwai.koom.javaoom.report.HeapReportUploader;
 import com.kwai.koom.javaoom.report.HprofUploader;
@@ -60,7 +60,8 @@ class KOOMInternal implements HeapDumpListener, HeapAnalysisListener {
     heapDumpTrigger = new HeapDumpTrigger();
     heapAnalysisTrigger = new HeapAnalysisTrigger();
 
-    ProcessLifecycleOwner.get().getLifecycle().addObserver(heapAnalysisTrigger);
+    KLifeCycleObserver.get().addObserver(heapAnalysisTrigger);
+    KLifeCycleObserver.get().addObserver(heapDumpTrigger);
   }
 
   private void buildConfig(Application application) {

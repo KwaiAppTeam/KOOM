@@ -1,7 +1,7 @@
 package com.kwai.koom.javaoom.analysis;
 
+import android.app.Fragment;
 import android.util.Log;
-import androidx.fragment.app.Fragment;
 
 import com.kwai.koom.javaoom.common.KLog;
 
