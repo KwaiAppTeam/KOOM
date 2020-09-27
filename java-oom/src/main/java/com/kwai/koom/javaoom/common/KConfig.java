@@ -70,8 +70,11 @@ public class KConfig {
       this.heapRatio = KConstants.HeapThreshold.getDefaultPercentRation();
       this.heapOverTimes = KConstants.HeapThreshold.OVER_TIMES;
       this.heapPollInterval = KConstants.HeapThreshold.POLL_INTERVAL;
-      this.rootDir = KGlobalConfig.getApplication().getCacheDir()
-          .getAbsolutePath() + File.separator + KOOM_DIR;
+      File cacheFile = KGlobalConfig.getApplication().getCacheDir();
+      //issue https://github.com/KwaiAppTeam/KOOM/issues/30
+      this.rootDir = cacheFile != null ?
+              cacheFile.getAbsolutePath() + File.separator + KOOM_DIR :
+              "/data/data/" + KGlobalConfig.getApplication().getPackageName() + "/cache/" + KOOM_DIR;
       File dir = new File(rootDir);
       if (!dir.exists()) dir.mkdirs();
       this.processName = KGlobalConfig.getApplication().getPackageName();
