@@ -55,10 +55,20 @@ public class KUtils {
 
   @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN_MR2)
   public static float getSpaceInGB(String dir) {
-    StatFs statFs = new StatFs(dir);
-    long blockSize = statFs.getBlockSizeLong();
-    long availableBlocks = statFs.getAvailableBlocks();
-    return 1.0f * blockSize * availableBlocks / KConstants.Bytes.GB;
+    float space = 0;
+    //Add try-catch for unreasonable case
+    try {
+      File d = new File(dir);
+      if (!d.exists()) d.mkdirs();
+      StatFs statFs = new StatFs(dir);
+      long blockSize = statFs.getBlockSizeLong();
+      long availableBlocks = statFs.getAvailableBlocks();
+      space = 1.0f * blockSize * availableBlocks / KConstants.Bytes.GB;
+    } catch (Exception e) {
+      KLog.e("Space", e.getMessage());
+      e.printStackTrace();
+    }
+    return space;
   }
 
   public static int computeGenerations(Class<?> clazz) {
