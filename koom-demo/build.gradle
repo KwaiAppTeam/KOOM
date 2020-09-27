@@ -22,6 +22,7 @@ android {
 
 dependencies {
     implementation project(':java-oom')
+    //implementation 'com.kwai.koom:java-oom:1.0.7'
     implementation deps.androidx.appcompat
     implementation deps.androidx.constraintlayout
     implementation deps.material
