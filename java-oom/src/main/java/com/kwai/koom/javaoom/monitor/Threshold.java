@@ -25,6 +25,11 @@ public interface Threshold {
   float value();
 
   /**
+   * @return maxValue
+   */
+  float maxValue();
+
+  /**
    * @return threshold crossed times
    */
   int overTimes();
