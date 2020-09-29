@@ -20,9 +20,14 @@ package com.kwai.koom.javaoom.monitor;
 public interface Threshold {
 
   /**
-   * @return value
+   * @return value 触发trigger的最低阀值，且必须命中策略heapOverTimes次才会真正触发
    */
   float value();
+
+  /**
+   * @return maxValue 达到这个最大阀值，强制触发trigger
+   */
+  float maxValue();
 
   /**
    * @return threshold crossed times
