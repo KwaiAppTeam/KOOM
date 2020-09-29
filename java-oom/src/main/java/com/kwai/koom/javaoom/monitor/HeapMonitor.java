@@ -81,7 +81,7 @@ public class HeapMonitor implements Monitor {
     }
 
     lastHeapStatus = heapStatus;
-    return currentTimes >= heapThreshold.overTimes() || heapStatus.isOverMaxThreshold;
+    return currentTimes >= heapThreshold.overTimes();
   }
 
   private HeapStatus lastHeapStatus;
