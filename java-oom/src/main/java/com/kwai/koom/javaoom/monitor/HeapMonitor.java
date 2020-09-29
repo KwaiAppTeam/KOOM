@@ -55,25 +55,26 @@ public class HeapMonitor implements Monitor {
 
     HeapStatus heapStatus = currentHeapStatus();
 
+    if (heapStatus.isOverMaxThreshold) {
+      // 已达到最大阀值，强制触发trigger，防止后续出现大内存分配导致OOM进程Crash，无法触发trigger
+      KLog.i(TAG, "heap used is over max ratio, force trigger and over times reset to 0");
+      currentTimes = 0;
+      return true;
+    }
+
     if (heapStatus.isOverThreshold) {
       KLog.i(TAG, "heap status used:" + heapStatus.used / KConstants.Bytes.MB
               + ", max:" + heapStatus.max / KConstants.Bytes.MB
               + ", last over times:" + currentTimes);
-      if (heapStatus.isOverMaxThreshold) {
-        // 已达到最大阀值，强制触发trigger，防止后续出现大内存分配导致OOM进程Crash，无法trigger
-        KLog.i(TAG, "heap used is over max ratio, force trigger and over times reset to 0");
-        currentTimes = 0;
-      } else {
-        if (heapThreshold.ascending()) {
-          if (lastHeapStatus == null || heapStatus.used >= lastHeapStatus.used || heapStatus.isOverMaxThreshold) {
-            currentTimes++;
-          } else {
-            KLog.i(TAG, "heap status used is not ascending, and over times reset to 0");
-            currentTimes = 0;
-          }
-        } else {
+      if (heapThreshold.ascending()) {
+        if (lastHeapStatus == null || heapStatus.used >= lastHeapStatus.used || heapStatus.isOverMaxThreshold) {
           currentTimes++;
+        } else {
+          KLog.i(TAG, "heap status used is not ascending, and over times reset to 0");
+          currentTimes = 0;
         }
+      } else {
+        currentTimes++;
       }
     } else {
       currentTimes = 0;
