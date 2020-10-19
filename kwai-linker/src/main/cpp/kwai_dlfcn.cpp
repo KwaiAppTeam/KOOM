@@ -27,6 +27,17 @@
 namespace kwai {
 namespace linker {
 
+extern "C" int dl_iterate_phdr(int (*__callback)(struct dl_phdr_info *, size_t, void *),
+                               void *__data) __attribute__((weak));
+int dl_iterate_phdr_wrapper(int (*__callback)(struct dl_phdr_info *, size_t, void *),
+                            void *__data) {
+  if (dl_iterate_phdr) {
+    return dl_iterate_phdr(__callback, __data);
+  }
+  ALOGF("dl_iterate_phdr unsupported!");
+  return 0;
+}
+
 int DlFcn::android_api_;
 
 void DlFcn::init_api() {
@@ -70,7 +81,7 @@ KWAI_EXPORT void *DlFcn::dlopen(const char *lib_name, int flags) {
         // Android Q added "runtime" namespace
         dl_iterate_data data{};
         data.info_.dlpi_name = "libart.so";
-        dl_iterate_phdr(dl_iterate_callback, &data);
+        dl_iterate_phdr_wrapper(dl_iterate_callback, &data);
         CHECKP(data.info_.dlpi_addr > 0)
         handle = __loader_dlopen(lib_name, flags, (void *)data.info_.dlpi_addr);
       }
@@ -80,7 +91,7 @@ KWAI_EXPORT void *DlFcn::dlopen(const char *lib_name, int flags) {
   // __ANDROID_API_N__
   auto *data = new dl_iterate_data();
   data->info_.dlpi_name = lib_name;
-  dl_iterate_phdr(dl_iterate_callback, data);
+  dl_iterate_phdr_wrapper(dl_iterate_callback, data);
 
   return data;
 }
