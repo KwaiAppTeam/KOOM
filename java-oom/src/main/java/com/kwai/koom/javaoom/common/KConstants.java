@@ -2,8 +2,6 @@ package com.kwai.koom.javaoom.common;
 
 import static com.kwai.koom.javaoom.common.KConstants.Bytes.MB;
 
-import android.util.Log;
-
 /**
  * Copyright 2020 Kwai, Inc. All rights reserved.
  * <p>
@@ -38,6 +36,8 @@ public class KConstants {
     public static float PERCENT_RATIO_IN_256_DEVICE = 85;
     public static float PERCENT_RATIO_IN_128_DEVICE = 90;
 
+    public static float PERCENT_MAX_RATIO = 95;
+
     public static float getDefaultPercentRation() {
       int maxMem = (int) (Runtime.getRuntime().maxMemory() / MB);
       if (Debug.VERBOSE_LOG) {
@@ -51,6 +51,10 @@ public class KConstants {
         return KConstants.HeapThreshold.PERCENT_RATIO_IN_128_DEVICE;
       }
       return KConstants.HeapThreshold.PERCENT_RATIO_IN_512_DEVICE;
+    }
+
+    public static float getDefaultMaxPercentRation() {
+      return KConstants.HeapThreshold.PERCENT_MAX_RATIO;
     }
 
     public static int OVER_TIMES = 3;

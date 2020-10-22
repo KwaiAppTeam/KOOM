@@ -29,6 +29,11 @@ public class FdThreshold implements Threshold {
   }
 
   @Override
+  public float maxValue() {
+    return 0;
+  }
+
+  @Override
   public int overTimes() {
     return DEFAULT_OVER_TIMES;
   }

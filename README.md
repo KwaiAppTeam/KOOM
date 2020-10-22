@@ -117,5 +117,5 @@ If you are interested in contributing, check out the [CONTRIBUTING.md](./CONTRIB
 ## Feedback
 Welcome report [issues](https://github.com/KwaiAppTeam/KOOM/issues) or contact us in WeChat group.
 
-<img src=./doc/images/wechat4.jpg/>
+<img src=./doc/images/wechat5.jpg/>
 
