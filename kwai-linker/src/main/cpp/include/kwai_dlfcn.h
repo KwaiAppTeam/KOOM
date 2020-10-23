@@ -39,6 +39,29 @@ public:
    */
   static int dlclose(void *handle);
 
+  /**
+   * Inspired by https://github.com/avs333/Nougat_dlfunctions/
+   *
+   * Parse ELF file based on /proc/<pid>/mappings and store .dynsym、.dynstr、.symtab、.strtab
+   * information.
+   *
+   * It's much less effective than DlFcn::dlopen, do not use this in low
+   * memory state or high performance sensitive scenario!
+   *
+   * It's more powerful than DlFcn::dlopen which can only get symbols in .dynsym(GLOBAL), it can
+   * also get symbols in .symtab(LOCAL).
+   */
+  static void *dlopen_elf(const char *lib_name, int flags);
+  /**
+   * Since dlopen_elf consumes more memory, when fetching multiple symbols in a so, try to open
+   * it only once, get all symbol addresses and cache them and then close it.
+   */
+  static void *dlsym_elf(void *handle, const char *name);
+  /**
+   * Release memroy.
+   */
+  static int dlclose_elf(void *handle);
+
 private:
   struct dl_iterate_data {
     dl_phdr_info info_;

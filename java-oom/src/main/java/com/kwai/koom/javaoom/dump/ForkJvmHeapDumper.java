@@ -1,13 +1,13 @@
 package com.kwai.koom.javaoom.dump;
 
+import java.io.IOException;
+
+import android.os.Build;
 import android.os.Debug;
-import android.util.Log;
 
 import com.kwai.koom.javaoom.KOOMEnableChecker;
 import com.kwai.koom.javaoom.common.KGlobalConfig;
 import com.kwai.koom.javaoom.common.KLog;
-
-import java.io.IOException;
 
 
 /**
@@ -58,6 +58,11 @@ public class ForkJvmHeapDumper implements HeapDumper {
     if (!KOOMEnableChecker.get().isSpaceEnough()) {
       KLog.e(TAG, "dump failed caused by disk space not enough!");
       return false;
+    }
+
+    // Compatible with Android 11
+    if (Build.VERSION.SDK_INT > Build.VERSION_CODES.Q) {
+      return dumpHprofDataNative(path);
     }
 
     boolean dumpRes = false;
@@ -116,4 +121,9 @@ public class ForkJvmHeapDumper implements HeapDumper {
    * Resume the VM.
    */
   private native void resumeVM();
+
+  /**
+   * Dump hprof with hidden c++ API
+   */
+  public static native boolean dumpHprofDataNative(String fileName);
 }
