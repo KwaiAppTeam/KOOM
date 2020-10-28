@@ -96,7 +96,7 @@ public class ForkJvmHeapDumper implements HeapDumper {
    *
    * @return init result
    */
-  private native boolean initForkDump();
+  private native void initForkDump();
 
   /**
    * First do suspend vm, then do fork.

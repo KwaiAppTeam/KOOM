@@ -83,7 +83,7 @@ KWAI_EXPORT void *DlFcn::dlopen(const char *lib_name, int flags) {
     } else {
       handle = __loader_dlopen(lib_name, flags, (void *)dlerror);
       if (handle == nullptr) {
-        // Android Q added "runtime" namespace
+        // Support more namespaces(e.g. runtime)
         dl_iterate_data data{};
         data.info_.dlpi_name = lib_name;
         dl_iterate_phdr_wrapper(dl_iterate_callback, &data);
@@ -417,7 +417,7 @@ KWAI_EXPORT void *DlFcn::dlsym_elf(void *handle, const char *name) {
   char *dynstr = (char *)ctx->dynstr;
   char *strtab = (char *)ctx->strtab;
 
-  // 搜索.dynsym
+  // search in .dynsym
   for (k = 0; k < ctx->dynsym_num; k++, dynsym++)
     if (strcmp(dynstr + dynsym->st_name, name) == 0) {
       /*  NB: dynsym->st_value is an offset into the section for relocatables,
@@ -427,7 +427,7 @@ KWAI_EXPORT void *DlFcn::dlsym_elf(void *handle, const char *name) {
       return ret;
     }
 
-  // 搜索.symtab
+  // search in .symtab
   if (symtab) {
     for (k = 0; k < ctx->symtab_num; k++, symtab++) {
       if (strcmp(strtab + symtab->st_name, name) == 0) {

@@ -634,9 +634,15 @@ Java_com_kwai_koom_javaoom_dump_StripHprofHeapDumper_isStripSuccess(JNIEnv *env,
   return (jboolean)isDumpHookSucc;
 }
 
-JNIEXPORT jboolean JNICALL
+static void initDumpHprofSymbols();
+static pthread_once_t once_control = PTHREAD_ONCE_INIT;
+
+JNIEXPORT void JNICALL
 Java_com_kwai_koom_javaoom_dump_ForkJvmHeapDumper_initForkDump(JNIEnv *env, jobject jObject) {
-  return initForkVMSymbols();
+  if (!initForkVMSymbols()) {
+    // Above android 11
+    pthread_once(&once_control, initDumpHprofSymbols);
+  }
 }
 
 JNIEXPORT jint JNICALL Java_com_kwai_koom_javaoom_dump_ForkJvmHeapDumper_fork(JNIEnv *env,
@@ -869,7 +875,6 @@ static void initDumpHprofSymbols() {
 
 JNIEXPORT jboolean JNICALL Java_com_kwai_koom_javaoom_dump_ForkJvmHeapDumper_dumpHprofDataNative(
     JNIEnv *env, jclass clazz, jstring file_name) {
-  static pthread_once_t once_control = PTHREAD_ONCE_INIT;
   pthread_once(&once_control, initDumpHprofSymbols);
   if (ScopedGCCriticalSectionConstructor == nullptr || ScopedSuspendAllConstructor == nullptr ||
       ScopedGCCriticalSectionDestructor == nullptr || ScopedSuspendAllDestructor == nullptr ||
@@ -903,6 +908,7 @@ JNIEXPORT jboolean JNICALL Java_com_kwai_koom_javaoom_dump_ForkJvmHeapDumper_dum
   HprofConstructor(gHprofHandle, filename, -1, false);
   Dump(gHprofHandle);
   HprofDestructor(gHprofHandle);
+  env->ReleaseStringUTFChars(file_name, filename);
   return JNI_TRUE;
 }
 
