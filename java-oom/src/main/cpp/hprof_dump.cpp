@@ -16,16 +16,20 @@
 //
 
 #include <android/log.h>
+#include <cerrno>
 #include <cstdio>
 #include <cstdlib>
 #include <dlfcn.h>
 #include <fcntl.h>
 #include <jni.h>
 #include <kwai_dlfcn.h>
+#include <pthread.h>
 #include <string>
 #include <unistd.h>
 #include <wait.h>
 #include <xhook.h>
+
+#define LOG_TAG "HprofDump"
 
 enum HprofTag {
   HPROF_TAG_STRING = 0x01,
@@ -542,7 +546,7 @@ ssize_t hook_write(int fd, const void *buf, size_t count) {
     if (writeLen > 0) {
       total_write += write(fd, writeBuf, writeLen);
     } else if (writeLen < 0) {
-      __android_log_print(ANDROID_LOG_ERROR, "HprofDump", "hook_write array i:%d writeLen<0:%lu", i,
+      __android_log_print(ANDROID_LOG_ERROR, LOG_TAG, "hook_write array i:%d writeLen<0:%lu", i,
                           writeLen);
     }
     startIndex = stripIndexListPair[i * 2 + 1];
@@ -556,39 +560,38 @@ ssize_t hook_write(int fd, const void *buf, size_t count) {
   hookWriteSerialNum++;
 
   if (total_write != count) {
-    __android_log_print(ANDROID_LOG_INFO, "HprofDump", "hook write, hprof strip happens");
+    __android_log_print(ANDROID_LOG_INFO, LOG_TAG, "hook write, hprof strip happens");
   }
 
   return count;
 }
 
 void (*suspendVM)();
-
 void (*resumeVM)();
 
 bool initForkVMSymbols() {
-  bool res = false;
-
   void *libHandle = kwai::linker::DlFcn::dlopen("libart.so", RTLD_NOW);
   if (libHandle == nullptr) {
-    return res;
+    return false;
   }
 
   suspendVM = (void (*)())kwai::linker::DlFcn::dlsym(libHandle, "_ZN3art3Dbg9SuspendVMEv");
   if (suspendVM == nullptr) {
-    __android_log_print(ANDROID_LOG_ERROR, "KOOM", "suspendVM is null!");
+    __android_log_print(ANDROID_LOG_WARN, LOG_TAG, "_ZN3art3Dbg9SuspendVMEv unsupported!");
   }
 
   resumeVM = (void (*)())kwai::linker::DlFcn::dlsym(libHandle, "_ZN3art3Dbg8ResumeVMEv");
   if (resumeVM == nullptr) {
-    __android_log_print(ANDROID_LOG_ERROR, "KOOM", "resumeVM is null!");
+    __android_log_print(ANDROID_LOG_WARN, LOG_TAG, "_ZN3art3Dbg8ResumeVMEv unsupported!");
   }
 
   kwai::linker::DlFcn::dlclose(libHandle);
   return suspendVM != nullptr && resumeVM != nullptr;
 }
 
+#ifdef __cplusplus
 extern "C" {
+#endif
 
 JNIEXPORT void JNICALL
 Java_com_kwai_koom_javaoom_dump_StripHprofHeapDumper_initStripDump(JNIEnv *env, jobject jObject) {
@@ -631,9 +634,15 @@ Java_com_kwai_koom_javaoom_dump_StripHprofHeapDumper_isStripSuccess(JNIEnv *env,
   return (jboolean)isDumpHookSucc;
 }
 
-JNIEXPORT jboolean JNICALL
+static void initDumpHprofSymbols();
+static pthread_once_t once_control = PTHREAD_ONCE_INIT;
+
+JNIEXPORT void JNICALL
 Java_com_kwai_koom_javaoom_dump_ForkJvmHeapDumper_initForkDump(JNIEnv *env, jobject jObject) {
-  return initForkVMSymbols();
+  if (!initForkVMSymbols()) {
+    // Above android 11
+    pthread_once(&once_control, initDumpHprofSymbols);
+  }
 }
 
 JNIEXPORT jint JNICALL Java_com_kwai_koom_javaoom_dump_ForkJvmHeapDumper_fork(JNIEnv *env,
@@ -646,7 +655,6 @@ JNIEXPORT jint JNICALL Java_com_kwai_koom_javaoom_dump_ForkJvmHeapDumper_trySusp
   if (suspendVM == nullptr) {
     initForkVMSymbols();
   }
-
   if (suspendVM != nullptr) {
     suspendVM();
   }
@@ -669,7 +677,6 @@ JNIEXPORT void JNICALL Java_com_kwai_koom_javaoom_dump_ForkJvmHeapDumper_resumeV
   if (resumeVM == nullptr) {
     initForkVMSymbols();
   }
-
   if (resumeVM != nullptr) {
     resumeVM();
   }
@@ -686,4 +693,225 @@ JNIEXPORT void JNICALL Java_com_kwai_koom_javaoom_dump_ForkJvmHeapDumper_waitPid
   int status;
   waitpid(pid, &status, 0);
 }
+
+#define TLS_SLOT_ART_THREAD_SELF 7
+#if defined(__aarch64__)
+#define __get_tls()                                                                                \
+  ({                                                                                               \
+    void **__val;                                                                                  \
+    __asm__("mrs %0, tpidr_el0" : "=r"(__val));                                                    \
+    __val;                                                                                         \
+  })
+#elif defined(__arm__)
+#define __get_tls()                                                                                \
+  ({                                                                                               \
+    void **__val;                                                                                  \
+    __asm__("mrc p15, 0, %0, c13, c0, 3" : "=r"(__val));                                           \
+    __val;                                                                                         \
+  })
+#else
+#error unsupported architecture
+#endif
+
+// What caused the GC?
+enum GcCause {
+  // Invalid GC cause used as a placeholder.
+  kGcCauseNone,
+  // GC triggered by a failed allocation. Thread doing allocation is blocked waiting for GC before
+  // retrying allocation.
+  kGcCauseForAlloc,
+  // A background GC trying to ensure there is free memory ahead of allocations.
+  kGcCauseBackground,
+  // An explicit System.gc() call.
+  kGcCauseExplicit,
+  // GC triggered for a native allocation when NativeAllocationGcWatermark is exceeded.
+  // (This may be a blocking GC depending on whether we run a non-concurrent collector).
+  kGcCauseForNativeAlloc,
+  // GC triggered for a collector transition.
+  kGcCauseCollectorTransition,
+  // Not a real GC cause, used when we disable moving GC (currently for GetPrimitiveArrayCritical).
+  kGcCauseDisableMovingGc,
+  // Not a real GC cause, used when we trim the heap.
+  kGcCauseTrim,
+  // Not a real GC cause, used to implement exclusion between GC and instrumentation.
+  kGcCauseInstrumentation,
+  // Not a real GC cause, used to add or remove app image spaces.
+  kGcCauseAddRemoveAppImageSpace,
+  // Not a real GC cause, used to implement exclusion between GC and debugger.
+  kGcCauseDebugger,
+  // GC triggered for background transition when both foreground and background collector are CMS.
+  kGcCauseHomogeneousSpaceCompact,
+  // Class linker cause, used to guard filling art methods with special values.
+  kGcCauseClassLinker,
+  // Not a real GC cause, used to implement exclusion between code cache metadata and GC.
+  kGcCauseJitCodeCache,
+  // Not a real GC cause, used to add or remove system-weak holders.
+  kGcCauseAddRemoveSystemWeakHolder,
+  // Not a real GC cause, used to prevent hprof running in the middle of GC.
+  kGcCauseHprof,
+  // Not a real GC cause, used to prevent GetObjectsAllocated running in the middle of GC.
+  kGcCauseGetObjectsAllocated,
+  // GC cause for the profile saver.
+  kGcCauseProfileSaver,
+  // GC cause for running an empty checkpoint.
+  kGcCauseRunEmptyCheckpoint,
+};
+
+// Which types of collections are able to be performed.
+enum CollectorType {
+  // No collector selected.
+  kCollectorTypeNone,
+  // Non concurrent mark-sweep.
+  kCollectorTypeMS,
+  // Concurrent mark-sweep.
+  kCollectorTypeCMS,
+  // Semi-space / mark-sweep hybrid, enables compaction.
+  kCollectorTypeSS,
+  // Heap trimming collector, doesn't do any actual collecting.
+  kCollectorTypeHeapTrim,
+  // A (mostly) concurrent copying collector.
+  kCollectorTypeCC,
+  // The background compaction of the concurrent copying collector.
+  kCollectorTypeCCBackground,
+  // Instrumentation critical section fake collector.
+  kCollectorTypeInstrumentation,
+  // Fake collector for adding or removing application image spaces.
+  kCollectorTypeAddRemoveAppImageSpace,
+  // Fake collector used to implement exclusion between GC and debugger.
+  kCollectorTypeDebugger,
+  // A homogeneous space compaction collector used in background transition
+  // when both foreground and background collector are CMS.
+  kCollectorTypeHomogeneousSpaceCompact,
+  // Class linker fake collector.
+  kCollectorTypeClassLinker,
+  // JIT Code cache fake collector.
+  kCollectorTypeJitCodeCache,
+  // Hprof fake collector.
+  kCollectorTypeHprof,
+  // Fake collector for installing/removing a system-weak holder.
+  kCollectorTypeAddRemoveSystemWeakHolder,
+  // Fake collector type for GetObjectsAllocated
+  kCollectorTypeGetObjectsAllocated,
+  // Fake collector type for ScopedGCCriticalSection
+  kCollectorTypeCriticalSection,
+};
+
+// Over size malloc ScopedSuspendAll instance for device compatibility
+static void *gSSAHandle = malloc(64);
+void (*ScopedSuspendAllConstructor)(void *handle, const char *cause, bool long_suspend);
+void (*ScopedSuspendAllDestructor)(void *handle);
+// Over size malloc ScopedGCCriticalSection instance for device compatibility
+static void *gSGCSHandle = malloc(64);
+void (*ScopedGCCriticalSectionConstructor)(void *handle, void *self, GcCause cause,
+                                           CollectorType collector_type);
+void (*ScopedGCCriticalSectionDestructor)(void *handle);
+// Over size malloc Hprof instance for device compatibility
+static void *gHprofHandle = malloc(128);
+void (*HprofConstructor)(void *handle, const char *output_filename, int fd, bool direct_to_ddms);
+void (*HprofDestructor)(void *handle);
+void (*Dump)(void *handle);
+
+// For above android 11
+static void initDumpHprofSymbols() {
+  // Parse .dynsym(GLOBAL)
+  void *libHandle = kwai::linker::DlFcn::dlopen("libart.so", RTLD_NOW);
+  if (libHandle == nullptr) {
+    return;
+  }
+  ScopedSuspendAllConstructor = (void (*)(void *, const char *, bool))kwai::linker::DlFcn::dlsym(
+      libHandle, "_ZN3art16ScopedSuspendAllC1EPKcb");
+  if (ScopedSuspendAllConstructor == nullptr) {
+    __android_log_print(ANDROID_LOG_WARN, LOG_TAG, "_ZN3art16ScopedSuspendAllC1EPKcb unsupported!");
+  }
+
+  ScopedSuspendAllDestructor =
+      (void (*)(void *))kwai::linker::DlFcn::dlsym(libHandle, "_ZN3art16ScopedSuspendAllD1Ev");
+  if (ScopedSuspendAllDestructor == nullptr) {
+    __android_log_print(ANDROID_LOG_WARN, LOG_TAG, "_ZN3art16ScopedSuspendAllD1Ev unsupported!");
+  }
+
+  ScopedGCCriticalSectionConstructor =
+      (void (*)(void *, void *, GcCause, CollectorType))kwai::linker::DlFcn::dlsym(
+          libHandle,
+          "_ZN3art2gc23ScopedGCCriticalSectionC1EPNS_6ThreadENS0_7GcCauseENS0_13CollectorTypeE");
+  if (ScopedGCCriticalSectionConstructor == nullptr) {
+    __android_log_print(ANDROID_LOG_WARN, LOG_TAG,
+                        "_ZN3art2gc23ScopedGCCriticalSectionC1EPNS_6ThreadENS0_7GcCauseENS0_"
+                        "13CollectorTypeE unsupported!");
+  }
+
+  ScopedGCCriticalSectionDestructor = (void (*)(void *))kwai::linker::DlFcn::dlsym(
+      libHandle, "_ZN3art2gc23ScopedGCCriticalSectionD1Ev");
+  if (ScopedGCCriticalSectionDestructor == nullptr) {
+    __android_log_print(ANDROID_LOG_WARN, LOG_TAG,
+                        "_ZN3art2gc23ScopedGCCriticalSectionD1Ev unsupported!");
+  }
+
+  kwai::linker::DlFcn::dlclose(libHandle);
+  // Parse .symtab(LOCAL)
+  libHandle = kwai::linker::DlFcn::dlopen_elf("libart.so", RTLD_NOW);
+  if (libHandle == nullptr) {
+    return;
+  }
+  HprofConstructor = (void (*)(void *, const char *, int, bool))kwai::linker::DlFcn::dlsym_elf(
+      libHandle, "_ZN3art5hprof5HprofC2EPKcib");
+  if (HprofConstructor == nullptr) {
+    __android_log_print(ANDROID_LOG_WARN, LOG_TAG, "_ZN3art5hprof5HprofC2EPKcib unsupported!");
+  }
+
+  HprofDestructor =
+      (void (*)(void *))kwai::linker::DlFcn::dlsym_elf(libHandle, "_ZN3art5hprof5HprofD0Ev");
+  if (HprofDestructor == nullptr) {
+    __android_log_print(ANDROID_LOG_WARN, LOG_TAG, "_ZN3art5hprof5HprofD0Ev unsupported!");
+  }
+
+  Dump = (void (*)(void *))kwai::linker::DlFcn::dlsym_elf(libHandle, "_ZN3art5hprof5Hprof4DumpEv");
+  if (Dump == nullptr) {
+    __android_log_print(ANDROID_LOG_WARN, LOG_TAG, "_ZN3art5hprof5Hprof4DumpEv unsupported!");
+  }
+
+  kwai::linker::DlFcn::dlclose_elf(libHandle);
 }
+
+JNIEXPORT jboolean JNICALL Java_com_kwai_koom_javaoom_dump_ForkJvmHeapDumper_dumpHprofDataNative(
+    JNIEnv *env, jclass clazz, jstring file_name) {
+  pthread_once(&once_control, initDumpHprofSymbols);
+  if (ScopedGCCriticalSectionConstructor == nullptr || ScopedSuspendAllConstructor == nullptr ||
+      ScopedGCCriticalSectionDestructor == nullptr || ScopedSuspendAllDestructor == nullptr ||
+      HprofConstructor == nullptr || HprofDestructor == nullptr || Dump == nullptr) {
+    return JNI_FALSE;
+  }
+  ScopedGCCriticalSectionConstructor(gSGCSHandle, __get_tls()[TLS_SLOT_ART_THREAD_SELF],
+                                     kGcCauseHprof, kCollectorTypeHprof);
+  ScopedSuspendAllConstructor(gSSAHandle, LOG_TAG, true);
+  pid_t pid = fork();
+  if (pid == -1) {
+    // Fork error.
+    __android_log_print(ANDROID_LOG_ERROR, LOG_TAG, "failed to fork!");
+    return JNI_FALSE;
+  }
+  if (pid != 0) {
+    // Parent
+    ScopedGCCriticalSectionDestructor(gSGCSHandle);
+    ScopedSuspendAllDestructor(gSSAHandle);
+
+    int stat_loc;
+    for (;;) {
+      if (waitpid(pid, &stat_loc, 0) != -1 || errno != EINTR) {
+        break;
+      }
+    }
+    return JNI_TRUE;
+  }
+
+  const char *filename = env->GetStringUTFChars(file_name, nullptr);
+  HprofConstructor(gHprofHandle, filename, -1, false);
+  Dump(gHprofHandle);
+  HprofDestructor(gHprofHandle);
+  env->ReleaseStringUTFChars(file_name, filename);
+  return JNI_TRUE;
+}
+
+#ifdef __cplusplus
+}
+#endif

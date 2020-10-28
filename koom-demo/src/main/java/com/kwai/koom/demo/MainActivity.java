@@ -60,7 +60,7 @@ public class MainActivity extends AppCompatActivity {
     String text = "";
     switch (progress) {
       case HEAP_DUMP_START:
-        text = "heap dump stared";
+        text = "heap dump started";
         break;
       case HEAP_DUMPED:
         text = "heap dump ended";
