@@ -45,7 +45,7 @@ public class KOOMEnableChecker {
    */
   public boolean isVersionPermit() {
     return Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP
-        && Build.VERSION.SDK_INT <= Build.VERSION_CODES.Q;
+        && Build.VERSION.SDK_INT <= Build.VERSION_CODES.R;
   }
 
   /**
