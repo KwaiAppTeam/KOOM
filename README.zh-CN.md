@@ -112,12 +112,11 @@ KOOM 以 Apache-2.0 证书开源，详情参见 [LICENSE](./LICENSE)。
 
 ## 联系我们
 
-**项目负责人**
-[alhah(薛秋实)](https://github.com/alhah)
+**项目负责人**<br>
+[alhah(薛秋实)](https://github.com/alhah)<br>
 
-**项目核心成员**
-[alhah(薛秋实)](https://github.com/alhah)
-[AndroidInternal(李锐)](https://github.com/AndroidInternal)
+**项目核心成员**<br>
+[alhah(薛秋实)](https://github.com/alhah) <br>[AndroidInternal(李锐)](https://github.com/AndroidInternal)<br>
 **微信讨论群**
-<img src=./doc/images/wechat.jpg/>。
+<img src=./doc/images/wechat.jpg/>
 
