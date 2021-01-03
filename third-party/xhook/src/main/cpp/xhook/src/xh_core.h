@@ -28,10 +28,10 @@
 extern "C" {
 #endif
 
-int xh_core_register(const char *pathname_regex_str, const char *symbol, void *new_func,
-                     void **old_func);
+int xh_core_register(const char* pathname_regex_str, const char* symbol,
+                     void* new_func, void** old_func);
 
-int xh_core_ignore(const char *pathname_regex_str, const char *symbol);
+int xh_core_ignore(const char* pathname_regex_str, const char* symbol);
 
 int xh_core_refresh(int async);
 

@@ -30,9 +30,9 @@ extern "C" {
 
 unsigned int xh_version();
 
-const char *xh_version_str();
+const char* xh_version_str();
 
-const char *xh_version_str_full();
+const char* xh_version_str_full();
 
 #ifdef __cplusplus
 }
