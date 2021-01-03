@@ -913,6 +913,7 @@ JNIEXPORT jboolean JNICALL Java_com_kwai_koom_javaoom_dump_ForkJvmHeapDumper_dum
   Dump(gHprofHandle);
   HprofDestructor(gHprofHandle);
   env->ReleaseStringUTFChars(file_name, filename);
+  _exit(0);
   return JNI_TRUE;
 }
 
