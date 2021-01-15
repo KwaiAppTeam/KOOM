@@ -2,6 +2,7 @@ package com.kwai.koom.javaoom.dump;
 
 import java.io.IOException;
 
+import android.os.Build;
 import android.os.Debug;
 import android.util.Log;
 
@@ -38,7 +39,7 @@ public class StripHprofHeapDumper implements HeapDumper {
   public StripHprofHeapDumper() {
     soLoaded = KGlobalConfig.getSoLoader().loadLib("koom-java");
     if (soLoaded) {
-      initStripDump();
+      initStripDump(Build.VERSION.SDK_INT);
     }
   }
 
@@ -67,7 +68,11 @@ public class StripHprofHeapDumper implements HeapDumper {
     return dumpRes;
   }
 
-  public native void initStripDump();
+  public void hprofNameNative(String name) {
+    hprofName(name);
+  }
+
+  public native void initStripDump(int sdk_version);
 
   public native void hprofName(String name);
 

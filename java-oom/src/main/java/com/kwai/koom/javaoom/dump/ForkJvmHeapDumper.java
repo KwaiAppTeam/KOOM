@@ -9,6 +9,7 @@ import com.kwai.koom.javaoom.KOOMEnableChecker;
 import com.kwai.koom.javaoom.common.KGlobalConfig;
 import com.kwai.koom.javaoom.common.KLog;
 
+import java.io.File;
 
 /**
  * Copyright 2020 Kwai, Inc. All rights reserved.
@@ -38,7 +39,7 @@ public class ForkJvmHeapDumper implements HeapDumper {
   public ForkJvmHeapDumper() {
     soLoaded = KGlobalConfig.getSoLoader().loadLib("koom-java");
     if (soLoaded) {
-      initForkDump();
+      initForkDump(Build.VERSION.SDK_INT);
     }
   }
 
@@ -58,6 +59,19 @@ public class ForkJvmHeapDumper implements HeapDumper {
     if (!KOOMEnableChecker.get().isSpaceEnough()) {
       KLog.e(TAG, "dump failed caused by disk space not enough!");
       return false;
+    }
+
+    //modify file permission, adapt to some rom
+    File file = new File(path);
+    if (file.exists()) {
+      file.setReadable(true, false);
+    } else {
+      try {
+        file.createNewFile();
+        file.setReadable(true, false);
+      } catch (IOException e) {
+        e.printStackTrace();
+      }
     }
 
     // Compatible with Android 11
@@ -96,7 +110,7 @@ public class ForkJvmHeapDumper implements HeapDumper {
    *
    * @return init result
    */
-  private native void initForkDump();
+  private native void initForkDump(int sdk_version);
 
   /**
    * First do suspend vm, then do fork.

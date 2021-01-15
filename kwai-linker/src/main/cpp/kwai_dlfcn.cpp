@@ -74,7 +74,7 @@ KWAI_EXPORT void *DlFcn::dlopen(const char *lib_name, int flags) {
     return ::dlopen(lib_name, flags);
   }
   if (android_api_ > __ANDROID_API_N__) {
-    void *handle = ::dlopen("libdl.so", RTLD_NOW);
+    void *handle = ::dlopen("libdl.so", flags);
     CHECKP(handle)
     auto __loader_dlopen = reinterpret_cast<__loader_dlopen_fn>(::dlsym(handle, "__loader_dlopen"));
     CHECKP(__loader_dlopen)
