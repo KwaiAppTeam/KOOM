@@ -434,24 +434,31 @@ int processHeap(const void *buf, int firstIndex, int maxLen, int heapSerialNo, i
 
     //裁剪掉基本类型数组，无论是否在system space都进行裁剪
     //区别是数组左坐标，app space时带数组元信息（类型、长度）方便回填
-    if (isCurrentSystemHeap) {
-      stripIndexListPair[stripIndex * 2] = firstIndex;
-    } else {
-      stripIndexListPair[stripIndex * 2] =
-          primitiveArrayDumpIndex + BASIC_TYPE_BYTE_SIZE /*value type*/;
-    }
-    arraySerialNo++;
+//    if (isCurrentSystemHeap) {
+//      stripIndexListPair[stripIndex * 2] = firstIndex;
+//    } else {
+//      stripIndexListPair[stripIndex * 2] =
+//          primitiveArrayDumpIndex + BASIC_TYPE_BYTE_SIZE /*value type*/;
+//    }
+//    arraySerialNo++;
+//
+//    int valueSize = getByteSizeFromType(((unsigned char *)buf)[primitiveArrayDumpIndex]);
+//    primitiveArrayDumpIndex += BASIC_TYPE_BYTE_SIZE /*value type*/ + valueSize * length;
+//
+//    //数组右坐标
+//    stripIndexListPair[stripIndex * 2 + 1] = primitiveArrayDumpIndex;
+//
+//    // app space时，不修改长度因为回填数组时会补齐
+//    if (isCurrentSystemHeap) {
+//      stripBytesSum += primitiveArrayDumpIndex - firstIndex;
+//    }
 
+    stripIndexListPair[stripIndex * 2] = firstIndex;
     int valueSize = getByteSizeFromType(((unsigned char *)buf)[primitiveArrayDumpIndex]);
     primitiveArrayDumpIndex += BASIC_TYPE_BYTE_SIZE /*value type*/ + valueSize * length;
-
-    //数组右坐标
     stripIndexListPair[stripIndex * 2 + 1] = primitiveArrayDumpIndex;
+    stripBytesSum += primitiveArrayDumpIndex - firstIndex;
 
-    // app space时，不修改长度因为回填数组时会补齐
-    if (isCurrentSystemHeap) {
-      stripBytesSum += primitiveArrayDumpIndex - firstIndex;
-    }
     stripIndex++;
 
     arraySerialNo = processHeap(buf, primitiveArrayDumpIndex, maxLen, heapSerialNo, arraySerialNo);
@@ -594,7 +601,8 @@ extern "C" {
 #endif
 
 JNIEXPORT void JNICALL
-Java_com_kwai_koom_javaoom_dump_StripHprofHeapDumper_initStripDump(JNIEnv *env, jobject jObject) {
+Java_com_kwai_koom_javaoom_dump_StripHprofHeapDumper_initStripDump(
+        JNIEnv *env, jobject jObject, int sdk_version) {
   hprofFd = -1;
   hprofName = nullptr;
   isDumpHookSucc = false;
@@ -611,14 +619,20 @@ Java_com_kwai_koom_javaoom_dump_StripHprofHeapDumper_initStripDump(JNIEnv *env, 
    * android 7-10版本，open方法都在libart.so中
    * libbase.so与libartbase.so，为保险操作
    */
-  xhook_register("libart.so", "open", (void *)hook_open, nullptr);
-  xhook_register("libbase.so", "open", (void *)hook_open, nullptr);
-  xhook_register("libartbase.so", "open", (void *)hook_open, nullptr);
 
-  xhook_register("libc.so", "write", (void *)hook_write, nullptr);
-  xhook_register("libart.so", "write", (void *)hook_write, nullptr);
-  xhook_register("libbase.so", "write", (void *)hook_write, nullptr);
-  xhook_register("libartbase.so", "write", (void *)hook_write, nullptr);
+  if (sdk_version == 30) {
+    xhook_register("libart.so", "open", (void *)hook_open, nullptr);
+    xhook_register("libc.so", "write", (void *)hook_write, nullptr);
+  } else {
+    xhook_register("libart.so", "open", (void *)hook_open, nullptr);
+    xhook_register("libbase.so", "open", (void *)hook_open, nullptr);
+    xhook_register("libartbase.so", "open", (void *)hook_open, nullptr);
+
+    xhook_register("libc.so", "write", (void *)hook_write, nullptr);
+    xhook_register("libart.so", "write", (void *)hook_write, nullptr);
+    xhook_register("libbase.so", "write", (void *)hook_write, nullptr);
+    xhook_register("libartbase.so", "write", (void *)hook_write, nullptr);
+  }
 
   xhook_refresh(0);
   xhook_clear();
@@ -638,10 +652,12 @@ static void initDumpHprofSymbols();
 static pthread_once_t once_control = PTHREAD_ONCE_INIT;
 
 JNIEXPORT void JNICALL
-Java_com_kwai_koom_javaoom_dump_ForkJvmHeapDumper_initForkDump(JNIEnv *env, jobject jObject) {
-  if (!initForkVMSymbols()) {
-    // Above android 11
+Java_com_kwai_koom_javaoom_dump_ForkJvmHeapDumper_initForkDump(
+        JNIEnv *env, jobject jObject, jint sdk_version) {
+  if (sdk_version == 30) {
     pthread_once(&once_control, initDumpHprofSymbols);
+  } else {
+    initForkVMSymbols();
   }
 }
 
@@ -709,8 +725,6 @@ JNIEXPORT void JNICALL Java_com_kwai_koom_javaoom_dump_ForkJvmHeapDumper_waitPid
     __asm__("mrc p15, 0, %0, c13, c0, 3" : "=r"(__val));                                           \
     __val;                                                                                         \
   })
-#else
-#error unsupported architecture
 #endif
 
 // What caused the GC?
@@ -881,8 +895,14 @@ JNIEXPORT jboolean JNICALL Java_com_kwai_koom_javaoom_dump_ForkJvmHeapDumper_dum
       HprofConstructor == nullptr || HprofDestructor == nullptr || Dump == nullptr) {
     return JNI_FALSE;
   }
+#ifdef defined(__arm__) || defined(__aarch64__)
   ScopedGCCriticalSectionConstructor(gSGCSHandle, __get_tls()[TLS_SLOT_ART_THREAD_SELF],
                                      kGcCauseHprof, kCollectorTypeHprof);
+#else
+  static pthread_key_t pthread_key_self_;
+  void* thread = pthread_getspecific(pthread_key_self_);
+  ScopedGCCriticalSectionConstructor(gSGCSHandle, thread, kGcCauseHprof, kCollectorTypeHprof);
+#endif
   ScopedSuspendAllConstructor(gSSAHandle, LOG_TAG, true);
   pid_t pid = fork();
   if (pid == -1) {
@@ -890,7 +910,21 @@ JNIEXPORT jboolean JNICALL Java_com_kwai_koom_javaoom_dump_ForkJvmHeapDumper_dum
     __android_log_print(ANDROID_LOG_ERROR, LOG_TAG, "failed to fork!");
     return JNI_FALSE;
   }
-  if (pid != 0) {
+  if (pid == 0) {
+      if (nullptr == hprofName) {
+          const char *filename = env->GetStringUTFChars(file_name, nullptr);
+          HprofConstructor(gHprofHandle, filename, -1, false);
+          Dump(gHprofHandle);
+          HprofDestructor(gHprofHandle);
+          env->ReleaseStringUTFChars(file_name, filename);
+      } else {
+          HprofConstructor(gHprofHandle, hprofName, -1, false);
+          Dump(gHprofHandle);
+          HprofDestructor(gHprofHandle);
+      }
+      isDumpHookSucc = true;
+      _exit(0);
+  } else {
     // Parent
     ScopedGCCriticalSectionDestructor(gSGCSHandle);
     ScopedSuspendAllDestructor(gSSAHandle);
@@ -901,14 +935,8 @@ JNIEXPORT jboolean JNICALL Java_com_kwai_koom_javaoom_dump_ForkJvmHeapDumper_dum
         break;
       }
     }
-    return JNI_TRUE;
   }
 
-  const char *filename = env->GetStringUTFChars(file_name, nullptr);
-  HprofConstructor(gHprofHandle, filename, -1, false);
-  Dump(gHprofHandle);
-  HprofDestructor(gHprofHandle);
-  env->ReleaseStringUTFChars(file_name, filename);
   return JNI_TRUE;
 }
 
