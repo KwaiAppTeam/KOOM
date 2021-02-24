@@ -97,6 +97,7 @@ See wiki [FAQ](https://github.com/KwaiAppTeam/KOOM/wiki/FAQ)
 高性能内存镜像解析组件，基于shark解析器定制优化，泄露判定关键代码参考`LeakDetector.java`
 
 ## License
+
 KOOM 以 Apache-2.0 证书开源，详情参见 [LICENSE](./LICENSE)。
 
 ## 版本历史
@@ -107,6 +108,14 @@ KOOM 以 Apache-2.0 证书开源，详情参见 [LICENSE](./LICENSE)。
 
 
 ## 问题 & 反馈
-欢迎提 [issues](https://github.com/KwaiAppTeam/KOOM/issues) 提问反馈，或者加入微信群。
+欢迎提 [issues](https://github.com/KwaiAppTeam/KOOM/issues) 提问反馈。
 
+## 联系我们
+
+**项目负责人**<br>
+[alhah(薛秋实)](https://github.com/alhah)<br>
+
+**项目核心成员**<br>
+[alhah(薛秋实)](https://github.com/alhah) <br>[AndroidInternal(李锐)](https://github.com/AndroidInternal)<br>
+**微信讨论群**
 <img src=./doc/images/wechat8.png/>。
