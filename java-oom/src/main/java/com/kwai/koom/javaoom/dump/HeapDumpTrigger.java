@@ -120,4 +120,14 @@ public class HeapDumpTrigger implements KTrigger {
   public void setHeapDumpListener(HeapDumpListener heapDumpListener) {
     this.heapDumpListener = heapDumpListener;
   }
+
+  @Override
+  public void onForeground() {
+    //do noting now
+  }
+
+  @Override
+  public void onBackground() {
+    //do nothing now
+  }
 }

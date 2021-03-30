@@ -1,7 +1,6 @@
 package com.kwai.koom.javaoom.common;
 
-import androidx.lifecycle.LifecycleObserver;
-
+import com.kwai.koom.javaoom.lifecyle.LifecycleObserver;
 import com.kwai.koom.javaoom.monitor.TriggerReason;
 
 /**
