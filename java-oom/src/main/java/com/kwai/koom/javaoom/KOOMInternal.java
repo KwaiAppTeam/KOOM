@@ -89,29 +89,33 @@ class KOOMInternal implements HeapDumpListener, HeapAnalysisListener {
   private boolean started;
 
   private void startInternal() {
-    if (started) {
-      KLog.i(TAG, "already started!");
-      return;
+    try {
+      if (started) {
+        KLog.i(TAG, "already started!");
+        return;
+      }
+      started = true;
+
+      heapDumpTrigger.setHeapDumpListener(this);
+      heapAnalysisTrigger.setHeapAnalysisListener(this);
+
+      if (KOOMEnableChecker.doCheck() != KOOMEnableChecker.Result.NORMAL) {
+        KLog.e(TAG, "koom start failed, check result: " + KOOMEnableChecker.doCheck());
+        return;
+      }
+
+      ReanalysisChecker reanalysisChecker = new ReanalysisChecker();
+      if (reanalysisChecker.detectReanalysisFile() != null) {
+        KLog.i(TAG, "detected reanalysis file");
+        heapAnalysisTrigger
+            .trigger(TriggerReason.analysisReason(TriggerReason.AnalysisReason.REANALYSIS));
+        return;
+      }
+
+      heapDumpTrigger.startTrack();
+    } catch (Exception e) {
+      e.printStackTrace();
     }
-    started = true;
-
-    heapDumpTrigger.setHeapDumpListener(this);
-    heapAnalysisTrigger.setHeapAnalysisListener(this);
-
-    if (KOOMEnableChecker.doCheck() != KOOMEnableChecker.Result.NORMAL) {
-      KLog.e(TAG, "koom start failed, check result: " + KOOMEnableChecker.doCheck());
-      return;
-    }
-
-    ReanalysisChecker reanalysisChecker = new ReanalysisChecker();
-    if (reanalysisChecker.detectReanalysisFile() != null) {
-      KLog.i(TAG, "detected reanalysis file");
-      heapAnalysisTrigger
-          .trigger(TriggerReason.analysisReason(TriggerReason.AnalysisReason.REANALYSIS));
-      return;
-    }
-
-    heapDumpTrigger.startTrack();
   }
 
   public void stop() {
