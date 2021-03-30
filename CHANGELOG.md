@@ -7,3 +7,14 @@ Enhancement
 
 Bug fix
 - StripHprofHeapDumper bugfix.
+
+# v1.1.0
+Enhancement
+- Add heap max ratio and force trigger.
+- Add support for x86.
+
+Bug fix
+- Hardcode cacheDir path on unpredictable case.
+- Add try-catch in abnormal start, delete abnormal json file.
+
+
