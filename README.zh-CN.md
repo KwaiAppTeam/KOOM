@@ -17,7 +17,7 @@ KOOM(Kwai OOM, Kill OOM)是快手性能优化团队在处理移动端OOM问题�
 
 ```gradle
 dependencies {
-    implementation 'com.kwai.koom:java-oom:1.0.7'
+    implementation 'com.kwai.koom:java-oom:1.1.0'
 }
 ```
 
@@ -118,4 +118,4 @@ KOOM 以 Apache-2.0 证书开源，详情参见 [LICENSE](./LICENSE)。
 **项目核心成员**<br>
 [alhah(薛秋实)](https://github.com/alhah) <br>[AndroidInternal(李锐)](https://github.com/AndroidInternal)<br>
 **微信讨论群**
-<img src=./doc/images/wechat8.png/>。
+<img src=./doc/images/wechat.jpg/>。

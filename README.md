@@ -31,7 +31,7 @@ Try to run the koom-demo project first, and have a general understanding of the 
 
 ```gradle
 dependencies {
-    implementation 'com.kwai.koom:java-oom:1.0.7'
+    implementation 'com.kwai.koom:java-oom:1.1.0'
 }
 ```
 
@@ -117,4 +117,4 @@ If you are interested in contributing, check out the [CONTRIBUTING.md](./CONTRIB
 ## Feedback
 Welcome report [issues](https://github.com/KwaiAppTeam/KOOM/issues) or contact us in WeChat group.
 
-<img src=./doc/images/wechat8.png/>
+<img src=./doc/images/wechat.jpg/>
