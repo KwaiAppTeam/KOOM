@@ -123,7 +123,7 @@ public class ReanalysisChecker {
       HeapReport heapReport = gson.fromJson(str, HeapReport.class);
       return heapReport == null ? new HeapReport() : heapReport;
     } catch (Exception e) {
-      //e.printStackTrace();
+      file.delete();
     } finally {
       KUtils.closeQuietly(fin);
     }
