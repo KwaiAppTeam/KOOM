@@ -19,6 +19,7 @@
 #include <dlfcn.h>
 #include <fcntl.h>
 #include <fstream>
+#include <jni.h>
 #include <kwai_dlfcn.h>
 #include <kwai_log.h>
 #include <kwai_macros.h>
@@ -27,6 +28,10 @@
 #include <sys/mman.h>
 #include <sys/types.h>
 #include <unistd.h>
+
+#define LOG_TAG "kwai_dlfcn"
+
+#define DLPI_NAME_LENGTH 256
 
 namespace kwai {
 namespace linker {
@@ -38,7 +43,6 @@ int dl_iterate_phdr_wrapper(int (*__callback)(struct dl_phdr_info *, size_t, voi
   if (dl_iterate_phdr) {
     return dl_iterate_phdr(__callback, __data);
   }
-  ALOGF("dl_iterate_phdr unsupported!");
   return 0;
 }
 
@@ -49,14 +53,62 @@ void DlFcn::init_api() {
   ALOGD("android_api_ = %d", android_api_);
 }
 
-int DlFcn::dl_iterate_callback(dl_phdr_info *info, size_t size, void *data) {
+static pthread_once_t once_control = PTHREAD_ONCE_INIT;
+
+// Used for DlFcn::dlopen above android M
+static int dl_iterate_callback(dl_phdr_info *info, size_t size, void *data) {
   ALOGD("dl_iterate_callback %s %p", info->dlpi_name, info->dlpi_addr);
-  auto target = reinterpret_cast<dl_iterate_data *>(data);
+  auto target = reinterpret_cast<DlFcn::dl_iterate_data *>(data);
   if (info->dlpi_addr != 0 && strstr(info->dlpi_name, target->info_.dlpi_name)) {
     target->info_.dlpi_addr = info->dlpi_addr;
     target->info_.dlpi_phdr = info->dlpi_phdr;
     target->info_.dlpi_phnum = info->dlpi_phnum;
-    target->info_.dlpi_name = info->dlpi_name;
+
+    // break iterate
+    return 1;
+  }
+  // continue iterate
+  return 0;
+}
+
+// Used for DlFcn::dlopen_elf
+static int dl_iterate_callback_elf(dl_phdr_info *info, size_t size, void *data) {
+  ALOGD("dl_iterate_callback_elf %s %p", info->dlpi_name, info->dlpi_addr);
+  auto target = reinterpret_cast<DlFcn::dl_iterate_data *>(data);
+  if (info->dlpi_addr != 0 && strstr(info->dlpi_name, target->info_.dlpi_name)) {
+    target->info_.dlpi_addr = info->dlpi_addr;
+    target->info_.dlpi_phdr = info->dlpi_phdr;
+    target->info_.dlpi_phnum = info->dlpi_phnum;
+#if defined(__arm__)
+    // android linker use basename for lib on armeabi-v7a below android 6, find the full path
+    if (DlFcn::android_api_ < __ANDROID_API_M__) {
+      FILE *maps;
+      maps = fopen("/proc/self/maps", "r");
+      if (!maps) {
+        ALOGE("failed to open maps");
+        // break iterate
+        return 1;
+      } else {
+        char buff[DLPI_NAME_LENGTH];
+        while (fgets(buff, sizeof(buff), maps)) {
+          if ((strstr(buff, "r-xp") || strstr(buff, "r--p")) && strstr(buff, info->dlpi_name)) {
+            size_t length = strlen(buff);
+            buff[length - 1] = '\0';
+            break;
+          }
+        }
+
+        fclose(maps);
+        char *ptr = strchr(buff, '/');
+        if (ptr) {
+          strncpy((char *)target->info_.dlpi_name, ptr, DLPI_NAME_LENGTH);
+          // break iterate
+          return 1;
+        }
+      }
+    }
+#endif
+    strncpy((char *)target->info_.dlpi_name, info->dlpi_name, DLPI_NAME_LENGTH);
     // break iterate
     return 1;
   }
@@ -66,9 +118,8 @@ int DlFcn::dl_iterate_callback(dl_phdr_info *info, size_t size, void *data) {
 
 using __loader_dlopen_fn = void *(*)(const char *filename, int flag, void *address);
 
-KWAI_EXPORT void *DlFcn::dlopen(const char *lib_name, int flags) {
+JNIEXPORT void *DlFcn::dlopen(const char *lib_name, int flags) {
   ALOGD("dlopen %s", lib_name);
-  static pthread_once_t once_control = PTHREAD_ONCE_INIT;
   pthread_once(&once_control, init_api);
   if (android_api_ < __ANDROID_API_N__) {
     return ::dlopen(lib_name, flags);
@@ -83,7 +134,7 @@ KWAI_EXPORT void *DlFcn::dlopen(const char *lib_name, int flags) {
     } else {
       handle = __loader_dlopen(lib_name, flags, (void *)dlerror);
       if (handle == nullptr) {
-        // Support more namespaces(e.g. runtime)
+        // Android Q added "runtime" namespace
         dl_iterate_data data{};
         data.info_.dlpi_name = lib_name;
         dl_iterate_phdr_wrapper(dl_iterate_callback, &data);
@@ -101,7 +152,7 @@ KWAI_EXPORT void *DlFcn::dlopen(const char *lib_name, int flags) {
   return data;
 }
 
-KWAI_EXPORT void *DlFcn::dlsym(void *handle, const char *name) {
+JNIEXPORT void *DlFcn::dlsym(void *handle, const char *name) {
   ALOGD("dlsym %s", name);
   CHECKP(handle)
   if (android_api_ != __ANDROID_API_N__) {
@@ -110,7 +161,6 @@ KWAI_EXPORT void *DlFcn::dlsym(void *handle, const char *name) {
   // __ANDROID_API_N__
   auto *data = (dl_iterate_data *)handle;
   ElfW(Addr) dlpi_addr = data->info_.dlpi_addr;
-  const char *dlpi_name = data->info_.dlpi_name;
   const ElfW(Phdr) *dlpi_phdr = data->info_.dlpi_phdr;
   ElfW(Half) dlpi_phnum = data->info_.dlpi_phnum;
   // preserved for parse .symtab
@@ -227,7 +277,7 @@ KWAI_EXPORT void *DlFcn::dlsym(void *handle, const char *name) {
   return nullptr;
 }
 
-KWAI_EXPORT int DlFcn::dlclose(void *handle) {
+JNIEXPORT int DlFcn::dlclose(void *handle) {
   if (android_api_ != __ANDROID_API_N__) {
     return ::dlclose(handle);
   }
@@ -269,25 +319,48 @@ struct ctx {
   off_t bias;
 };
 
-KWAI_EXPORT void *DlFcn::dlopen_elf(const char *lib_name, int flags) {
-  dl_iterate_data data{};
-  data.info_.dlpi_name = lib_name;
-  if (!dl_iterate_phdr) {
-    return nullptr;
-  }
-  dl_iterate_phdr(dl_iterate_callback, &data);
-  const char *lib_path = data.info_.dlpi_name;
-  ElfW(Addr) dlpi_addr = data.info_.dlpi_addr;
-  const ElfW(Phdr) *dlpi_phdr = data.info_.dlpi_phdr;
-  ElfW(Half) dlpi_phnum = data.info_.dlpi_phnum;
+JNIEXPORT void *DlFcn::dlopen_elf(const char *lib_name, int flags) {
+  pthread_once(&once_control, init_api);
+  char lib_path[DLPI_NAME_LENGTH];
   // preserved for parse .symtab
   ElfW(Addr) elf_base_addr;
+  if (!dl_iterate_phdr) {
+    FILE *maps;
+    char buff[DLPI_NAME_LENGTH];
+    bool found = false;
+    maps = fopen("/proc/self/maps", "r");
+    CHECKP(maps)
+    while (fgets(buff, sizeof(buff), maps)) {
+      if ((strstr(buff, "r-xp") || strstr(buff, "r--p")) && strstr(buff, lib_name)) {
+        found = true;
+        ALOGD("dlopen_elf %s", buff);
+        break;
+      }
+    }
+    fclose(maps);
+    CHECKP(found)
+    CHECKP(sscanf(buff, "%lx%*[^/]%s", &elf_base_addr, lib_path) == 2)
+    ALOGD("%s loaded in Android at %p", lib_path, elf_base_addr);
+  } else {
+    dl_iterate_data data{};
+    data.info_.dlpi_name = (const char *)malloc(DLPI_NAME_LENGTH);
+    CHECKP(data.info_.dlpi_name)
+    strncpy((char *)data.info_.dlpi_name, lib_name, DLPI_NAME_LENGTH);
+    dl_iterate_phdr(dl_iterate_callback_elf, &data);
+    strncpy(lib_path, data.info_.dlpi_name, DLPI_NAME_LENGTH);
+    free((void *)data.info_.dlpi_name);
 
-  for (int i = 0; i < dlpi_phnum; ++i) {
-    if (dlpi_phdr[i].p_type == PT_LOAD && dlpi_phdr[i].p_offset == 0) {
-      elf_base_addr = dlpi_addr + dlpi_phdr[i].p_vaddr;
-      ALOGD("PT_LOAD dlpi_addr %p p_vaddr %p elf_base_addr %p", dlpi_addr, dlpi_phdr[i].p_vaddr,
-            elf_base_addr);
+    ElfW(Addr) dlpi_addr = data.info_.dlpi_addr;
+    const ElfW(Phdr) *dlpi_phdr = data.info_.dlpi_phdr;
+    ElfW(Half) dlpi_phnum = data.info_.dlpi_phnum;
+
+    for (int i = 0; i < dlpi_phnum; ++i) {
+      if (dlpi_phdr[i].p_type == PT_LOAD && dlpi_phdr[i].p_offset == 0) {
+        elf_base_addr = dlpi_addr + dlpi_phdr[i].p_vaddr;
+        ALOGD("PT_LOAD dlpi_addr %p p_vaddr %p elf_base_addr %p", dlpi_addr, dlpi_phdr[i].p_vaddr,
+              elf_base_addr);
+        break;
+      }
     }
   }
 
@@ -408,7 +481,7 @@ err_exit:
   return 0;
 }
 
-KWAI_EXPORT void *DlFcn::dlsym_elf(void *handle, const char *name) {
+JNIEXPORT void *DlFcn::dlsym_elf(void *handle, const char *name) {
   CHECKP(handle)
   int k;
   auto *ctx = (struct ctx *)handle;
@@ -417,7 +490,7 @@ KWAI_EXPORT void *DlFcn::dlsym_elf(void *handle, const char *name) {
   char *dynstr = (char *)ctx->dynstr;
   char *strtab = (char *)ctx->strtab;
 
-  // search in .dynsym
+  // Search in.dynsym
   for (k = 0; k < ctx->dynsym_num; k++, dynsym++)
     if (strcmp(dynstr + dynsym->st_name, name) == 0) {
       /*  NB: dynsym->st_value is an offset into the section for relocatables,
@@ -427,7 +500,7 @@ KWAI_EXPORT void *DlFcn::dlsym_elf(void *handle, const char *name) {
       return ret;
     }
 
-  // search in .symtab
+  // Search in.symtab
   if (symtab) {
     for (k = 0; k < ctx->symtab_num; k++, symtab++) {
       if (strcmp(strtab + symtab->st_name, name) == 0) {
@@ -441,7 +514,7 @@ KWAI_EXPORT void *DlFcn::dlsym_elf(void *handle, const char *name) {
   return 0;
 }
 
-KWAI_EXPORT int DlFcn::dlclose_elf(void *handle) {
+JNIEXPORT int DlFcn::dlclose_elf(void *handle) {
   CHECKI(handle)
   auto *ctx = (struct ctx *)handle;
   if (ctx->dynsym)

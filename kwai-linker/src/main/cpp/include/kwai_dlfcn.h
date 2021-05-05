@@ -38,7 +38,6 @@ public:
    * Android N+ dlclose bypass
    */
   static int dlclose(void *handle);
-
   /**
    * Inspired by https://github.com/avs333/Nougat_dlfunctions/
    *
@@ -53,7 +52,7 @@ public:
    */
   static void *dlopen_elf(const char *lib_name, int flags);
   /**
-   * Since dlopen_elf consumes more memory, when fetching multiple symbols in a so, try to open
+   * Since dlopen_elf consumes more memory, when fetching multiple symbols in one lib, try to open
    * it only once, get all symbol addresses and cache them and then close it.
    */
   static void *dlsym_elf(void *handle, const char *name);
@@ -62,17 +61,14 @@ public:
    */
   static int dlclose_elf(void *handle);
 
-private:
   struct dl_iterate_data {
     dl_phdr_info info_;
   };
 
   static int android_api_;
 
+private:
   static void init_api();
-
-  static int dl_iterate_callback(dl_phdr_info *info, size_t size, void *data);
-
   /**
    * ELF hash func
    */

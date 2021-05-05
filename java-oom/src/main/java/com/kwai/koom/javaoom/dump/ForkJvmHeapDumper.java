@@ -51,7 +51,7 @@ public class ForkJvmHeapDumper implements HeapDumper {
     }
 
     if (!KOOMEnableChecker.get().isVersionPermit()) {
-      KLog.e(TAG, "dump failed caused by version net permitted!");
+      KLog.e(TAG, "dump failed caused by version not permitted!");
       return false;
     }
 
