@@ -124,7 +124,7 @@ JNIEXPORT void *DlFcn::dlopen(const char *lib_name, int flags) {
   if (android_api_ < __ANDROID_API_N__) {
     return ::dlopen(lib_name, flags);
   }
-  if (android_api_ > __ANDROID_API_N__) {
+  if (android_api_ > __ANDROID_API_N_MR1__) {
     void *handle = ::dlopen("libdl.so", RTLD_NOW);
     CHECKP(handle)
     auto __loader_dlopen = reinterpret_cast<__loader_dlopen_fn>(::dlsym(handle, "__loader_dlopen"));
@@ -144,7 +144,7 @@ JNIEXPORT void *DlFcn::dlopen(const char *lib_name, int flags) {
       return handle;
     }
   }
-  // __ANDROID_API_N__
+  // __ANDROID_API_N__ ~ __ANDROID_API_N_MR1__
   auto *data = new dl_iterate_data();
   data->info_.dlpi_name = lib_name;
   dl_iterate_phdr_wrapper(dl_iterate_callback, data);
@@ -155,10 +155,10 @@ JNIEXPORT void *DlFcn::dlopen(const char *lib_name, int flags) {
 JNIEXPORT void *DlFcn::dlsym(void *handle, const char *name) {
   ALOGD("dlsym %s", name);
   CHECKP(handle)
-  if (android_api_ != __ANDROID_API_N__) {
+  if (android_api_ != __ANDROID_API_N__ && android_api_ != __ANDROID_API_N_MR1__) {
     return ::dlsym(handle, name);
   }
-  // __ANDROID_API_N__
+  // __ANDROID_API_N__ ~ __ANDROID_API_N_MR1__
   auto *data = (dl_iterate_data *)handle;
   ElfW(Addr) dlpi_addr = data->info_.dlpi_addr;
   const ElfW(Phdr) *dlpi_phdr = data->info_.dlpi_phdr;
@@ -278,10 +278,10 @@ JNIEXPORT void *DlFcn::dlsym(void *handle, const char *name) {
 }
 
 JNIEXPORT int DlFcn::dlclose(void *handle) {
-  if (android_api_ != __ANDROID_API_N__) {
+  if (android_api_ != __ANDROID_API_N__ && android_api_ != __ANDROID_API_N_MR1__) {
     return ::dlclose(handle);
   }
-  // __ANDROID_API_N__
+  // __ANDROID_API_N__ ~ __ANDROID_API_N_MR1__
   delete (dl_iterate_data *)handle;
   return 0;
 }
