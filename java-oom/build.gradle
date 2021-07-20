@@ -10,15 +10,6 @@ android {
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles "consumer-rules.pro"
-
-        externalNativeBuild {
-            cmake {
-                abiFilters 'armeabi-v7a', 'arm64-v8a', 'x86', 'x86_64'
-                arguments "-DANDROID_TOOLCHAIN=clang", "-DANDROID_STL=c++_shared", "-DCMAKE_VERBOSE_MAKEFILE=ON"
-                cppFlags '-Wl,--gc-sections -fno-exceptions -fno-rtti -fvisibility=hidden'
-                cFlags '-Wl,--gc-sections -fvisibility=hidden'
-            }
-        }
     }
 
     buildTypes {
