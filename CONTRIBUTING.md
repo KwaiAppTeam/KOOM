@@ -20,24 +20,18 @@ Welcome your pull request.
 
 ## Branch Management
 
-There are two main branches:
+There is only one main branch:
 
-1. `master` branch
+* `master` branch
 
     * It's the latest (pre-)release branch. We use `master` for tags.
-    * **Please do NOT submit any PR on `master` branch.**
-
-2. `dev` branch
-
-    * It's our stable developing branch.
-    * **Please always submit PR on `dev` branch.**
-
-
+    * Feature or bugfix branch pull out from `master` and merge after everything is ok. 
+    
 ## Pull Requests
 
 Please make sure the following is done when submitting a pull request:
 
-1. Fork the repo and create your branch from `dev`.
+1. Fork the repo and create your feature or bugfix branch from `master`.
 2. Add the copyright notice to the top of any new files you've added.
 3. Try your best to test your code.
 4. Squash all of your commits into one meaningful commit.
@@ -45,8 +39,8 @@ Please make sure the following is done when submitting a pull request:
 
 ## Code Style Guide
 
-1. 2 spaces for indentation rather than tabs.
-2. Follow the C code style already in place.
+1. For Java Code Style reference [AOSP Java Code Style](https://source.android.com/setup/contribute/code-style) except 2 spaces for indentation.
+2. For C++ Code Style reference [Google C++ Code Style](https://google.github.io/styleguide/cppguide.html).
 
 
 ## License
