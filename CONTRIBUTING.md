@@ -39,10 +39,8 @@ Please make sure the following is done when submitting a pull request:
 
 ## Code Style Guide
 
-1. For Java Code Style reference [AOSP Java Code Style](https://source.android.com/setup
-/contribute/code-style) except 2 spaces for indentation.
-2. For C++ Code Style reference [Google C++ Code Style](https://google.github.io/styleguide/cppguide
-.html).
+1. For Java Code Style reference [AOSP Java Code Style](https://source.android.com/setup/contribute/code-style) except 2 spaces for indentation.
+2. For C++ Code Style reference [Google C++ Code Style](https://google.github.io/styleguide/cppguide.html).
 
 
 ## License
