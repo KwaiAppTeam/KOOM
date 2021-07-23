@@ -5,4 +5,5 @@ include ':third-party:xhook'
 include ':third-party:shark'
 include ':koom-native'
 include ':koom-base'
+include ':kwai-unwind'
 rootProject.name = "KOOM"
