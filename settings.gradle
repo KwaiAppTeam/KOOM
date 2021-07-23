@@ -4,3 +4,4 @@ include ':java-oom'
 include ':third-party:xhook'
 include ':third-party:shark'
 rootProject.name = "KOOM"
+include ':kwai-unwind'
