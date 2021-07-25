@@ -6,4 +6,5 @@ include ':third-party:shark'
 include ':koom-native'
 include ':koom-base'
 include ':kwai-unwind'
+include ':kwai-android-base'
 rootProject.name = "KOOM"
