@@ -5,3 +5,4 @@ include ':third-party:xhook'
 include ':third-party:shark'
 rootProject.name = "KOOM"
 include ':kwai-unwind'
+include ':kwai-android-base'
