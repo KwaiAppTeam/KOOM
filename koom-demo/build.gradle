@@ -8,8 +8,6 @@ android {
         applicationId "com.kwai.koom.demo"
         versionCode 1
         versionName "1.0"
-
-        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 
     buildTypes {
@@ -36,7 +34,6 @@ android {
 
 dependencies {
     implementation project(':java-oom')
-    //implementation 'com.kwai.koom:java-oom:1.0.7'
     implementation deps.androidx.appcompat
     implementation deps.androidx.constraintlayout
     implementation deps.material
