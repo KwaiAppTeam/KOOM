@@ -1,31 +1,27 @@
 # For more information about using CMake with Android Studio, read the
 # documentation: https://d.android.com/studio/projects/add-native-code.html
 
-set(TARGET plt-unwind)
-set(BUILD_DIR ${CMAKE_SOURCE_DIR}/../../../build)
+set(TARGET kwai-unwind)
+set(LINK_DIR ${CMAKE_SOURCE_DIR}/../../../../kwai-android-base)
 
 project(${TARGET})
 
 # Sets the minimum version of CMake required to build the native library.
 cmake_minimum_required(VERSION 3.4.1)
 
-add_compile_options(-Wall -Wextra -Wexit-time-destructors -DDEXFILE_SUPPORT)
-# 配置-std=c++1z
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_EXTENSIONS OFF)
+add_compile_options(-Wall -Wextra -Wexit-time-destructors -DDEXFILE_SUPPORT -oz)
 
 include_directories(
         ${CMAKE_SOURCE_DIR}/include
         ${CMAKE_SOURCE_DIR}/libbacktrace/include
         ${CMAKE_SOURCE_DIR}/libunwindstack/include
 
-        ${BUILD_DIR}/jni/plt-base/source/include
-        ${BUILD_DIR}/jni/plt-base/source/liblog/include
-        ${BUILD_DIR}/jni/plt-base/source/lzma
+        ${LINK_DIR}/src/main/cpp/include
+        ${LINK_DIR}/src/main/cpp/liblog/include
+        ${LINK_DIR}/src/main/cpp/lzma
 )
 
-link_directories(${BUILD_DIR}/jni/plt-base/libs/${ANDROID_ABI}/)
+link_directories(${LINK_DIR}/libs/${ANDROID_ABI}/)
 
 # Define the base library, its includes and the needed defines.
 set(BASE_SOURCES libunwindstack/ArmExidx.cpp libunwindstack/DexFiles.cpp libunwindstack/DwarfCfa.cpp libunwindstack/DwarfEhFrameWithHdr.cpp libunwindstack/DwarfMemory.cpp
@@ -35,13 +31,21 @@ set(BASE_SOURCES libunwindstack/ArmExidx.cpp libunwindstack/DexFiles.cpp libunwi
         libunwindstack/Unwinder.cpp libunwindstack/Symbols.cpp libunwindstack/DexFile.cpp
         libunwindstack/ThreadEntry.cpp libunwindstack/ThreadUnwinder.cpp)
 
-file(GLOB DEXFILE_SUPPORT_SOURCES dexfile_support/dex_file_supp.cpp)
+set(DEXFILE_SUPPORT_SOURCES dexfile_support/dex_file_supp.cpp)
 
 set(BACKTRACE_SOURCES libbacktrace/Backtrace.cpp libbacktrace/BacktraceCurrent.cpp
         libbacktrace/BacktraceMap.cpp libbacktrace/BacktracePtrace.cpp libbacktrace/ThreadEntry.cpp
         libbacktrace/UnwindStack.cpp libbacktrace/UnwindStackMap.cpp)
 
 set(FAST_UNWIND_SOURCES fast_unwind/fast_unwind.cpp fast_unwind/fast_unwind_test.cpp)
+
+enable_language(ASM)
+
+IF (${ANDROID_ABI} MATCHES "x86")
+    set(ASM_SOURCES libunwindstack/AsmGetRegsX86.S)
+ELSEIF (${ANDROID_ABI} MATCHES "x86_64")
+    set(ASM_SOURCES libunwindstack/AsmGetRegsX86_64.S)
+ENDIF ()
 
 # Creates and names a library, sets it as either STATIC
 # or SHARED, and provides the relative paths to its source code.
@@ -59,6 +63,7 @@ add_library( # Sets the name of the library.
         ${DEXFILE_SUPPORT_SOURCES}
         ${BACKTRACE_SOURCES}
         ${FAST_UNWIND_SOURCES}
+        ${ASM_SOURCES}
         )
 
 # Searches for a specified prebuilt library and stores the path as a
@@ -81,7 +86,7 @@ find_library( # Sets the name of the path variable.
 target_link_libraries( # Specifies the target library.
         ${TARGET}
 
-        plt-base
+        kwai-android-base
 
         # Links the target library to the log library
         # included in the NDK.

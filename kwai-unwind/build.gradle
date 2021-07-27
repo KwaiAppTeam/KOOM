@@ -9,11 +9,11 @@ android {
         versionCode 1
         versionName "1.0"
 
-        ndkVersion '22.1.7171670'
-
         externalNativeBuild {
             cmake {
-                cppFlags "-std=c++17"
+                abiFilters 'armeabi-v7a', 'arm64-v8a', 'x86', 'x86_64'
+                arguments "-DANDROID_TOOLCHAIN=clang", "-DANDROID_STL=c++_shared", "-DCMAKE_VERBOSE_MAKEFILE=ON"
+                cppFlags '-std=c++17 -Wl,--gc-sections -fno-exceptions -fno-rtti'
             }
         }
     }
@@ -24,13 +24,19 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
-    externalNativeBuild {
-        cmake {
-            path "src/main/cpp/CMakeLists.txt"
-            version "3.10.2"
+//    externalNativeBuild {
+//        cmake {
+//            path "src/main/cpp/CMakeLists.txt"
+//            version "3.18.1"
+//        }
+//    }
+    sourceSets {
+        main {
+            java.srcDirs = ['src/main/java']
+            jniLibs.srcDir('src/main/libs')
+            jni.srcDirs = []
         }
     }
-
 }
 
 dependencies {
