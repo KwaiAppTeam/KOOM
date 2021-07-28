@@ -19,6 +19,7 @@
 #include <stdio.h>
 
 #include <string>
+#include <kwai_util/kwai_macros.h>
 
 namespace android {
 namespace base {
@@ -65,7 +66,7 @@ void StringAppendV(std::string *dst, const char *format, va_list ap) {
   delete[] buf;
 }
 
-std::string StringPrintf(const char *fmt, ...) {
+KWAI_EXPORT std::string StringPrintf(const char *fmt, ...) {
   va_list ap;
   va_start(ap, fmt);
   std::string result;

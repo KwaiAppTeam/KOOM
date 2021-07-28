@@ -17,7 +17,7 @@
 #include <bits/pthread_types.h>
 #include <cstdlib>
 #include <fast_unwind/fast_unwind.h>
-#include <kwai_linker/kwai_macros.h>
+#include <kwai_util/kwai_macros.h>
 #include <log/log.h>
 #include <pthread.h>
 #include <unistd.h>

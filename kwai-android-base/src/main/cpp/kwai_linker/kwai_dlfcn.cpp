@@ -19,7 +19,6 @@
 #include <dlfcn.h>
 #include <fcntl.h>
 #include <kwai_linker/kwai_dlfcn.h>
-#include <kwai_linker/kwai_macros.h>
 #include <link.h>
 #include <log/kcheck.h>
 #include <log/log.h>
@@ -27,6 +26,7 @@
 #include <sys/mman.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <kwai_util/kwai_macros.h>
 
 #define LOG_TAG "kwai_dlfcn"
 

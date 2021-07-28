@@ -25,7 +25,7 @@
 #define LOG_TAG "unwind"
 #include <log/log.h>
 
-#include <kwai_linker/kwai_macros.h>
+#include <kwai_util/kwai_macros.h>
 #include <unwindstack/Elf.h>
 #include <unwindstack/ElfInterface.h>
 #include <unwindstack/MapInfo.h>
