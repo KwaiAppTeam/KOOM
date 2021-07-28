@@ -17,12 +17,13 @@
 #include <cstdint>
 #include <ctime>
 #include <kwai_util/ktime.h>
+#include <kwai_util/kwai_macros.h>
 
 static constexpr uint64_t MILLIS_PER_SEC = 1000;
 static constexpr uint64_t MICRO_PER_SEC = 1000 * MILLIS_PER_SEC;
 static constexpr uint64_t NANOS_PER_SEC = 1000 * MICRO_PER_SEC;
 
-uint64_t nanotime() {
+KWAI_EXPORT uint64_t nanotime() {
   timespec ts{};
   clock_gettime(CLOCK_MONOTONIC, &ts);
   return static_cast<uint64_t>(ts.tv_sec * NANOS_PER_SEC + ts.tv_nsec);

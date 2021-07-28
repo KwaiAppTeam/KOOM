@@ -21,6 +21,7 @@
 
 #include <string>
 #include <vector>
+#include <kwai_util/kwai_macros.h>
 
 namespace android {
 namespace base {
@@ -88,7 +89,7 @@ template std::string Join(const std::vector<const char *> &, char);
 template std::string Join(const std::vector<std::string> &, const std::string &);
 template std::string Join(const std::vector<const char *> &, const std::string &);
 
-bool StartsWith(std::string_view s, std::string_view prefix) {
+KWAI_EXPORT bool StartsWith(std::string_view s, std::string_view prefix) {
   return s.substr(0, prefix.size()) == prefix;
 }
 

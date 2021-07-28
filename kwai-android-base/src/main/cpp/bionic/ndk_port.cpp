@@ -26,8 +26,9 @@
 #include <sys/uio.h>
 #include <syscall.h>
 #include <unistd.h>
+#include <kwai_util/kwai_macros.h>
 
-extern "C" const char *__gnu_basename(const char *path) {
+KWAI_EXPORT extern "C" const char *__gnu_basename(const char *path) {
   const char *last_slash = strrchr(path, '/');
   return (last_slash != nullptr) ? last_slash + 1 : path;
 }
@@ -63,7 +64,8 @@ extern "C" uint32_t __system_property_serial(const prop_info *__pi) __attribute_
 /*
  * Need to do this since process_vm_readv() is __INTRODUCED_IN __ANDROID_API__ 23.
  */
-extern "C" ssize_t kwai_process_vm_readv(pid_t pid, const struct iovec *lvec, unsigned long liovcnt,
+KWAI_EXPORT extern "C" ssize_t kwai_process_vm_readv(pid_t pid, const struct iovec
+        *lvec, unsigned long liovcnt,
                                          const struct iovec *rvec, unsigned long riovcnt,
                                          unsigned long flags) {
   if (process_vm_readv) {

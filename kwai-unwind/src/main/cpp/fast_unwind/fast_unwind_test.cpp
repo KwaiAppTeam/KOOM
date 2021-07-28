@@ -18,7 +18,7 @@
 #include <cstring>
 #include <fast_unwind/fast_unwind.h>
 #include <fast_unwind/fast_unwind_test.h>
-#include <kwai_linker/kwai_macros.h>
+#include <kwai_util/kwai_macros.h>
 #include <kwai_util/ktime.h>
 #include <linux/prctl.h>
 #include <log/log_main.h>

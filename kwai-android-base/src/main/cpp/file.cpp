@@ -27,6 +27,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 
+#include <kwai_util/kwai_macros.h>
 #include <memory>
 #include <mutex>
 #include <string>
@@ -231,7 +232,8 @@ bool ReadFdToString(borrowed_fd fd, std::string *content) {
   return (n == 0) ? true : false;
 }
 
-bool ReadFileToString(const std::string &path, std::string *content, bool follow_symlinks) {
+KWAI_EXPORT bool ReadFileToString(const std::string &path, std::string *content,
+                                  bool follow_symlinks) {
   content->clear();
 
   int flags = O_RDONLY | O_CLOEXEC | O_BINARY | (follow_symlinks ? 0 : O_NOFOLLOW);

@@ -18,6 +18,7 @@
 
 #include <stdint.h>
 #include <unistd.h>
+#include <kwai_util/kwai_macros.h>
 
 #if defined(__APPLE__)
 #include <pthread.h>
@@ -30,7 +31,7 @@
 namespace android {
 namespace base {
 
-uint64_t GetThreadId() {
+KWAI_EXPORT uint64_t GetThreadId() {
 #if defined(__BIONIC__)
   return gettid();
 #elif defined(__APPLE__)

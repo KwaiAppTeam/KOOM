@@ -28,7 +28,7 @@
 #include <backtrace/Backtrace.h>
 #include <backtrace/BacktraceMap.h>
 
-#include <kwai_linker/kwai_macros.h>
+#include <kwai_util/kwai_macros.h>
 
 #include "BacktraceLog.h"
 #include "UnwindStack.h"

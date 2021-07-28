@@ -32,7 +32,7 @@
 
 #include <bionic/ndk_port.h>
 
-#include <kwai_linker/kwai_macros.h>
+#include <kwai_util/kwai_macros.h>
 #include <unwindstack/Memory.h>
 
 #include "Check.h"

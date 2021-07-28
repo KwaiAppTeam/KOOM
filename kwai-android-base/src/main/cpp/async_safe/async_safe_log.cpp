@@ -48,6 +48,7 @@
 #include <android/set_abort_message.h>
 #include <async_safe/log.h>
 #include <bionic/ndk_port.h>
+#include <kwai_util/kwai_macros.h>
 
 #include "private/CachedProperty.h"
 #include "private/ErrnoRestorer.h"
@@ -547,7 +548,7 @@ int async_safe_format_log_va_list(int priority, const char *tag, const char *for
   return async_safe_write_log(priority, tag, buffer);
 }
 
-int async_safe_format_log(int priority, const char *tag, const char *format, ...) {
+KWAI_EXPORT int async_safe_format_log(int priority, const char *tag, const char *format, ...) {
   va_list args;
   va_start(args, format);
   int result = async_safe_format_log_va_list(priority, tag, format, args);

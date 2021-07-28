@@ -33,7 +33,7 @@
 #include <string>
 #include <vector>
 
-#include <kwai_linker/kwai_macros.h>
+#include <kwai_util/kwai_macros.h>
 #include <unwindstack/Elf.h>
 #include <unwindstack/Maps.h>
 #include <unwindstack/Memory.h>

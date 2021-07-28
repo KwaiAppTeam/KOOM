@@ -20,7 +20,7 @@
 
 #include <vector>
 
-#include <kwai_linker/kwai_macros.h>
+#include <kwai_util/kwai_macros.h>
 #include <log/log_main.h>
 #include <unwindstack/Elf.h>
 #include <unwindstack/MapInfo.h>
