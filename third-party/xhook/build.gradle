@@ -9,11 +9,11 @@ android {
         versionName "1.0"
     }
 
-    /*externalNativeBuild {
+    externalNativeBuild {
       cmake {
         path "src/main/cpp/xhook/CMakeLists.txt"
       }
-    }*/
+    }
 
     buildTypes {
         release {
@@ -25,7 +25,7 @@ android {
     sourceSets {
         main {
             java.srcDirs = ['src/main/java']
-            jniLibs.srcDir('src/main/libs')
+//            jniLibs.srcDir('src/main/libs')
         }
     }
 }

@@ -19,18 +19,18 @@ android {
         }
     }
 
-    /*externalNativeBuild {
+    externalNativeBuild {
         cmake {
             path file('CMakeLists.txt')
         }
         version "3.10.2"
-    }*/
+    }
 
     sourceSets {
         main {
             java.srcDirs = ['src/main/java']
-            jniLibs.srcDir('src/main/libs')
-            jni.srcDirs = []
+//            jniLibs.srcDir('src/main/libs')
+//            jni.srcDirs = []
         }
     }
 }

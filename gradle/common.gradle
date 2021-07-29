@@ -1,3 +1,6 @@
+apply plugin: 'kotlin-android'
+apply plugin: 'kotlin-android-extensions'
+
 android {
     compileSdkVersion rootProject.ext.versions.compileSdkVersion
     buildToolsVersion rootProject.ext.versions.buildToolsVersion
@@ -6,6 +9,13 @@ android {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
     }
+
+    kotlinOptions {
+        jvmTarget = "1.8"
+    }
+
+    ndkVersion "22.1.7171670"
+
     defaultConfig {
         minSdkVersion rootProject.ext.versions.minSdkVersion
         targetSdkVersion rootProject.ext.versions.targetSdkVersion
