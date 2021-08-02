@@ -7,23 +7,13 @@ android {
     defaultConfig {
         versionCode 1
         versionName "1.0"
-
-        externalNativeBuild {
-            cmake {
-                abiFilters 'armeabi-v7a', 'arm64-v8a', 'x86', 'x86_64'
-                arguments "-DANDROID_TOOLCHAIN=clang"
-                cppFlags '-Wl,--gc-sections -fno-exceptions -fno-rtti -fvisibility=hidden'
-                cFlags '-Wl,--gc-sections -fvisibility=hidden'
-            }
-        }
-
     }
 
-    /*externalNativeBuild {
+    externalNativeBuild {
       cmake {
         path "src/main/cpp/xhook/CMakeLists.txt"
       }
-    }*/
+    }
 
     buildTypes {
         release {
@@ -35,7 +25,7 @@ android {
     sourceSets {
         main {
             java.srcDirs = ['src/main/java']
-            jniLibs.srcDir('src/main/libs')
+//            jniLibs.srcDir('src/main/libs')
         }
     }
 }

@@ -3,7 +3,10 @@ package com.kwai.koom.demo;
 import java.io.File;
 
 import android.app.Application;
+import android.content.Context;
 
+import com.kwai.koom.base.MonitorManager;
+import com.kwai.koom.demo.nativeleak.init.PerformanceInitTask;
 import com.kwai.koom.javaoom.KOOM;
 import com.kwai.koom.javaoom.common.KConfig;
 import com.kwai.koom.javaoom.common.KLog;
@@ -27,10 +30,21 @@ import com.kwai.koom.javaoom.dump.ForkJvmHeapDumper;
  * @author Rui Li <lirui05@kuaishou.com>
  */
 public class KOOMApplication extends Application {
+  {
+    PerformanceInitTask.INSTANCE.init(this);
+  }
+  @Override
+  protected void attachBaseContext(Context base) {
+    MonitorManager.onApplicationPreAttachContext();
+    super.attachBaseContext(base);
+    MonitorManager.onApplicationPostAttachContext();
+  }
 
   @Override
   public void onCreate() {
+    MonitorManager.onApplicationPreCreate();
     super.onCreate();
+    MonitorManager.onApplicationPostCreate();
     KOOM.init(this);
   }
 

@@ -7,9 +7,14 @@ import android.widget.Button;
 import android.widget.TextView;
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.kwai.koom.base.Monitor_SoKt;
 import com.kwai.koom.demo.leaked.LeakMaker;
+import com.kwai.koom.demo.nativeleak.NativeLeakTest;
 import com.kwai.koom.javaoom.KOOM;
 import com.kwai.koom.javaoom.KOOMProgressListener;
+import com.kwai.koom.nativeoom.leakmonitor.LeakMonitor;
+
+import java.util.concurrent.TimeUnit;
 
 /**
  * Copyright 2020 Kwai, Inc. All rights reserved.
@@ -48,6 +53,18 @@ public class MainActivity extends AppCompatActivity {
       LeakMaker.makeLeak(MainActivity.this);
 
       testReport();
+    });
+
+    findViewById(R.id.btn_test_native_leak).setOnClickListener(v -> {
+      if (Monitor_SoKt.loadSoQuietly("native-leak-test")) {
+        LeakMonitor.INSTANCE.startLoop(true, false, 0);
+        try {
+          TimeUnit.MILLISECONDS.sleep(500);
+        } catch (InterruptedException interruptedException) {
+          interruptedException.printStackTrace();
+        }
+        NativeLeakTest.triggerLeak(new Object());
+      }
     });
 
   }

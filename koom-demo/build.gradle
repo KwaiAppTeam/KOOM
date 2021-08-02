@@ -19,6 +19,13 @@ android {
         }
     }
 
+    externalNativeBuild {
+        cmake {
+            path 'src/main/jni/CMakeLists.txt'
+            version '3.10.2'
+        }
+    }
+
     packagingOptions {
         pickFirst('lib/armeabi-v7a/libc++_shared.so')
         pickFirst('lib/arm64-v8a/libc++_shared.so')
@@ -33,6 +40,9 @@ dependencies {
     implementation deps.androidx.appcompat
     implementation deps.androidx.constraintlayout
     implementation deps.material
+    implementation deps.kotlin.stdlib
+    implementation project(path: ':koom-native')
+    implementation project(path: ':koom-base')
     testImplementation deps.junit
     androidTestImplementation deps.androidx.test.ext
     androidTestImplementation deps.androidx.test.espresso

@@ -3,4 +3,6 @@ include ':kwai-linker'
 include ':java-oom'
 include ':third-party:xhook'
 include ':third-party:shark'
+include ':koom-native'
+include ':koom-base'
 rootProject.name = "KOOM"

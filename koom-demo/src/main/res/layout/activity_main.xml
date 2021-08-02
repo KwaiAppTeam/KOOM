@@ -12,6 +12,15 @@
     android:text="@string/test_report_leak"
     android:layout_centerInParent="true" />
 
+  <Button
+    android:id="@+id/btn_test_native_leak"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:text="Test Native Leak"
+    android:layout_below="@id/btn_report_leak"
+    android:layout_centerInParent="true"/>
+
+
   <TextView
     android:id="@+id/tv_report_status"
     android:layout_width="wrap_content"
