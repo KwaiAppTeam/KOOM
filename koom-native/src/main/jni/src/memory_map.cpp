@@ -13,6 +13,7 @@
 #include <vector>
 #include <dlfcn.h>
 #include <cxxabi.h>
+#include <utils/log_util.h>
 
 #include "memory_map.h"
 
@@ -159,7 +160,6 @@ MemoryMap::~MemoryMap() {
   entries_.clear();
 }
 
-// TODO note
 MapEntry *MemoryMap::CalculateRelPc(uintptr_t pc, uintptr_t *rel_pc) {
   MapEntry pc_entry(pc);
 
@@ -196,13 +196,14 @@ MapEntry *MemoryMap::CalculateRelPc(uintptr_t pc, uintptr_t *rel_pc) {
   return entry;
 }
 
-std::string MemoryMap::BacktraceOfPC(const uintptr_t* frames, size_t frame_count) {
+std::string MemoryMap::FormatBacktrace(const uintptr_t* frames, size_t frame_count) {
   std::string str;
   uintptr_t offset = 0;
   const char *symbol = nullptr;
 
   for (size_t cursor = 0; cursor < frame_count; cursor++) {
     Dl_info info;
+    DLOGI("frame %p %d", frames[cursor], frame_count);
     if (dladdr(reinterpret_cast<void *>(frames[cursor]), &info) != 0) {
       offset = reinterpret_cast<uintptr_t>(info.dli_saddr);
       symbol = info.dli_sname;

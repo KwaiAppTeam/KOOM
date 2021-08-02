@@ -48,7 +48,7 @@ public:
   int AsyncRefresh();
   void SetAllocThreshold(size_t threshold);
   std::vector<std::shared_ptr<AllocRecord>> GetLeakAllocs();
-  uint64_t CurrentBucketIndex();
+  uint64_t CurrentAllocIndex();
   void OnMonitor(uintptr_t address, size_t size);
   void RegisterAlloc(uintptr_t address, size_t size);
   void UnregisterAlloc(uintptr_t address);
@@ -57,13 +57,13 @@ public:
 
 private:
   LeakMonitor()
-      : bucket_index_(0), has_install_monitor_(false), live_alloc_records_(),
+      : alloc_index_(0), has_install_monitor_(false), live_alloc_records_(),
         alloc_threshold_(kDefaultAllocThreshold), is_hooked_(false){};
   ~LeakMonitor() = default;
   LeakMonitor(const LeakMonitor &);
   LeakMonitor &operator=(const LeakMonitor &);
   ConcurrentHashMap<intptr_t, std::shared_ptr<AllocRecord>> live_alloc_records_;
-  std::atomic<uint64_t> bucket_index_;
+  std::atomic<uint64_t> alloc_index_;
   std::atomic<bool> has_install_monitor_;
   std::atomic<size_t> alloc_threshold_;
   std::atomic<bool> is_hooked_;

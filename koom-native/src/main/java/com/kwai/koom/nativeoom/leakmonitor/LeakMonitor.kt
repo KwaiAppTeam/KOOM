@@ -64,7 +64,7 @@ object LeakMonitor : LoopMonitor<LeakMonitorConfig>() {
   private external fun nativeGetAllocIndex(): Long
 
   @JvmStatic
-  private external fun nativeGetLeakAllocs(memoryAllocationInfoMap: Map<String, AllocationInfo>)
+  private external fun nativeGetLeakAllocs(memoryAllocationInfoMap: Map<String, AllocationRecord>)
 
   private val mIndex = AtomicInteger()
 
@@ -84,7 +84,7 @@ object LeakMonitor : LoopMonitor<LeakMonitorConfig>() {
       return LoopState.Continue
     }
 
-    val allocationInfoMap = mutableMapOf<String, AllocationInfo>()
+    val allocationInfoMap = mutableMapOf<String, AllocationRecord>()
         .apply { nativeGetLeakAllocs(this) }
         .also { AllocationTagLifecycleCallbacks.bindAllocationTag(it) }
         .also { MonitorLog.i(TAG, "memoryAllocationInfoMap ${it.size}") }
@@ -154,7 +154,7 @@ object LeakMonitor : LoopMonitor<LeakMonitorConfig>() {
 
   @RequiresApi(Build.VERSION_CODES.N)
   private fun packageLeakMessage(
-      allocationInfoMap: MutableMap<String, AllocationInfo>
+      allocationInfoMap: MutableMap<String, AllocationRecord>
   ): NativeLeakMessage {
     val nativeLeakMessage = NativeLeakMessage().apply {
       logUUID = "${UUID_PREFIX}-${mIndex.getAndIncrement()}"

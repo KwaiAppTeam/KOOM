@@ -129,7 +129,7 @@ static void SetAllocThreshold(JNIEnv *, jclass, jint size) {
 }
 
 static jlong GetAllocIndex(JNIEnv *, jclass) {
-  return LeakMonitor::GetInstance().CurrentBucketIndex();
+  return LeakMonitor::GetInstance().CurrentAllocIndex();
 }
 
 static void GetLeakAllocs(JNIEnv *env, jclass, jobject allocation_record_map) {
@@ -213,7 +213,7 @@ extern "C" JNIEXPORT jint JNI_OnLoad(JavaVM *vm, void *reserved) {
 
   // AllocInfo
   jclass allocation_info;
-  FIND_CLASS(allocation_info, "com/kwai/koom/nativeoom/leakmonitor/AllocationInfo");
+  FIND_CLASS(allocation_info, "com/kwai/koom/nativeoom/leakmonitor/AllocationRecord");
   g_allocation_info_class.global_ref = reinterpret_cast<jclass>(env->NewGlobalRef(allocation_info));
   GET_METHOD_ID(g_allocation_info_class.construct_method, allocation_info, "<init>", "()V");
   GET_FIELD_ID(g_allocation_info_class.index, allocation_info, "index", "J");

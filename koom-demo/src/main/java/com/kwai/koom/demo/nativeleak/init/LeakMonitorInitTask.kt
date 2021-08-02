@@ -3,12 +3,9 @@ package com.kwai.koom.demo.nativeleak.init
 import android.app.Application
 import com.kwai.koom.base.MonitorManager
 import com.kwai.koom.nativeoom.leakmonitor.LeakMonitorConfig
-import me.weishu.reflection.Reflection
 
 object LeakMonitorInitTask : InitTask {
   override fun init(application: Application) {
-//    ReflectionHacker.unseal(application)
-    Reflection.unseal(application)
 
     val config = LeakMonitorConfig.Builder()
         .setLoopInterval(50000) // 设置轮训的间隔

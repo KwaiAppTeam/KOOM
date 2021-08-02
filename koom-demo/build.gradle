@@ -43,7 +43,6 @@ dependencies {
     implementation deps.kotlin.stdlib
     implementation project(path: ':koom-native')
     implementation project(path: ':koom-base')
-    implementation 'com.github.tiann:FreeReflection:3.1.0'
     testImplementation deps.junit
     androidTestImplementation deps.androidx.test.ext
     androidTestImplementation deps.androidx.test.espresso

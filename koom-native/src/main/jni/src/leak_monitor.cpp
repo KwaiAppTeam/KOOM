@@ -54,6 +54,8 @@ static const uint32_t kCheckedFrameThreshold = kMaxBacktraceSize / 3;
 
 static bool use_fast_unwind = true;
 
+// Define allocator proxies; aligned_alloc included in API 28 and valloc/pvalloc can ignore in LP64
+// So we can't proxy aligned_alloc/valloc/pvalloc.
 PROXY(void, Free, void *ptr) {
   free(ptr);
   if (ptr) {
@@ -101,7 +103,13 @@ PROXY(void *, Memalign, size_t alignment, size_t byte_count) {
   return result;
 }
 
-// TODO Add posix_memalign and aligned_alloc monitor; ignore valloc/pvalloc in LP64
+PROXY(int, Posix_memalign, void** memptr, size_t alignment, size_t size) {
+  auto result = posix_memalign(memptr, alignment, size);
+  LeakMonitor::GetInstance().OnMonitor(reinterpret_cast<intptr_t>(*memptr), size);
+  CLEAR_MEMORY(*memptr, size);
+  return result;
+}
+
 
 struct BacktraceInfo {
   uint32_t cout;
@@ -189,6 +197,7 @@ void LeakMonitor::InstallMonitor(std::vector<std::string> *selected_list,
       std::make_pair("realloc", reinterpret_cast<void *>(WRAP(Realloc))),
       std::make_pair("calloc", reinterpret_cast<void *>(WRAP(Calloc))),
       std::make_pair("memalign", reinterpret_cast<void *>(WRAP(Memalign))),
+      std::make_pair("posix_memalign", reinterpret_cast<void *>(WRAP(Posix_memalign))),
       std::make_pair("free", reinterpret_cast<void *>(WRAP(Free)))};
 
   StackTrace::Init();
@@ -249,7 +258,7 @@ std::vector<std::shared_ptr<AllocRecord>> LeakMonitor::GetLeakAllocs() {
   // Check leak allocation (unreachable && not free)
   for (auto &live : live_allocs) {
     for (auto &unreachable : unreachable_allocs) {
-      DLOGI("live alloc %p <> unreachable %p", live->address, unreachable.first);
+      DLOGI("live alloc %p <> unreachable %p", CONFUSE(live->address), unreachable.first);
       if (is_leak(unreachable, live)) {
         leak_allocs.push_back(live);
         // Just remove leak allocation(never be free)
@@ -261,9 +270,9 @@ std::vector<std::shared_ptr<AllocRecord>> LeakMonitor::GetLeakAllocs() {
   return leak_allocs;
 }
 
-uint64_t LeakMonitor::CurrentBucketIndex() {
+uint64_t LeakMonitor::CurrentAllocIndex() {
   CHECK(has_install_monitor_);
-  return bucket_index_.load(std::memory_order_relaxed);
+  return alloc_index_.load(std::memory_order_relaxed);
 }
 
 ALWAYS_INLINE void LeakMonitor::RegisterAlloc(uintptr_t address, size_t size) {
@@ -275,7 +284,7 @@ ALWAYS_INLINE void LeakMonitor::RegisterAlloc(uintptr_t address, size_t size) {
   auto alloc_record = std::make_shared<AllocRecord>();
   alloc_record->address = CONFUSE(address);
   alloc_record->size = size;
-  alloc_record->index = bucket_index_++;
+  alloc_record->index = alloc_index_++;
   auto alloc_thread_info = ThreadLocalManager::GetAllocThreadInfo();
   assert(alloc_thread_info != nullptr);
   alloc_record->num_backtraces = alloc_thread_info->cursor;
@@ -332,7 +341,7 @@ std::vector<std::pair<uintptr_t, size_t>> LeakMonitor::CollectUnreachableMem() {
   std::string unreachable_memory = reinterpret_cast<std::string (*)(bool, size_t)>
       (get_unreachable_memory)(false, 1024);
 
-  prctl(PR_SET_DUMPABLE, 0, 0, 0, 0);
+//  prctl(PR_SET_DUMPABLE, 0, 0, 0, 0);
 
   std::regex filter_regex("[0-9]+ bytes unreachable at [A-Za-z0-9]+");
   std::sregex_iterator unreachable_begin(unreachable_memory.begin(),
@@ -344,7 +353,6 @@ std::vector<std::pair<uintptr_t, size_t>> LeakMonitor::CollectUnreachableMem() {
     auto address = std::stoul(line.substr(line.find_last_of(' ') + 1, line.length() - line
         .find_last_of(' ') - 1), 0, 16);
     auto size = std::stoul(line.substr(0, line.find_first_of(' ')));
-    DLOGI("wlb %s : %lx, %lu", line.c_str(), address, size);
     unreachable_mem.push_back(std::pair<uintptr_t, size_t>(address, size));
   }
   return std::move(unreachable_mem);

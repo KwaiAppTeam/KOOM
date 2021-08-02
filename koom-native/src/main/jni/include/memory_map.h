@@ -55,7 +55,7 @@ class MemoryMap {
   ~MemoryMap();
 
   MapEntry *CalculateRelPc(uintptr_t pc, uintptr_t *rel_pc = nullptr);
-  std::string BacktraceOfPC(const uintptr_t* frames, size_t frame_count);
+  std::string FormatBacktrace(const uintptr_t* frames, size_t frame_count);
  private:
   bool ReadMaps();
 

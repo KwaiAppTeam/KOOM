@@ -25,7 +25,7 @@ import android.content.Context
 import android.os.Bundle
 import com.kwai.koom.base.MonitorManager.getApplication
 import com.kwai.koom.base.currentActivity
-import com.kwai.koom.nativeoom.leakmonitor.AllocationInfo
+import com.kwai.koom.nativeoom.leakmonitor.AllocationRecord
 import java.util.concurrent.ConcurrentHashMap
 
 object AllocationTagLifecycleCallbacks : Application.ActivityLifecycleCallbacks {
@@ -51,7 +51,7 @@ object AllocationTagLifecycleCallbacks : Application.ActivityLifecycleCallbacks 
     mAllocationTagInfoMap.clear()
   }
 
-  fun bindAllocationTag(allocationInfoMap: Map<String, AllocationInfo>?) {
+  fun bindAllocationTag(allocationInfoMap: Map<String, AllocationRecord>?) {
     if (allocationInfoMap.isNullOrEmpty()) {
       return
     }
