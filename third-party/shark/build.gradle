@@ -1,5 +1,8 @@
-apply plugin: 'java-library'
-apply plugin: 'kotlin'
+plugins {
+    id 'org.jetbrains.dokka'
+    id 'java-library'
+    id 'kotlin'
+}
 
 sourceCompatibility = JavaVersion.VERSION_1_7
 targetCompatibility = JavaVersion.VERSION_1_7
@@ -15,4 +18,7 @@ dependencies {
     compileOnly deps.okio_1x
 }
 
+
+
+apply from: rootProject.file('gradle/mavenCentral-publish.gradle')
 apply from: rootProject.file('gradle/jcenter-publish.gradle')

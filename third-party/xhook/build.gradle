@@ -44,4 +44,6 @@ dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
 }
 
+
+apply from: rootProject.file('gradle/mavenCentral-publish.gradle')
 apply from: rootProject.file('gradle/jcenter-publish.gradle')

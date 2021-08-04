@@ -47,4 +47,6 @@ android {
 dependencies {
 }
 
+
+apply from: rootProject.file('gradle/mavenCentral-publish.gradle')
 apply from: rootProject.file('gradle/jcenter-publish.gradle')

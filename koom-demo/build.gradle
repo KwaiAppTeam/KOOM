@@ -29,10 +29,11 @@ android {
 
 dependencies {
     implementation project(':java-oom')
-    //implementation 'com.kwai.koom:java-oom:1.0.7'
+    //implementation 'io.github.kwaiappteam:java-oom:1.0.7'
     implementation deps.androidx.appcompat
     implementation deps.androidx.constraintlayout
     implementation deps.material
+    implementation project(path: ':java-oom')
     testImplementation deps.junit
     androidTestImplementation deps.androidx.test.ext
     androidTestImplementation deps.androidx.test.espresso
