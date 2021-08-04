@@ -18,12 +18,18 @@
 #define KWAI_DLFCN_H
 
 #include <link.h>
+#include <string>
 
 namespace kwai {
 namespace linker {
 
 class DlFcn {
 public:
+  typedef struct {
+    std::string full_name;
+    ElfW(Addr) load_base;
+  } SoDlInfo;
+
   /**
    * Android N+ dlopen bypass
    */

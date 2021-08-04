@@ -23,7 +23,8 @@ add_library( # Sets the name of the library.
 
         # Sets the library as a shared library.
         SHARED
-
+        src/main/cpp/elf_reader.cpp
+        src/main/cpp/map_util.cpp
         # Provides a relative path to your source file(s).
         src/main/cpp/kwai_dlfcn.cpp)
 
