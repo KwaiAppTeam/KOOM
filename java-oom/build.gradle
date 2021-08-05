@@ -8,15 +8,11 @@ android {
         versionCode 1
         versionName "1.0"
 
-        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
-        consumerProguardFiles "consumer-rules.pro"
-
         externalNativeBuild {
             cmake {
                 abiFilters 'armeabi-v7a', 'arm64-v8a', 'x86', 'x86_64'
                 arguments "-DANDROID_TOOLCHAIN=clang", "-DANDROID_STL=c++_shared", "-DCMAKE_VERBOSE_MAKEFILE=ON"
-                cppFlags '-Wl,--gc-sections -fno-exceptions -fno-rtti -fvisibility=hidden'
-                cFlags '-Wl,--gc-sections -fvisibility=hidden'
+                cppFlags "-std=c++17", "-Wl,--gc-sections", "-fno-exceptions", "-fno-rtti", "-fvisibility=hidden"
             }
         }
     }
@@ -45,14 +41,13 @@ android {
 }
 
 dependencies {
-    api project(':kwai-linker')
+    implementation project(':kwai-linker')
     implementation project(':third-party:xhook')
     api project(':third-party:shark')
     implementation deps.kotlin.stdlib
     implementation deps.gson
     implementation deps.okio
-    api 'androidx.lifecycle:lifecycle-extensions:2.2.0'
-
+    implementation deps.androidx.lifecycle
 }
 
 apply from: rootProject.file('gradle/jcenter-publish.gradle')
