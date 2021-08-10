@@ -18,12 +18,29 @@
 #define KWAI_DLFCN_H
 
 #include <link.h>
+#include <string>
 
 namespace kwai {
 namespace linker {
 
 class DlFcn {
 public:
+  struct SoDlInfo {
+    /**
+     * The full path name of so
+     */
+    std::string full_name;
+    /**
+     * The load base address. For example:
+     * phdr0: the PT_LOAD segment
+     * phdr0_load_address: the segment map start address.
+     * phdr0->p_vaddr: the segment virtual address.
+     *
+     * load_base = phdr0_load_address - PAGE_START(phdr0->p_vaddr)
+     */
+    ElfW(Addr) load_base;
+  };
+
   /**
    * Android N+ dlopen bypass
    */
@@ -51,16 +68,12 @@ public:
    * also get symbols in .symtab(LOCAL).
    */
   static void *dlopen_elf(const char *lib_name, int flags);
+
   /**
    * Since dlopen_elf consumes more memory, when fetching multiple symbols in a so, try to open
    * it only once, get all symbol addresses and cache them and then close it.
    */
   static void *dlsym_elf(void *handle, const char *name);
-
-  /**
-   * Same with dlsym_elf, but can get symbol size; if can't symbol address, size is meaningless
-   */
-  static void *dlsym_size_elf(void *handle, const char *name, size_t *size);
 
   /**
    * Release memroy.
@@ -75,14 +88,6 @@ public:
 
 private:
   static void init_api();
-  /**
-   * ELF hash func
-   */
-  static uint32_t elf_hash(const uint8_t *name);
-  /**
-   * GNU hash func
-   */
-  static uint32_t elf_gnu_hash(const uint8_t *name);
 };
 
 } // namespace linker

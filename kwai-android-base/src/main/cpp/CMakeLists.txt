@@ -44,7 +44,7 @@ set(LOG_SOURCES liblog/event_tag_map.cpp liblog/log_event_list.cpp liblog/log_ev
         liblog/logger_read.cpp liblog/logger_write.cpp liblog/logprint.cpp liblog/pmsg_reader.cpp
         liblog/pmsg_writer.cpp liblog/properties.cpp)
 
-set(KWAI_LINKER_SOURCES kwai_linker/kwai_dlfcn.cpp)
+set(KWAI_LINKER_SOURCES kwai_linker/kwai_dlfcn.cpp kwai_linker/elf_reader.cpp)
 
 set(KWAI_UTIL_SOURCES kwai_util/ktime.cpp)
 
