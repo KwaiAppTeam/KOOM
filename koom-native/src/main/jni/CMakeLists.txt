@@ -33,7 +33,6 @@ add_library( # Sets the name of the library.
 
         src/memory_map.cpp
         src/jni_leak_monitor.cpp
-        src/thread_local_manager.cpp
         src/leak_monitor.cpp
         src/utils/hook_helper.cpp
         src/utils/stack_trace.cpp

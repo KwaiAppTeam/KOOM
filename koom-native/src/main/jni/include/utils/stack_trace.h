@@ -27,7 +27,6 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-#define ENABLE_PRINT_FRAME_INFO true
 #define FAST_UNWIND_TLS_INITIAL_EXEC __thread __attribute__((tls_model("initial-exec")))
 
 #ifndef KWAI_EXPORT
@@ -36,9 +35,6 @@
 
 class StackTrace {
 public:
-  static std::atomic<bool> inSymbolizing;
-  static std::atomic<bool> inBacktrace;
-
   static void Init();
 
   static size_t FastUnwind(uintptr_t *buf, size_t num_entries);

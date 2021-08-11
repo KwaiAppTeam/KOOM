@@ -29,7 +29,7 @@ class ScopedLocalRef {
   }
 
   ScopedLocalRef(ScopedLocalRef &&s) :
-      env_(s.env_), local_ref_(s.local_ref_) {
+      env_(s.env_), local_ref_(s.release()) {
   }
 
   ScopedLocalRef& operator=(ScopedLocalRef &&s) noexcept {

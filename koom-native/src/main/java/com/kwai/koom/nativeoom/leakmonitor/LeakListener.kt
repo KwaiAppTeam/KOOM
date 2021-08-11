@@ -19,25 +19,6 @@
 
 package com.kwai.koom.nativeoom.leakmonitor
 
-import androidx.annotation.Keep
-
-@Keep
-class AllocationRecord {
-  @JvmField
-  var index = 0L
-
-  @JvmField
-  var size = 0
-
-  @JvmField
-  var threadName: String? = null
-
-  @JvmField
-  var tag: String? = null
-
-  @JvmField
-  var soName: String? = null
-
-  @JvmField
-  var backtrace: LongArray? = null
+interface LeakListener {
+  fun onLeak(leaks: MutableCollection<LeakRecord>)
 }

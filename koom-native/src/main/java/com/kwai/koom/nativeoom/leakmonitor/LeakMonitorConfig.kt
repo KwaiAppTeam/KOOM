@@ -20,6 +20,7 @@
 package com.kwai.koom.nativeoom.leakmonitor
 
 import com.kwai.koom.base.MonitorConfig
+import com.kwai.koom.base.MonitorLog
 
 class LeakMonitorConfig(
     val selectedSoList: Array<String>,
@@ -28,7 +29,9 @@ class LeakMonitorConfig(
     val leakItemsThreshold: Int,
     val nativeHeapAllocatedThreshold: Int,
     val mallocThreshold: Int,
-    val loopInterval: Long
+    val loopInterval: Long,
+    val enableLocalSymbolic: Boolean,
+    val leakListener: LeakListener
 ) : MonitorConfig<LeakMonitor>() {
 
   class Builder : MonitorConfig.Builder<LeakMonitorConfig> {
@@ -43,6 +46,14 @@ class LeakMonitorConfig(
      * Default is 300s, memory analysis is time consume, NOT below 300s in Production Environment
      */
     private var mLoopInterval = 300_000L
+
+    private var mEnableLocalSymbolic = false
+
+    private var mLeakListener: LeakListener = object : LeakListener {
+      override fun onLeak(leaks: MutableCollection<LeakRecord>) {
+        leaks.forEach { MonitorLog.i(LeakMonitor.TAG, "$it") }
+      }
+    }
 
     fun setSelectedSoList(selectedSoList: Array<String>) = apply {
       mSelectedSoList = selectedSoList
@@ -68,14 +79,23 @@ class LeakMonitorConfig(
       mLoopInterval = loopInterval
     }
 
+    fun setLeakListener(leakListener: LeakListener) = apply {
+      mLeakListener = leakListener
+    }
+
+    fun setEnableLocalSymbolic(enableLocalSymbolic: Boolean) = apply {
+      mEnableLocalSymbolic = enableLocalSymbolic
+    }
+
     override fun build() = LeakMonitorConfig(
         selectedSoList = mSelectedSoList,
         ignoredSoList = mIgnoredSoList,
-
         leakItemsThreshold = mLeakItemsThreshold,
         nativeHeapAllocatedThreshold = mNativeHeapAllocatedThreshold,
         mallocThreshold = mMallocThreshold,
-        loopInterval = mLoopInterval
+        loopInterval = mLoopInterval,
+        enableLocalSymbolic = mEnableLocalSymbolic,
+        leakListener = mLeakListener
     )
   }
 }
