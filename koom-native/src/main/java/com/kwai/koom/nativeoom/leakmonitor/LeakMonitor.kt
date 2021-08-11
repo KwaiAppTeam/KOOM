@@ -32,21 +32,16 @@ import com.kwai.koom.base.MonitorLogger
 import com.kwai.koom.base.loadSoQuietly
 import com.kwai.koom.base.loop.LoopMonitor
 import com.kwai.koom.nativeoom.leakmonitor.allocationtag.AllocationTagLifecycleCallbacks
-import com.kwai.koom.nativeoom.leakmonitor.message.NativeLeakMessage
 import java.util.*
 import java.util.concurrent.atomic.AtomicInteger
 
 @Keep
 object LeakMonitor : LoopMonitor<LeakMonitorConfig>() {
-  private const val TAG = "NativeLeakMonitor"
-  private const val ERROR_EVENT_KEY = "NativeLeakMonitor_Error"
-  private const val NATIVE_LEAK_HAPPENED_BEGIN = "------  Native Leak Found ------\n"
-  private const val STOP_LOOP_THRESHOLD = 80000
-
-  private val UUID_PREFIX = UUID.randomUUID().toString()
+  const val TAG = "NativeLeakMonitor"
 
   @JvmStatic
-  private external fun nativeInstallMonitor(selectedList: Array<String>, ignoreList: Array<String>)
+  private external fun nativeInstallMonitor(selectedList: Array<String>,
+    ignoreList: Array<String>, enableLocalSymbolic: Boolean)
 
   @JvmStatic
   private external fun nativeUninstallMonitor()
@@ -64,7 +59,7 @@ object LeakMonitor : LoopMonitor<LeakMonitorConfig>() {
   private external fun nativeGetAllocIndex(): Long
 
   @JvmStatic
-  private external fun nativeGetLeakAllocs(memoryAllocationInfoMap: Map<String, AllocationRecord>)
+  private external fun nativeGetLeakAllocs(leakRecordMap: Map<String, LeakRecord>)
 
   private val mIndex = AtomicInteger()
 
@@ -84,17 +79,16 @@ object LeakMonitor : LoopMonitor<LeakMonitorConfig>() {
       return LoopState.Continue
     }
 
-    val allocationInfoMap = mutableMapOf<String, AllocationRecord>()
+    val leakRecordMap = mutableMapOf<String, LeakRecord>()
         .apply { nativeGetLeakAllocs(this) }
         .also { AllocationTagLifecycleCallbacks.bindAllocationTag(it) }
-        .also { MonitorLog.i(TAG, "memoryAllocationInfoMap ${it.size}") }
+        .also { MonitorLog.i(TAG, "LeakRecordMap size: ${it.size}") }
 
-    if (allocationInfoMap.isEmpty()) {
+    if (leakRecordMap.isEmpty()) {
       return LoopState.Continue
     }
 
-    packageLeakMessage(allocationInfoMap).also { uploadLeakMessage(it) }
-
+    monitorConfig.leakListener.onLeak(leakRecordMap.values)
     return LoopState.Continue
   }
 
@@ -108,7 +102,8 @@ object LeakMonitor : LoopMonitor<LeakMonitorConfig>() {
 
     AllocationTagLifecycleCallbacks.register()
 
-    nativeInstallMonitor(monitorConfig.selectedSoList, monitorConfig.ignoredSoList)
+    nativeInstallMonitor(monitorConfig.selectedSoList,
+      monitorConfig.ignoredSoList, monitorConfig.enableLocalSymbolic)
     nativeSetAllocThreshold(monitorConfig.mallocThreshold)
 
     super.startLoop(clearQueue, postAtFront, delayMillis)
@@ -151,76 +146,4 @@ object LeakMonitor : LoopMonitor<LeakMonitorConfig>() {
    * @return Unique allocation index
    */
   internal fun getAllocationIndex() = nativeGetAllocIndex()
-
-  @RequiresApi(Build.VERSION_CODES.N)
-  private fun packageLeakMessage(
-      allocationInfoMap: MutableMap<String, AllocationRecord>
-  ): NativeLeakMessage {
-    val nativeLeakMessage = NativeLeakMessage().apply {
-      logUUID = "${UUID_PREFIX}-${mIndex.getAndIncrement()}"
-    }
-
-    if (allocationInfoMap.size > STOP_LOOP_THRESHOLD) {
-      stopLoop()
-      MonitorLogger.addCustomStatEvent(ERROR_EVENT_KEY,
-          "allocationInfoMap size: ${allocationInfoMap.size}")
-      return nativeLeakMessage
-    }
-
-    runCatching {
-      val leakAllocations = LinkedList<Long>()
-
-      loop@ for (allocationInfoEntry in allocationInfoMap) {
-          leakAllocations.add(allocationInfoEntry.key.toLong(16))
-
-          val nativeLeakItem = NativeLeakMessage.NativeLeakItem().apply {
-            type = NativeLeakMessage.LeakType.TYPE_LEAK_ALLOC
-            leakSize = allocationInfoEntry.value.size.toString()
-            threadName = allocationInfoEntry.value.threadName
-            activity = allocationInfoEntry.value.tag
-          }
-
-          for (address in allocationInfoEntry.value.backtrace ?: LongArray(0)) {
-            val backtraceLine = NativeLeakMessage.BacktraceLine().apply {
-              offset = address.toString(16)
-              soName = allocationInfoEntry.value.soName
-            }
-
-            nativeLeakItem.backtraceLines.add(backtraceLine)
-          }
-
-          if (nativeLeakItem.backtraceLines.size == 0) {
-            continue
-          }
-          nativeLeakMessage.leakItems.add(nativeLeakItem)
-          if (nativeLeakMessage.leakItems.size >= monitorConfig.leakItemsThreshold) {
-            break@loop
-          }
-      }
-    }.onFailure {
-      it.printStackTrace()
-
-      nativeLeakMessage.errorMessage += it
-
-      MonitorLogger.addCustomStatEvent(ERROR_EVENT_KEY, Log.getStackTraceString(it))
-    }
-
-    MonitorLog.i(TAG, nativeLeakMessage.toString())
-    return nativeLeakMessage
-  }
-
-  private fun uploadLeakMessage(leakMessage: NativeLeakMessage) {
-    if (leakMessage.leakItems.isEmpty()) {
-      return
-    }
-    runCatching {
-      Gson().toJson(leakMessage)
-          .also { MonitorLogger.addExceptionEvent(it, Logger.ExceptionType.NATIVE_LEAK) }
-          .also { MonitorLog.i(TAG, "$NATIVE_LEAK_HAPPENED_BEGIN$it") }
-    }.onFailure {
-      it.printStackTrace()
-
-      MonitorLogger.addCustomStatEvent(ERROR_EVENT_KEY, Log.getStackTraceString(it))
-    }
-  }
 }

@@ -22,8 +22,12 @@
 
 #include "constants.h"
 #include "utils/concurrent_hash_map.h"
+#include "utils/log_util.h"
+
 #include <list>
 #include <vector>
+#include <linux/prctl.h>
+#include <sys/prctl.h>
 
 #define CONFUSE(address) (~(address))
 
@@ -36,6 +40,17 @@ struct AllocRecord {
   uint32_t num_backtraces;
   uintptr_t backtrace[kMaxBacktraceSize];
   char thread_name[kMaxThreadNameLen];
+};
+
+struct ThreadInfo {
+  char name[kMaxThreadNameLen];
+  ThreadInfo() {
+    if (prctl(PR_GET_NAME, name)) {
+      memcpy(name, "unknown", kMaxThreadNameLen);
+    }
+  }
+
+  ~ThreadInfo() = default;
 };
 
 class LeakMonitor {
@@ -58,7 +73,7 @@ public:
 private:
   LeakMonitor()
       : alloc_index_(0), has_install_monitor_(false), live_alloc_records_(),
-        alloc_threshold_(kDefaultAllocThreshold), is_hooked_(false){};
+        alloc_threshold_(kDefaultAllocThreshold), is_hooked_(false) {};
   ~LeakMonitor() = default;
   LeakMonitor(const LeakMonitor &);
   LeakMonitor &operator=(const LeakMonitor &);

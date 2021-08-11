@@ -1,20 +1,29 @@
 /*
- * Copyright (c) 2021. Kwai, Inc. All rights reserved.
+ * Copyright (C) 2012 The Android Open Source Project
+ * All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ *  * Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ *  * Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in
+ *    the documentation and/or other materials provided with the
+ *    distribution.
  *
- *         http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- * Created by lbtrace on 2021.
- *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+ * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+ * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+ * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+ * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
+ * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
+ * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+ * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
+ * OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+ * SUCH DAMAGE.
  */
 
 #ifndef KOOM_KOOM_NATIVE_SRC_MAIN_JNI_INCLUDE_MEMORY_MAP_H_
@@ -26,8 +35,10 @@
 #include <set>
 #include <string>
 
-const std::string kArtSo = "libart.so";
-const std::string kSoSuffex = ".so";
+#define LIB_ART "libart.so"
+#define OAT_SUFFEX ".oat"
+#define ODEX_SUFFEX ".odex"
+#define DEX_SUFFEX ".dex"
 
 struct MapEntry {
   MapEntry(uintptr_t start,
@@ -45,7 +56,8 @@ struct MapEntry {
       return target.size() >= suffix.size() &&
           target.substr(target.size() - suffix.size(), suffix.size()) == suffix;
     };
-    return ends_with(name, kArtSo) || !ends_with(name, kSoSuffex);
+    return ends_with(name, LIB_ART) || ends_with(name, OAT_SUFFEX) ||
+        ends_with(name, ODEX_SUFFEX) || ends_with(name, DEX_SUFFEX);
   }
 
   uintptr_t start;
@@ -70,7 +82,7 @@ class MemoryMap {
   ~MemoryMap();
 
   MapEntry *CalculateRelPc(uintptr_t pc, uintptr_t *rel_pc = nullptr);
-  std::string FormatBacktrace(const uintptr_t* frames, size_t frame_count);
+  std::string FormatSymbol(MapEntry *entry, uintptr_t pc);
  private:
   bool ReadMaps();
 

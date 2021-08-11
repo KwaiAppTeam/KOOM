@@ -1,20 +1,29 @@
 /*
- * Copyright (c) 2021. Kwai, Inc. All rights reserved.
+ * Copyright (C) 2012 The Android Open Source Project
+ * All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ *  * Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ *  * Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in
+ *    the documentation and/or other materials provided with the
+ *    distribution.
  *
- *         http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- * Created by lbtrace on 2021.
- *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+ * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+ * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+ * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+ * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
+ * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
+ * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+ * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
+ * OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+ * SUCH DAMAGE.
  */
 
 #include <ctype.h>
@@ -212,63 +221,51 @@ MapEntry *MemoryMap::CalculateRelPc(uintptr_t pc, uintptr_t *rel_pc) {
   return entry;
 }
 
-std::string MemoryMap::FormatBacktrace(const uintptr_t* frames, size_t frame_count) {
+std::string MemoryMap::FormatSymbol(MapEntry *entry, uintptr_t pc) {
   std::string str;
   uintptr_t offset = 0;
   const char *symbol = nullptr;
 
-  for (size_t cursor = 0; cursor < frame_count; cursor++) {
-    Dl_info info;
-    DLOGI("frame %p %d", frames[cursor], frame_count);
-    if (dladdr(reinterpret_cast<void *>(frames[cursor]), &info) != 0) {
-      offset = reinterpret_cast<uintptr_t>(info.dli_saddr);
-      symbol = info.dli_sname;
-    } else {
-      info.dli_fname = nullptr;
-    }
-
-    uintptr_t rel_pc = offset;
-    MapEntry *entry = CalculateRelPc(frames[cursor], &rel_pc);
-    if (entry->NeedIgnore()) {
-      break;
-    }
-
-    const char *soname = (entry != nullptr) ? entry->name.c_str() : info.dli_fname;
-    if (soname == nullptr) {
-      soname = "<unknown>";
-    }
-
-    char offset_buf[128];
-    if (entry != nullptr && entry->elf_start_offset != 0) {
-      snprintf(offset_buf, sizeof(offset_buf), " (offset 0x%" PRIxPTR ")", entry->elf_start_offset);
-    } else {
-      offset_buf[0] = '\0';
-    }
-
-    char buf[1024];
-    if (symbol != nullptr) {
-      char *demangled_name = abi::__cxa_demangle(symbol, nullptr, nullptr, nullptr);
-      const char *name;
-      if (demangled_name != nullptr) {
-        name = demangled_name;
-      } else {
-        name = symbol;
-      }
-      snprintf(buf, sizeof(buf),
-               "          #%02zd  pc %"
-               PAD_PTR
-               "  %s%s (%s+%" PRIuPTR ")\n",
-               cursor, rel_pc, soname, offset_buf, name,
-               frames[cursor] - offset);
-      free(demangled_name);
-    } else {
-      snprintf(buf, sizeof(buf), "          #%02zd  pc %"
-                                 PAD_PTR
-                                 "  %s%s\n",
-               cursor, rel_pc, soname, offset_buf);
-    }
-    str += buf;
+  Dl_info info;
+  if (dladdr(reinterpret_cast<void *>(pc), &info) != 0) {
+    offset = reinterpret_cast<uintptr_t>(info.dli_saddr);
+    symbol = info.dli_sname;
+  } else {
+    info.dli_fname = nullptr;
   }
+
+  const char *soname = (entry != nullptr) ? entry->name.c_str() : info.dli_fname;
+  if (soname == nullptr) {
+    soname = "<unknown>";
+  }
+
+  char offset_buf[128];
+  if (entry != nullptr && entry->elf_start_offset != 0) {
+    snprintf(offset_buf, sizeof(offset_buf), " (offset 0x%" PRIxPTR ")", entry->elf_start_offset);
+  } else {
+    offset_buf[0] = '\0';
+  }
+
+  char buf[1024];
+  if (symbol != nullptr) {
+    char *demangled_name = abi::__cxa_demangle(symbol, nullptr, nullptr, nullptr);
+    const char *name;
+    if (demangled_name != nullptr) {
+      name = demangled_name;
+    } else {
+      name = symbol;
+    }
+    snprintf(buf, sizeof(buf),
+             "  %s%s (%s+%" PRIuPTR ")\n",
+             soname, offset_buf, name,
+             pc - offset);
+    free(demangled_name);
+  } else {
+    snprintf(buf, sizeof(buf),
+             "  %s%s\n",
+             soname, offset_buf);
+  }
+  str += buf;
 
   return std::move(str);
 }
