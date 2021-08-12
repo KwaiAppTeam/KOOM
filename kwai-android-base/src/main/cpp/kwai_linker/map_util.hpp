@@ -109,13 +109,17 @@ class MapUtil {
   /**
    * Get the base address(load_bias) of a loaded so, what is the load_bias?
    * See above ELF LOADING detail.
+   *
+   * Note: You should using full path name because some libraries have same name.
    */
   static bool GetLoadInfo(const std::string &name,
                           ElfW(Addr) *load_base,
                           std::string &so_full_name,
                           int android_api) {
-    auto get_load_info = android_api > __ANDROID_API_O__ ?
-        GetLoadInfoAboveAPIO : GetLoadInfoBelowAPIO;
+    // Actually Android 5.x, we can using "dl_iterate_phdr",
+    // but we need lock "g_dl_mutex" by self, so we just using maps in Android 5.x.
+    auto get_load_info = android_api > __ANDROID_API_L_MR1__ ?
+        GetLoadInfoByDl : GetLoadInfoByMaps;
     return get_load_info(name, load_base, so_full_name);
   }
 
@@ -183,7 +187,7 @@ class MapUtil {
     return sub_str && strlen(sub_str) == strlen(suffix);
   }
 
-  static bool GetLoadInfoBelowAPIO(const std::string &name, ElfW(Addr) *load_base,
+  static bool GetLoadInfoByMaps(const std::string &name, ElfW(Addr) *load_base,
                                    std::string &full_name) {
     FILE *fp = fopen("/proc/self/maps", "re");
     auto ret = false;
@@ -252,9 +256,8 @@ class MapUtil {
     return ret;
   }
 
-  static bool GetLoadInfoAboveAPIO(const std::string &name, ElfW(Addr) *load_base,
+  static bool GetLoadInfoByDl(const std::string &name, ElfW(Addr) *load_base,
                                    std::string &so_full_name) {
-
     struct PhdrInfo {
       const char *name;
       std::string full_name;
