@@ -4,14 +4,14 @@ package kshark
  * A primitive type in the prof.
  */
 enum class PrimitiveType(
-    /**
-     * The hprof defined "basic type".
-     */
-    val hprofType: Int,
-    /**
-     * The size in bytes for each value of that type.
-     */
-    val byteSize: Int
+  /**
+   * The hprof defined "basic type".
+   */
+  val hprofType: Int,
+  /**
+   * The size in bytes for each value of that type.
+   */
+  val byteSize: Int
 ) {
   BOOLEAN(4, 1),
   CHAR(5, 2),

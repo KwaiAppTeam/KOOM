@@ -15,8 +15,8 @@ class GraphContext {
    * @see MutableMap.getOrPut
    */
   fun <T> getOrPut(
-      key: String,
-      defaultValue: () -> T
+    key: String,
+    defaultValue: () -> T
   ): T {
     @Suppress("UNCHECKED_CAST")
     return store.getOrPut(key, {
@@ -28,8 +28,8 @@ class GraphContext {
    * @see MutableMap.set
    */
   operator fun <T> set(
-      key: String,
-      value: T
+    key: String,
+    value: T
   ) {
     store[key] = (value as Any?)
   }

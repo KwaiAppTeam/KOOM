@@ -4,6 +4,7 @@ import kshark.LeakTraceReference.ReferenceType.ARRAY_ENTRY
 import kshark.LeakTraceReference.ReferenceType.INSTANCE_FIELD
 import kshark.LeakTraceReference.ReferenceType.LOCAL
 import kshark.LeakTraceReference.ReferenceType.STATIC_FIELD
+import kshark.internal.lastSegment
 import java.io.Serializable
 
 /**
@@ -13,16 +14,14 @@ import java.io.Serializable
  * [LeakTrace.referencePath].
  */
 data class LeakTraceReference(
-    val originObject: LeakTraceObject,
+  val originObject: LeakTraceObject,
 
-    val referenceType: ReferenceType,
+  val referenceType: ReferenceType,
 
-    val referenceName: String,
+  val owningClassName: String,
 
-    //Added by Kwai, Inc
-    //field's declared class name, which can be ancestor class
-    // when field are inherited from ancestor's class.
-    val declaredClassName: String
+  val referenceName: String
+
 ) : Serializable {
 
   enum class ReferenceType {
@@ -31,6 +30,12 @@ data class LeakTraceReference(
     LOCAL,
     ARRAY_ENTRY
   }
+
+  /**
+   * Returns {@link #className} without the package, ie stripped of any string content before the
+   * last period (included).
+   */
+  val owningClassSimpleName: String get() = owningClassName.lastSegment('.')
 
   val referenceDisplayName: String
     get() {
@@ -54,5 +59,4 @@ data class LeakTraceReference(
   companion object {
     private const val serialVersionUID = 1L
   }
-
 }

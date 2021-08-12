@@ -21,12 +21,18 @@ sealed class HeapAnalysis : Serializable {
   abstract val createdAtTimeMillis: Long
 
   /**
+   * Total time spent dumping the heap.
+   */
+  abstract val dumpDurationMillis: Long
+
+  /**
    * Total time spent analyzing the heap.
    */
   abstract val analysisDurationMillis: Long
 
   companion object {
     private const val serialVersionUID: Long = -8657286725869987172
+    const val DUMP_DURATION_UNKNOWN: Long = -1
   }
 }
 
@@ -34,13 +40,14 @@ sealed class HeapAnalysis : Serializable {
  * The analysis performed by [HeapAnalyzer] did not complete successfully.
  */
 data class HeapAnalysisFailure(
-    override val heapDumpFile: File,
-    override val createdAtTimeMillis: Long,
-    override val analysisDurationMillis: Long,
-    /**
-     * An exception wrapping the actual exception that was thrown.
-     */
-    val exception: HeapAnalysisException
+  override val heapDumpFile: File,
+  override val createdAtTimeMillis: Long,
+  override val dumpDurationMillis: Long = DUMP_DURATION_UNKNOWN,
+  override val analysisDurationMillis: Long,
+  /**
+   * An exception wrapping the actual exception that was thrown.
+   */
+  val exception: HeapAnalysisException
 ) : HeapAnalysis() {
 
   override fun toString(): String {
@@ -73,18 +80,20 @@ Heap dump timestamp: $createdAtTimeMillis
  * The result of a successful heap analysis performed by [HeapAnalyzer].
  */
 data class HeapAnalysisSuccess(
-    override val heapDumpFile: File,
-    override val createdAtTimeMillis: Long,
-    override val analysisDurationMillis: Long,
-    val metadata: Map<String, String>,
-    /**
-     * The list of [ApplicationLeak] found in the heap dump by [HeapAnalyzer].
-     */
-    val applicationLeaks: List<ApplicationLeak>,
-    /**
-     * The list of [LibraryLeak] found in the heap dump by [HeapAnalyzer].
-     */
-    val libraryLeaks: List<LibraryLeak>
+  override val heapDumpFile: File,
+  override val createdAtTimeMillis: Long,
+  override val dumpDurationMillis: Long = DUMP_DURATION_UNKNOWN,
+  override val analysisDurationMillis: Long,
+  val metadata: Map<String, String>,
+  /**
+   * The list of [ApplicationLeak] found in the heap dump by [HeapAnalyzer].
+   */
+  val applicationLeaks: List<ApplicationLeak>,
+  /**
+   * The list of [LibraryLeak] found in the heap dump by [HeapAnalyzer].
+   */
+  val libraryLeaks: List<LibraryLeak>,
+  val unreachableObjects: List<LeakTraceObject>
 ) : HeapAnalysis() {
   /**
    * The list of [Leak] found in the heap dump by [HeapAnalyzer], ie all [applicationLeaks] and
@@ -101,24 +110,41 @@ ${applicationLeaks.size} APPLICATION LEAKS
 
 References underlined with "~~~" are likely causes.
 Learn more at https://squ.re/leaks.
-${if (applicationLeaks.isNotEmpty()) "\n" + applicationLeaks.joinToString(
+${
+      if (applicationLeaks.isNotEmpty()) "\n" + applicationLeaks.joinToString(
         "\n\n"
-    ) + "\n" else ""}====================================
+      ) + "\n" else ""
+    }====================================
 ${libraryLeaks.size} LIBRARY LEAKS
 
-Library Leaks are leaks coming from the Android Framework or Google libraries.
-${if (libraryLeaks.isNotEmpty()) "\n" + libraryLeaks.joinToString(
+A Library Leak is a leak caused by a known bug in 3rd party code that you do not have control over.
+See https://square.github.io/leakcanary/fundamentals-how-leakcanary-works/#4-categorizing-leaks
+${
+      if (libraryLeaks.isNotEmpty()) "\n" + libraryLeaks.joinToString(
         "\n\n"
-    ) + "\n" else ""}====================================
+      ) + "\n" else ""
+    }====================================
+${unreachableObjects.size} UNREACHABLE OBJECTS
+
+An unreachable object is still in memory but LeakCanary could not find a strong reference path
+from GC roots.
+${
+      if (unreachableObjects.isNotEmpty()) "\n" + unreachableObjects.joinToString(
+        "\n\n"
+      ) + "\n" else ""
+    }====================================
 METADATA
 
 Please include this in bug reports and Stack Overflow questions.
-${if (metadata.isNotEmpty()) "\n" + metadata.map { "${it.key}: ${it.value}" }.joinToString(
+${
+      if (metadata.isNotEmpty()) "\n" + metadata.map { "${it.key}: ${it.value}" }.joinToString(
         "\n"
-    ) else ""}
+      ) else ""
+    }
 Analysis duration: $analysisDurationMillis ms
 Heap dump file path: ${heapDumpFile.absolutePath}
 Heap dump timestamp: $createdAtTimeMillis
+Heap dump duration: ${if (dumpDurationMillis != DUMP_DURATION_UNKNOWN) "$dumpDurationMillis ms" else "Unknown"}
 ===================================="""
   }
 
@@ -131,32 +157,33 @@ Heap dump timestamp: $createdAtTimeMillis
      */
     fun upgradeFrom20Deserialized(fromV20: HeapAnalysisSuccess): HeapAnalysisSuccess {
       val applicationLeaks = fromV20.applicationLeaks
-          .map { it.leakTraceFromV20() }
-          .groupBy { it.signature }
-          .values
-          .map {
-            ApplicationLeak(it)
-          }
+        .map { it.leakTraceFromV20() }
+        .groupBy { it.signature }
+        .values
+        .map {
+          ApplicationLeak(it)
+        }
 
       val libraryLeaks = fromV20.libraryLeaks
-          .map { it to it.leakTraceFromV20() }
-          .groupBy { it.second.signature }
-          .values
-          .map { listOfPairs ->
-            val libraryLeakFrom20 = listOfPairs.first()
-                .first
-            LibraryLeak(pattern = libraryLeakFrom20.pattern,
-                description = libraryLeakFrom20.description,
-                leakTraces = listOfPairs.map { it.second }
-            )
-          }
+        .map { it to it.leakTraceFromV20() }
+        .groupBy { it.second.signature }
+        .values
+        .map { listOfPairs ->
+          val libraryLeakFrom20 = listOfPairs.first()
+            .first
+          LibraryLeak(pattern = libraryLeakFrom20.pattern,
+            description = libraryLeakFrom20.description,
+            leakTraces = listOfPairs.map { it.second }
+          )
+        }
       return HeapAnalysisSuccess(
-          heapDumpFile = fromV20.heapDumpFile,
-          createdAtTimeMillis = fromV20.createdAtTimeMillis,
-          analysisDurationMillis = fromV20.analysisDurationMillis,
-          metadata = fromV20.metadata,
-          applicationLeaks = applicationLeaks,
-          libraryLeaks = libraryLeaks
+        heapDumpFile = fromV20.heapDumpFile,
+        createdAtTimeMillis = fromV20.createdAtTimeMillis,
+        analysisDurationMillis = fromV20.analysisDurationMillis,
+        metadata = fromV20.metadata,
+        applicationLeaks = applicationLeaks,
+        libraryLeaks = libraryLeaks,
+        unreachableObjects = listOf()
       )
     }
   }
@@ -184,6 +211,17 @@ sealed class Leak : Serializable {
     }
 
   /**
+   * Sum of [LeakTrace.retainedObjectCount] for all elements in [leakTraces].
+   * Null if the retained heap size was not computed.
+   */
+  val totalRetainedObjectCount: Int?
+    get() = if (leakTraces.first().retainedObjectCount == null) {
+      null
+    } else {
+      leakTraces.sumBy { it.retainedObjectCount!! }
+    }
+
+  /**
    * A unique SHA1 hash that represents this group of leak traces.
    *
    * For [ApplicationLeak] this is based on [LeakTrace.signature] and for [LibraryLeak] this is
@@ -195,9 +233,9 @@ sealed class Leak : Serializable {
 
   override fun toString(): String {
     return (if (totalRetainedHeapByteSize != null) "$totalRetainedHeapByteSize bytes retained by leaking objects\n" else "") +
-        (if (leakTraces.size > 1) "Displaying only 1 leak trace out of ${leakTraces.size} with the same signature\n" else "") +
-        "Signature: $signature\n" +
-        leakTraces.first()
+      (if (leakTraces.size > 1) "Displaying only 1 leak trace out of ${leakTraces.size} with the same signature\n" else "") +
+      "Signature: $signature\n" +
+      leakTraces.first()
   }
 
   companion object {
@@ -211,16 +249,16 @@ sealed class Leak : Serializable {
  * instance. This is a known leak in library code that is beyond your control.
  */
 data class LibraryLeak(
-    override val leakTraces: List<LeakTrace>,
-    /**
-     * The pattern that matched one of the references in each of [leakTraces], as provided to a
-     * [LibraryLeakReferenceMatcher] instance.
-     */
-    val pattern: ReferencePattern,
-    /**
-     * A description that conveys what we know about this library leak.
-     */
-    val description: String
+  override val leakTraces: List<LeakTrace>,
+  /**
+   * The pattern that matched one of the references in each of [leakTraces], as provided to a
+   * [LibraryLeakReferenceMatcher] instance.
+   */
+  val pattern: ReferencePattern,
+  /**
+   * A description that conveys what we know about this library leak.
+   */
+  val description: String
 ) : Leak() {
   override val signature: String
     get() = pattern.toString().createSHA1Hash()
@@ -252,7 +290,7 @@ ${super.toString()}
  * A leak found by [HeapAnalyzer] in your application.
  */
 data class ApplicationLeak(
-    override val leakTraces: List<LeakTrace>
+  override val leakTraces: List<LeakTrace>
 ) : Leak() {
   override val signature: String
     get() = leakTraces.first().signature

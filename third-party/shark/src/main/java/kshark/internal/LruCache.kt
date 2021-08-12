@@ -1,6 +1,6 @@
 package kshark.internal
 
-import java.util.*
+import java.util.LinkedHashMap
 import kotlin.collections.MutableMap.MutableEntry
 
 /**
@@ -8,7 +8,7 @@ import kotlin.collections.MutableMap.MutableEntry
  * Implementation is inspired from http://chriswu.me/blog/a-lru-cache-in-10-lines-of-java/
  */
 internal class LruCache<K, V>(
-    val maxSize: Int
+  val maxSize: Int
 ) {
   private val cache: LinkedHashMap<K, V>
 
@@ -29,7 +29,7 @@ internal class LruCache<K, V>(
       "maxSize=$maxSize <= 0"
     }
     this.cache = object : LinkedHashMap<K, V>(maxSize, 0.75f, true) {
-      override fun removeEldestEntry(eldest: MutableEntry<K, V>?) = if (size >= maxSize) {
+      override fun removeEldestEntry(eldest: MutableEntry<K, V>?) = if (size > maxSize) {
         evictionCount++
         true
       } else {
@@ -51,8 +51,8 @@ internal class LruCache<K, V>(
   }
 
   fun put(
-      key: K,
-      value: V
+    key: K,
+    value: V
   ): V? {
     putCount++
     return cache.put(key, value)
@@ -70,8 +70,8 @@ internal class LruCache<K, V>(
     val accesses = hitCount + missCount
     val hitPercent = if (accesses != 0) 100 * hitCount / accesses else 0
     return String.format(
-        "LruCache[maxSize=%d,hits=%d,misses=%d,hitRate=%d%%]",
-        maxSize, hitCount, missCount, hitPercent
+      "LruCache[maxSize=%d,hits=%d,misses=%d,hitRate=%d%%]",
+      maxSize, hitCount, missCount, hitPercent
     )
   }
 }

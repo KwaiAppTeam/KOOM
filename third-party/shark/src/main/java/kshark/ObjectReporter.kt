@@ -26,10 +26,10 @@ class ObjectReporter constructor(val heapObject: HeapObject) {
    * Deprecated, use leakingReasons instead.
    */
   @Deprecated(
-      "Replace likelyLeakingReasons with leakingReasons",
-      replaceWith = ReplaceWith(
-          "leakingReasons"
-      )
+    "Replace likelyLeakingReasons with leakingReasons",
+    replaceWith = ReplaceWith(
+      "leakingReasons"
+    )
   )
   val likelyLeakingReasons
     get() = leakingReasons
@@ -43,8 +43,8 @@ class ObjectReporter constructor(val heapObject: HeapObject) {
    * Runs [block] if [ObjectReporter.heapObject] is an instance of [expectedClass].
    */
   fun whenInstanceOf(
-      expectedClass: KClass<out Any>,
-      block: ObjectReporter.(HeapInstance) -> Unit
+    expectedClass: KClass<out Any>,
+    block: ObjectReporter.(HeapInstance) -> Unit
   ) {
     whenInstanceOf(expectedClass.java.name, block)
   }
@@ -53,13 +53,12 @@ class ObjectReporter constructor(val heapObject: HeapObject) {
    * Runs [block] if [ObjectReporter.heapObject] is an instance of [expectedClassName].
    */
   fun whenInstanceOf(
-      expectedClassName: String,
-      block: ObjectReporter.(HeapInstance) -> Unit
+    expectedClassName: String,
+    block: ObjectReporter.(HeapInstance) -> Unit
   ) {
     val heapObject = heapObject
     if (heapObject is HeapInstance && heapObject instanceOf expectedClassName) {
       block(heapObject)
     }
   }
-
 }
