@@ -67,7 +67,7 @@ class ConcurrentHashMap {
   }
 
  private:
-  static const unsigned kDefaultBucketNum = 12;  //Prime Number is better
+  static const unsigned kDefaultBucketNum = 521;  //Prime Number is better
 
   class Bucket {
    public:
