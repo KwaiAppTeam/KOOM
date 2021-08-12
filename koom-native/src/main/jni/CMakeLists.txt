@@ -6,18 +6,18 @@ cmake_minimum_required(VERSION 3.6)
 
 set(TARGET native-oom)
 set(THIRD_PARTY_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../../../third-party)
-set(KWAI_LINKER_DIR ${CMAKE_SOURCE_DIR}/../../../../kwai-linker)
+set(KWAI_ANDROID_BASE_DIR ${CMAKE_SOURCE_DIR}/../../../../kwai-android-base)
 
 project(${TARGET})
 
 include_directories(
         ${CMAKE_CURRENT_SOURCE_DIR}/include/
-        ${KWAI_LINKER_DIR}/src/main/cpp/include/
+        ${KWAI_ANDROID_BASE_DIR}/src/main/cpp/include/kwai_linker
         ${THIRD_PARTY_DIR}/xhook/src/main/cpp/xhook/src/
         )
 
 link_directories(
-        ${KWAI_LINKER_DIR}/src/main/libs/${ANDROID_ABI}/
+        ${KWAI_ANDROID_BASE_DIR}/libs/${ANDROID_ABI}/
         ${THIRD_PARTY_DIR}/xhook/src/main/libs/${ANDROID_ABI}/
 )
 
@@ -50,5 +50,5 @@ find_library( # Sets the name of the path variable.
 target_link_libraries( # Specifies the target library.
         ${TARGET}
         xhook_lib
-        kwai-linker
+        kwai-android-base
         ${log-lib})

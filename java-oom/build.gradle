@@ -36,13 +36,13 @@ android {
 }
 
 dependencies {
-    implementation project(':kwai-linker')
     implementation project(':third-party:xhook')
     api project(':third-party:shark')
     implementation deps.kotlin.stdlib
     implementation deps.gson
     implementation deps.okio
     implementation deps.androidx.lifecycle
+    implementation project(path: ':kwai-android-base')
 }
 
 apply from: rootProject.file('gradle/jcenter-publish.gradle')

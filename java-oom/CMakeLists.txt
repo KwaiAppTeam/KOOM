@@ -13,11 +13,11 @@ cmake_minimum_required(VERSION 3.4.1)
 
 include_directories(
         ${CMAKE_CURRENT_SOURCE_DIR}/../third-party/xhook/src/main/cpp/xhook/src/
-        ${CMAKE_CURRENT_SOURCE_DIR}/../kwai-linker/src/main/cpp/include
+        ${CMAKE_CURRENT_SOURCE_DIR}/../kwai-android-base/src/main/cpp/include/kwai_linker
 )
 
 link_directories(
-        ${CMAKE_CURRENT_SOURCE_DIR}/../kwai-linker/src/main/libs/${ANDROID_ABI}/
+        ${CMAKE_CURRENT_SOURCE_DIR}/../kwai-android-base/libs/${ANDROID_ABI}/
         ${CMAKE_CURRENT_SOURCE_DIR}/../third-party/xhook/src/main/libs/${ANDROID_ABI}/
 )
 
@@ -54,7 +54,7 @@ find_library( # Sets the name of the path variable.
 target_link_libraries( # Specifies the target library.
         koom-java
         xhook_lib
-        kwai-linker
+        kwai-android-base
         # Links the target library to the log library
         # included in the NDK.
         ${log-lib})
