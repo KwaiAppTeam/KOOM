@@ -57,7 +57,16 @@ static const uint32_t kNumDropFrame = 2;
 static MemoryMap g_memory_map;
 static bool g_enable_local_symbolic = false;
 
-static void InstallMonitor(JNIEnv *env, jclass,
+static void UninstallMonitor(JNIEnv *env, jclass) {
+  LeakMonitor::GetInstance().UninstallMonitor();
+  g_memory_map.~MemoryMap();
+  env->DeleteGlobalRef(g_frame_info.global_ref);
+  memset(&g_frame_info, 0, sizeof(g_frame_info));
+  env->DeleteGlobalRef(g_leak_record.global_ref);
+  memset(&g_leak_record, 0, sizeof(g_leak_record));
+}
+
+static bool InstallMonitor(JNIEnv *env, jclass clz,
                            jobjectArray selected_array,
                            jobjectArray ignore_array,
                            jboolean enable_local_symbolic) {
@@ -94,16 +103,11 @@ static void InstallMonitor(JNIEnv *env, jclass,
 
   std::vector<std::string> selected_so = array_to_vector(env, selected_array);
   std::vector<std::string> ignore_so = array_to_vector(env, ignore_array);
-  LeakMonitor::GetInstance().InstallMonitor(&selected_so, &ignore_so);
-}
-
-static void UninstallMonitor(JNIEnv *env, jclass) {
-  LeakMonitor::GetInstance().UninstallMonitor();
-  g_memory_map.~MemoryMap();
-  env->DeleteGlobalRef(g_frame_info.global_ref);
-  memset(&g_frame_info, 0, sizeof(g_frame_info));
-  env->DeleteGlobalRef(g_leak_record.global_ref);
-  memset(&g_leak_record, 0, sizeof(g_leak_record));
+  bool ret = LeakMonitor::GetInstance().InstallMonitor(&selected_so, &ignore_so);
+  if (!ret) {
+    UninstallMonitor(env, clz);
+  }
+  return ret;
 }
 
 static void SyncRefreshMonitor(JNIEnv *, jclass) { LeakMonitor::GetInstance().SyncRefresh(); }
@@ -202,7 +206,7 @@ static void GetLeakAllocs(JNIEnv *env, jclass, jobject leak_record_map) {
 }
 
 static const JNINativeMethod kLeakMonitorMethods[] = {
-    {"nativeInstallMonitor", "([Ljava/lang/String;[Ljava/lang/String;Z)V",
+    {"nativeInstallMonitor", "([Ljava/lang/String;[Ljava/lang/String;Z)Z",
      reinterpret_cast<void *>(InstallMonitor)},
     {"nativeUninstallMonitor", "()V", reinterpret_cast<void *>(UninstallMonitor)},
     {"nativeSyncRefreshMonitor", "()V", reinterpret_cast<void *>(SyncRefreshMonitor)},
@@ -215,7 +219,7 @@ extern "C" JNIEXPORT jint JNI_OnLoad(JavaVM *vm, void *reserved) {
   JNIEnv *env;
 
   if (vm->GetEnv(reinterpret_cast<void **>(&env), JNI_VERSION_1_4) != JNI_OK) {
-    RLOGE("GetEnv Fail!");
+    ALOGE("GetEnv Fail!");
     return JNI_ERR;
   }
 
@@ -224,7 +228,7 @@ extern "C" JNIEXPORT jint JNI_OnLoad(JavaVM *vm, void *reserved) {
 #define NELEM(x) (sizeof(x) / sizeof((x)[0]))
   if (env->RegisterNatives(leak_monitor, kLeakMonitorMethods, NELEM(kLeakMonitorMethods)) !=
       JNI_OK) {
-    RLOGE("RegisterNatives Fail!");
+    ALOGE("RegisterNatives Fail!");
     return JNI_ERR;
   }
 

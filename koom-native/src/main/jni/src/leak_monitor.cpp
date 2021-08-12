@@ -101,14 +101,18 @@ LeakMonitor &LeakMonitor::GetInstance() {
   return leak_monitor;
 }
 
-void LeakMonitor::InstallMonitor(std::vector<std::string> *selected_list,
+bool LeakMonitor::InstallMonitor(std::vector<std::string> *selected_list,
                                  std::vector<std::string> *ignore_list) {
   KCHECK(!has_install_monitor_);
 
-  // Reinstall can't hook again, xhook can't support unhook
-  if (is_hooked_) {
-    has_install_monitor_ = true;
-    return;
+  // Reinstall can't hook again
+  if (has_install_monitor_) {
+    return true;
+  }
+
+  memory_analyzer_ = std::make_unique<MemoryAnalyzer>();
+  if (!memory_analyzer_->IsValid()) {
+    return false;
   }
 
   std::vector<const std::string> register_pattern = {"^/data/.*\\.so$"};
@@ -140,17 +144,18 @@ void LeakMonitor::InstallMonitor(std::vector<std::string> *selected_list,
   if (HookHelper::HookMethods(register_pattern, ignore_pattern, hook_entries) &&
       HookHelper::SyncRefreshHook()) {
     has_install_monitor_ = true;
-    is_hooked_ = true;
-    return;
+    return true;
   }
 
-  RLOGE("%s Fail", __FUNCTION__);
+  ALOGE("%s Fail", __FUNCTION__);
+  return false;
 }
 
 void LeakMonitor::UninstallMonitor() {
   KCHECK(has_install_monitor_);
   has_install_monitor_ = false;
   live_alloc_records_.Clear();
+  memory_analyzer_.reset(nullptr);
 }
 
 int LeakMonitor::SyncRefresh() {
@@ -170,7 +175,7 @@ void LeakMonitor::SetAllocThreshold(size_t threshold) {
 
 std::vector<std::shared_ptr<AllocRecord>> LeakMonitor::GetLeakAllocs() {
   KCHECK(has_install_monitor_);
-  auto unreachable_allocs = CollectUnreachableMem();
+  auto unreachable_allocs = memory_analyzer_->CollectUnreachableMem();
   std::vector<std::shared_ptr<AllocRecord>> live_allocs;
   std::vector<std::shared_ptr<AllocRecord>> leak_allocs;
 
@@ -240,49 +245,6 @@ ALWAYS_INLINE void LeakMonitor::OnMonitor(uintptr_t address, size_t size) {
 
   ALOGI("%s address %p, size %d", __FUNCTION__, address, size);
   RegisterAlloc(address, size);
-}
-
-std::vector<std::pair<uintptr_t, size_t>> LeakMonitor::CollectUnreachableMem() {
-  std::vector<std::pair<uintptr_t, size_t>> unreachable_mem;
-  auto handler = kwai::linker::DlFcn::dlopen("libmemunreachable.so", RTLD_NOW);
-  if (!handler) {
-    RLOGE("dlopen libmemunreachable error: %s", dlerror());
-    return std::move(unreachable_mem);
-  }
-
-  auto get_unreachable_memory =
-      kwai::linker::DlFcn::dlsym(handler, "_ZN7android26GetUnreachableMemoryStringEbm");
-  if (!get_unreachable_memory) {
-    RLOGE("dlsym get_unreachable_memory error: %s", dlerror());
-    return std::move(unreachable_mem);
-  }
-
-  // libmemunreachable NOT work in release apk because it using ptrace
-  if (prctl(PR_SET_DUMPABLE, 1, 0, 0, 0) == -1) {
-    RLOGE("Set process dumpable Fail");
-    return std::move(unreachable_mem);
-  }
-
-  // Note: time consuming
-  std::string unreachable_memory = reinterpret_cast<std::string (*)(bool, size_t)>
-      (get_unreachable_memory)(false, 1024);
-
-  // Unset "dumpable" for security
-  prctl(PR_SET_DUMPABLE, 0, 0, 0, 0);
-
-  std::regex filter_regex("[0-9]+ bytes unreachable at [A-Za-z0-9]+");
-  std::sregex_iterator unreachable_begin(unreachable_memory.begin(),
-                                         unreachable_memory.end(),
-                                         filter_regex);
-  std::sregex_iterator unreachable_end;
-  for (; unreachable_begin != unreachable_end; ++unreachable_begin) {
-    std::string line = unreachable_begin->str();
-    auto address = std::stoul(line.substr(line.find_last_of(' ') + 1, line.length() - line
-        .find_last_of(' ') - 1), 0, 16);
-    auto size = std::stoul(line.substr(0, line.find_first_of(' ')));
-    unreachable_mem.push_back(std::pair<uintptr_t, size_t>(address, size));
-  }
-  return std::move(unreachable_mem);
 }
 } // namespace leak_monitor
 } // namespace kwai

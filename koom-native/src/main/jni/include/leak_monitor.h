@@ -22,6 +22,7 @@
 
 #include "constants.h"
 #include "utils/concurrent_hash_map.h"
+#include "memory_analyzer.h"
 
 #include <list>
 #include <vector>
@@ -55,7 +56,7 @@ struct ThreadInfo {
 class LeakMonitor {
 public:
   static LeakMonitor &GetInstance();
-  void InstallMonitor(std::vector<std::string> *selected_list,
+  bool InstallMonitor(std::vector<std::string> *selected_list,
                       std::vector<std::string> *ignore_list);
   void UninstallMonitor();
   int SyncRefresh();
@@ -67,20 +68,18 @@ public:
   void RegisterAlloc(uintptr_t address, size_t size);
   void UnregisterAlloc(uintptr_t address);
 
-  std::vector<std::pair<uintptr_t, size_t>> CollectUnreachableMem();
-
 private:
   LeakMonitor()
       : alloc_index_(0), has_install_monitor_(false), live_alloc_records_(),
-        alloc_threshold_(kDefaultAllocThreshold), is_hooked_(false) {};
+        alloc_threshold_(kDefaultAllocThreshold), memory_analyzer_() {};
   ~LeakMonitor() = default;
   LeakMonitor(const LeakMonitor &);
   LeakMonitor &operator=(const LeakMonitor &);
+  std::unique_ptr<MemoryAnalyzer> memory_analyzer_;
   ConcurrentHashMap<intptr_t, std::shared_ptr<AllocRecord>> live_alloc_records_;
   std::atomic<uint64_t> alloc_index_;
   std::atomic<bool> has_install_monitor_;
   std::atomic<size_t> alloc_threshold_;
-  std::atomic<bool> is_hooked_;
 };
 } // namespace leak_monitor
 } // namespace kwai
