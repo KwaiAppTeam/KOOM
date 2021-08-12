@@ -19,47 +19,47 @@ sealed class GcRoot {
    * A global variable in native code.
    */
   class JniGlobal(
-      override val id: Long,
-      val jniGlobalRefId: Long
+    override val id: Long,
+    val jniGlobalRefId: Long
   ) : GcRoot()
 
   /**
    * A local variable in native code.
    */
   class JniLocal(
-      override val id: Long,
-      /** Corresponds to [ThreadObject.threadSerialNumber] */
-      val threadSerialNumber: Int,
-      /**
-       * frame number in stack trace (-1 for empty)
-       */
-      val frameNumber: Int
+    override val id: Long,
+    /** Corresponds to [ThreadObject.threadSerialNumber] */
+    val threadSerialNumber: Int,
+    /**
+     * frame number in stack trace (-1 for empty)
+     */
+    val frameNumber: Int
   ) : GcRoot()
 
   /**
    * A java local variable
    */
   class JavaFrame(
-      override val id: Long,
-      /** Corresponds to [ThreadObject.threadSerialNumber] */
-      val threadSerialNumber: Int,
-      /**
-       * frame number in stack trace (-1 for empty)
-       */
-      val frameNumber: Int
+    override val id: Long,
+    /** Corresponds to [ThreadObject.threadSerialNumber] */
+    val threadSerialNumber: Int,
+    /**
+     * frame number in stack trace (-1 for empty)
+     */
+    val frameNumber: Int
   ) : GcRoot()
 
   /**
    * Input or output parameters in native code
    */
   class NativeStack(
-      override val id: Long,
-      /**
-       * Corresponds to [ThreadObject.threadSerialNumber]
-       * Note: the corresponding thread is sometimes not found, see:
-       * https://issuetracker.google.com/issues/122713143
-       */
-      val threadSerialNumber: Int
+    override val id: Long,
+    /**
+     * Corresponds to [ThreadObject.threadSerialNumber]
+     * Note: the corresponding thread is sometimes not found, see:
+     * https://issuetracker.google.com/issues/122713143
+     */
+    val threadSerialNumber: Int
   ) : GcRoot()
 
   /**
@@ -68,9 +68,9 @@ sealed class GcRoot {
   class StickyClass(override val id: Long) : GcRoot()
 
   class ThreadBlock(
-      override val id: Long,
-      /** Corresponds to [ThreadObject.threadSerialNumber] */
-      val threadSerialNumber: Int
+    override val id: Long,
+    /** Corresponds to [ThreadObject.threadSerialNumber] */
+    val threadSerialNumber: Int
   ) : GcRoot()
 
   /**
@@ -85,9 +85,9 @@ sealed class GcRoot {
    * Added at https://android.googlesource.com/platform/tools/base/+/c0f0d528c155cab32e372dac77370569a386245c
    */
   class ThreadObject(
-      override val id: Long,
-      val threadSerialNumber: Int,
-      val stackTraceSerialNumber: Int
+    override val id: Long,
+    val threadSerialNumber: Int,
+    val stackTraceSerialNumber: Int
   ) : GcRoot()
 
   /**
@@ -104,9 +104,9 @@ sealed class GcRoot {
    * It's unclear what this is, documentation welcome.
    */
   class JniMonitor(
-      override val id: Long,
-      val stackTraceSerialNumber: Int,
-      val stackDepth: Int
+    override val id: Long,
+    val stackTraceSerialNumber: Int,
+    val stackDepth: Int
   ) : GcRoot()
 
   /**
@@ -128,5 +128,4 @@ sealed class GcRoot {
    * An object that is unreachable from any other root, but not a root itself.
    */
   class Unreachable(override val id: Long) : GcRoot()
-
 }

@@ -1,20 +1,28 @@
 package kshark
 
-import kshark.ValueHolder.*
+import kshark.ValueHolder.BooleanHolder
+import kshark.ValueHolder.ByteHolder
+import kshark.ValueHolder.CharHolder
+import kshark.ValueHolder.DoubleHolder
+import kshark.ValueHolder.FloatHolder
+import kshark.ValueHolder.IntHolder
+import kshark.ValueHolder.LongHolder
+import kshark.ValueHolder.ReferenceHolder
+import kshark.ValueHolder.ShortHolder
 
 /**
  * Represents a value in the heap dump, which can be an object reference or
  * a primitive type.
  */
 class HeapValue(
-    /**
-     * The graph of objects in the heap, which you can use to navigate the heap.
-     */
-    val graph: HeapGraph,
-    /**
-     * Holds the actual value that this [HeapValue] represents.
-     */
-    val holder: ValueHolder?
+  /**
+   * The graph of objects in the heap, which you can use to navigate the heap.
+   */
+  val graph: HeapGraph,
+  /**
+   * Holds the actual value that this [HeapValue] represents.
+   */
+  val holder: ValueHolder
 ) {
 
   /**

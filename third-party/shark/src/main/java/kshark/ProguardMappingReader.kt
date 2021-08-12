@@ -6,7 +6,7 @@ import java.io.InputStream
 import java.text.ParseException
 
 class ProguardMappingReader(
-    private val proguardMappingInputStream: InputStream
+  private val proguardMappingInputStream: InputStream
 ) {
 
   @Throws(FileNotFoundException::class, IOException::class, ParseException::class)
@@ -37,7 +37,10 @@ class ProguardMappingReader(
   }
 
   // classes are stored as "clearName -> obfuscatedName:"
-  private fun parseClassMapping(line: String, proguardMapping: ProguardMapping): String? {
+  private fun parseClassMapping(
+    line: String,
+    proguardMapping: ProguardMapping
+  ): String? {
     val arrowPosition = line.indexOf(ARROW_SYMBOL)
     if (arrowPosition == -1) {
       return null
@@ -50,7 +53,7 @@ class ProguardMappingReader(
 
     val clearClassName = line.substring(0, arrowPosition).trim()
     val obfuscatedClassName =
-        line.substring(arrowPosition + ARROW_SYMBOL.length, colonPosition).trim()
+      line.substring(arrowPosition + ARROW_SYMBOL.length, colonPosition).trim()
 
     proguardMapping.addMapping(obfuscatedClassName, clearClassName)
 
@@ -59,9 +62,9 @@ class ProguardMappingReader(
 
   // fields are stored as "typeName clearFieldName -> obfuscatedFieldName"
   private fun parseClassField(
-      line: String,
-      currentClassName: String,
-      proguardMapping: ProguardMapping
+    line: String,
+    currentClassName: String,
+    proguardMapping: ProguardMapping
   ) {
     val spacePosition = line.indexOf(SPACE_SYMBOL)
     if (spacePosition == -1) {

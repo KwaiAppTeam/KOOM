@@ -3,8 +3,8 @@ package kshark
 import kshark.HprofRecord.HeapDumpRecord.ObjectRecord.PrimitiveArrayDumpRecord.IntArrayDump
 
 class AndroidResourceIdNames private constructor(
-    private val resourceIds: IntArray,
-    private val names: Array<String>
+  private val resourceIds: IntArray,
+  private val names: Array<String>
 ) {
 
   operator fun get(id: Int): String? {
@@ -34,10 +34,9 @@ class AndroidResourceIdNames private constructor(
      * Resources.getResourceEntryName but returns null when the name isn't found instead of
      * throwing an exception.
      */
-    @Synchronized
-    fun saveToMemory(
-        getResourceTypeName: (Int) -> String?,
-        getResourceEntryName: (Int) -> String?
+    @Synchronized fun saveToMemory(
+      getResourceTypeName: (Int) -> String?,
+      getResourceEntryName: (Int) -> String?
     ) {
       if (holderField != null) {
         return
@@ -56,9 +55,9 @@ class AndroidResourceIdNames private constructor(
         }
       }
       val resourceIds = idToNamePairs.map { it.first }
-          .toIntArray()
+        .toIntArray()
       val names = idToNamePairs.map { it.second }
-          .toTypedArray()
+        .toTypedArray()
       holderField = AndroidResourceIdNames(resourceIds, names)
     }
 
@@ -80,12 +79,18 @@ class AndroidResourceIdNames private constructor(
         holderClass?.let {
           val holderField = holderClass["holderField"]!!
           holderField.valueAsInstance?.let { instance ->
+            println(instance.instanceClassName)
+            instance.readFields().forEach {
+              println("${it.name}=${it.value.holder}")
+            }
+            val resourceIdsField = instance[className, "resourceIds"]!!
+            val resourceIdsArray = resourceIdsField.valueAsPrimitiveArray!!
             val resourceIds =
-                (instance[className, "resourceIds"]!!.valueAsPrimitiveArray!!.readRecord() as IntArrayDump).array
+              (resourceIdsArray.readRecord() as IntArrayDump).array
             val names = instance[className, "names"]!!.valueAsObjectArray!!.readElements()
-                .map { it.readAsJavaString()!! }
-                .toList()
-                .toTypedArray()
+              .map { it.readAsJavaString()!! }
+              .toList()
+              .toTypedArray()
             AndroidResourceIdNames(resourceIds, names)
           }
         }
@@ -96,5 +101,4 @@ class AndroidResourceIdNames private constructor(
       holderField = null
     }
   }
-
 }

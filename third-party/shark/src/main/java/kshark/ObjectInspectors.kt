@@ -18,7 +18,7 @@ package kshark
 import kshark.FilteringLeakingObjectFinder.LeakingObjectFilter
 import kshark.HeapObject.HeapClass
 import kshark.HeapObject.HeapInstance
-import java.util.*
+import java.util.EnumSet
 
 /**
  * A set of default [ObjectInspector]s that knows about common JDK objects.
@@ -29,13 +29,14 @@ enum class ObjectInspectors : ObjectInspector {
 
     override val leakingObjectFilter = { heapObject: HeapObject ->
       KeyedWeakReferenceFinder.findKeyedWeakReferences(heapObject.graph)
-          .any { reference ->
-            reference.referent.value == heapObject.objectId
-          }
+        .filter { it.hasReferent && it.isRetained }
+        .any { reference ->
+          reference.referent.value == heapObject.objectId
+        }
     }
 
     override fun inspect(
-        reporter: ObjectReporter
+      reporter: ObjectReporter
     ) {
       val graph = reporter.heapObject.graph
       val references = KeyedWeakReferenceFinder.findKeyedWeakReferences(graph)
@@ -62,7 +63,7 @@ enum class ObjectInspectors : ObjectInspector {
 
   CLASSLOADER {
     override fun inspect(
-        reporter: ObjectReporter
+      reporter: ObjectReporter
     ) {
       reporter.whenInstanceOf(ClassLoader::class) {
         notLeakingReasons += "A ClassLoader is never leaking"
@@ -72,7 +73,7 @@ enum class ObjectInspectors : ObjectInspector {
 
   CLASS {
     override fun inspect(
-        reporter: ObjectReporter
+      reporter: ObjectReporter
     ) {
       if (reporter.heapObject is HeapClass) {
         reporter.notLeakingReasons += "a class is never leaking"
@@ -82,7 +83,7 @@ enum class ObjectInspectors : ObjectInspector {
 
   ANONYMOUS_CLASS {
     override fun inspect(
-        reporter: ObjectReporter
+      reporter: ObjectReporter
     ) {
       val heapObject = reporter.heapObject
       if (heapObject is HeapInstance) {
@@ -115,7 +116,7 @@ enum class ObjectInspectors : ObjectInspector {
 
   THREAD {
     override fun inspect(
-        reporter: ObjectReporter
+      reporter: ObjectReporter
     ) {
       reporter.whenInstanceOf(Thread::class) { instance ->
         val threadName = instance[Thread::class, "name"]!!.value.readAsJavaString()
@@ -140,17 +141,17 @@ enum class ObjectInspectors : ObjectInspector {
      * Returns a list of [LeakingObjectFilter] suitable for common JDK projects.
      */
     val jdkLeakingObjectFilters: List<LeakingObjectFilter> =
-        createLeakingObjectFilters(EnumSet.allOf(ObjectInspectors::class.java))
+      createLeakingObjectFilters(EnumSet.allOf(ObjectInspectors::class.java))
 
     /**
      * Creates a list of [LeakingObjectFilter] based on the passed in [ObjectInspectors].
      */
     fun createLeakingObjectFilters(inspectors: Set<ObjectInspectors>): List<LeakingObjectFilter> =
-        inspectors.mapNotNull { it.leakingObjectFilter }
-            .map { filter ->
-              object : LeakingObjectFilter {
-                override fun isLeakingObject(heapObject: HeapObject) = filter(heapObject)
-              }
-            }
+      inspectors.mapNotNull { it.leakingObjectFilter }
+        .map { filter ->
+          object : LeakingObjectFilter {
+            override fun isLeakingObject(heapObject: HeapObject) = filter(heapObject)
+          }
+        }
   }
 }

@@ -16,15 +16,22 @@
 
 package kshark.internal.hppc
 
-import java.util.*
+import java.util.Locale
 
 /**
  * Code from com.carrotsearch.hppc.LongLongScatterMap copy pasted, inlined and converted to Kotlin.
  *
  * See https://github.com/carrotsearch/hppc .
  */
-@Suppress("TooManyFunctions")
-class LongLongScatterMap {
+internal class LongLongScatterMap constructor(expectedElements: Int = 4) {
+
+  interface ForEachCallback {
+    fun onEntry(
+      key: Long,
+      value: Long
+    )
+  }
+
   /**
    * The array holding keys.
    */
@@ -67,12 +74,12 @@ class LongLongScatterMap {
     get() = size == 0
 
   init {
-    ensureCapacity(4)
+    ensureCapacity(expectedElements)
   }
 
   operator fun set(
-      key: Long,
-      value: Long
+    key: Long,
+    value: Long
   ): Long {
     val mask = this.mask
     if (key == 0L) {
@@ -175,7 +182,7 @@ class LongLongScatterMap {
     return getSlotValue(slot)
   }
 
-  fun forEach(block: (Long, Long) -> Unit) {
+  fun forEach(forEachCallback: ForEachCallback) {
     val max = mask + 1
     var slot = -1
 
@@ -186,7 +193,7 @@ class LongLongScatterMap {
         while (slot < max) {
           existing = keys[slot]
           if (existing != 0L) {
-            block(existing, values[slot])
+            forEachCallback.onEntry(existing, values[slot])
             continue@exitWhile
           }
           slot++
@@ -195,14 +202,14 @@ class LongLongScatterMap {
 
       if (slot == max && hasEmptyKey) {
         slot++
-        block(0L, values[max])
+        forEachCallback.onEntry(0L, values[max])
         continue@exitWhile
       }
       break@exitWhile
     }
   }
 
-  fun entrySequence(): Sequence<Pair<Long, Long>> {
+  fun entrySequence(): Sequence<LongLongPair> {
     val max = mask + 1
     var slot = -1
     return generateSequence {
@@ -277,8 +284,8 @@ class LongLongScatterMap {
    * Rehash from old buffers to new buffers.
    */
   private fun rehash(
-      fromKeys: LongArray,
-      fromValues: LongArray
+    fromKeys: LongArray,
+    fromValues: LongArray
   ) {
     // Rehash all stored key/value pairs into the new buffers.
     val keys = this.keys
@@ -320,12 +327,12 @@ class LongLongScatterMap {
       this.keys = prevKeys
       this.values = prevValues
       throw RuntimeException(
-          String.format(
-              Locale.ROOT,
-              "Not enough memory to allocate buffers for rehashing: %,d -> %,d",
-              this.mask + 1,
-              arraySize
-          ), e
+        String.format(
+          Locale.ROOT,
+          "Not enough memory to allocate buffers for rehashing: %,d -> %,d",
+          this.mask + 1,
+          arraySize
+        ), e
       )
     }
 
@@ -343,9 +350,9 @@ class LongLongScatterMap {
    * and rehash all keys, substituting new buffers at the end.
    */
   private fun allocateThenInsertThenRehash(
-      slot: Int,
-      pendingKey: Long,
-      pendingValue: Long
+    slot: Int,
+    pendingKey: Long,
+    pendingValue: Long
   ) {
 
     // Try to allocate new buffers first. If we OOM, we leave in a consistent state.

@@ -2,8 +2,10 @@ package kshark
 
 /**
  * Reports progress from the [HeapAnalyzer] as they occur, as [Step] values.
+ *
+ * This is a functional interface with which you can create a [OnAnalysisProgressListener] from a lambda.
  */
-interface OnAnalysisProgressListener {
+fun interface OnAnalysisProgressListener {
 
   // These steps are defined in the order in which they occur.
   enum class Step {
@@ -12,6 +14,7 @@ interface OnAnalysisProgressListener {
     FINDING_RETAINED_OBJECTS,
     FINDING_PATHS_TO_RETAINED_OBJECTS,
     FINDING_DOMINATORS,
+    INSPECTING_OBJECTS,
     COMPUTING_NATIVE_RETAINED_SIZE,
     COMPUTING_RETAINED_SIZE,
     BUILDING_LEAK_TRACES,
@@ -40,10 +43,10 @@ interface OnAnalysisProgressListener {
      * ```
      */
     inline operator fun invoke(crossinline block: (Step) -> Unit): OnAnalysisProgressListener =
-        object : OnAnalysisProgressListener {
-          override fun onAnalysisProgress(step: Step) {
-            block(step)
-          }
+      object : OnAnalysisProgressListener {
+        override fun onAnalysisProgress(step: Step) {
+          block(step)
         }
+      }
   }
 }

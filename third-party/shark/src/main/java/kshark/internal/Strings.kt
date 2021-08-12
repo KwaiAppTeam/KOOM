@@ -19,8 +19,8 @@ internal fun String.createSHA1Hash(): String = createHash(this, "SHA-1")
  * [this snippet](http://www.androidsnippets.com/create-a-md5-hash-and-dump-as-a-hex-string).
  */
 private fun createHash(
-    text: String,
-    algorithm: String
+  text: String,
+  algorithm: String
 ): String {
   try {
     // Create MD5 Hash.

@@ -16,14 +16,14 @@
 
 package kshark.internal.hppc
 
-import java.util.*
+import java.util.Locale
 
 /**
  * Code from com.carrotsearch.hppc.LongScatterSet copy pasted, inlined and converted to Kotlin.
  *
  * See https://github.com/carrotsearch/hppc .
  */
-class LongScatterSet {
+internal class LongScatterSet(expectedElements: Int = 4) {
   /** The hash array holding keys.  */
   private var keys: LongArray = longArrayOf()
 
@@ -57,7 +57,7 @@ class LongScatterSet {
   private val loadFactor = 0.75
 
   init {
-    ensureCapacity(4)
+    ensureCapacity(expectedElements)
   }
 
   private fun hashKey(key: Long): Int {
@@ -117,6 +117,60 @@ class LongScatterSet {
     }
   }
 
+  fun remove(key: Long): Boolean {
+    return if (key == 0L) {
+      val hadEmptyKey = hasEmptyKey
+      hasEmptyKey = false
+      hadEmptyKey
+    } else {
+      val keys = this.keys
+      val mask = this.mask
+      var slot = hashKey(key) and mask
+      var existing: Long = keys[slot]
+      while (existing != 0L) {
+        if (existing == key) {
+          shiftConflictingKeys(slot)
+          return true
+        }
+        slot = slot + 1 and mask
+        existing = keys[slot]
+      }
+      false
+    }
+  }
+
+  /**
+   * Shift all the slot-conflicting keys allocated to (and including) `slot`.
+   */
+  private fun shiftConflictingKeys(inputGapSlot: Int) {
+    var gapSlot = inputGapSlot
+    val keys = keys
+    val mask = mask
+    // Perform shifts of conflicting keys to fill in the gap.
+    var distance = 0
+    while (true) {
+      val slot = (gapSlot + (++distance)) and mask
+      val existing = keys[slot]
+      if (existing == 0L) {
+        break
+      }
+      val idealSlot = hashKey(existing)
+      val shift = (slot - idealSlot) and mask
+      if (shift >= distance) {
+        // Entry at this position was originally at or before the gap slot.
+        // Move the conflict-shifted entry to the gap's position and repeat the procedure
+        // for any entries to the right of the current position, treating it
+        // as the new gap.
+        keys[gapSlot] = existing
+        gapSlot = slot
+        distance = 0
+      }
+    }
+    // Mark the last found gap slot without a conflict as empty.
+    keys[gapSlot] = 0L
+    assigned--
+  }
+
   fun release() {
     assigned = 0
     hasEmptyKey = false
@@ -168,12 +222,12 @@ class LongScatterSet {
     } catch (e: OutOfMemoryError) {
       this.keys = prevKeys
       throw RuntimeException(
-          String.format(
-              Locale.ROOT,
-              "Not enough memory to allocate buffers for rehashing: %,d -> %,d",
-              size(),
-              arraySize
-          ), e
+        String.format(
+          Locale.ROOT,
+          "Not enough memory to allocate buffers for rehashing: %,d -> %,d",
+          size(),
+          arraySize
+        ), e
       )
     }
 
@@ -182,8 +236,8 @@ class LongScatterSet {
   }
 
   private fun allocateThenInsertThenRehash(
-      slot: Int,
-      pendingKey: Long
+    slot: Int,
+    pendingKey: Long
   ) {
     // Try to allocate new buffers first. If we OOM, we leave in a consistent state.
     val prevKeys = this.keys

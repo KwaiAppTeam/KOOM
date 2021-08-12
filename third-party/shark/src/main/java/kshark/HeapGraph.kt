@@ -4,6 +4,7 @@ import kshark.HeapObject.HeapClass
 import kshark.HeapObject.HeapInstance
 import kshark.HeapObject.HeapObjectArray
 import kshark.HeapObject.HeapPrimitiveArray
+import kotlin.jvm.Throws
 
 /**
  * Enables navigation through the heap graph of objects.
@@ -15,6 +16,16 @@ interface HeapGraph {
    * In memory store that can be used to store objects this [HeapGraph] instance.
    */
   val context: GraphContext
+
+  val objectCount: Int
+
+  val classCount: Int
+
+  val instanceCount: Int
+
+  val objectArrayCount: Int
+
+  val primitiveArrayCount: Int
 
   /**
    * All GC roots which type matches types known to this heap graph and which point to non null
@@ -65,6 +76,13 @@ interface HeapGraph {
    */
   @Throws(IllegalArgumentException::class)
   fun findObjectById(objectId: Long): HeapObject
+
+  /**
+   * Returns the [HeapObject] corresponding to the provided [objectIndex], and throws
+   * [IllegalArgumentException] if [objectIndex] is less than 0 or more than [objectCount] - 1.
+   */
+  @Throws(IllegalArgumentException::class)
+  fun findObjectByIndex(objectIndex: Int): HeapObject
 
   /**
    * Returns the [HeapObject] corresponding to the provided [objectId] or null if it cannot be

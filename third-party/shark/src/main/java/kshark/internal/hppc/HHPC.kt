@@ -16,7 +16,7 @@
 
 package kshark.internal.hppc
 
-import java.util.*
+import java.util.Locale
 
 /**
  * Code from https://github.com/carrotsearch/hppc copy pasted, inlined and converted to Kotlin.
@@ -34,11 +34,11 @@ internal object HHPC {
   private const val MAX_HASH_ARRAY_LENGTH = (-0x80000000).ushr(1)
 
   fun minBufferSize(
-      elements: Int,
-      loadFactor: Double
+    elements: Int,
+    loadFactor: Double
   ): Int {
     var length = Math.ceil(elements / loadFactor)
-        .toLong()
+      .toLong()
     if (length == elements.toLong()) {
       length++
     }
@@ -46,12 +46,12 @@ internal object HHPC {
 
     if (length > MAX_HASH_ARRAY_LENGTH) {
       throw RuntimeException(
-          String.format(
-              Locale.ROOT,
-              "Maximum array size exceeded for this load factor (elements: %d, load factor: %f)",
-              elements,
-              loadFactor
-          )
+        String.format(
+          Locale.ROOT,
+          "Maximum array size exceeded for this load factor (elements: %d, load factor: %f)",
+          elements,
+          loadFactor
+        )
       )
     }
 
@@ -72,29 +72,28 @@ internal object HHPC {
   }
 
   fun expandAtCount(
-      arraySize: Int,
-      loadFactor: Double
+    arraySize: Int,
+    loadFactor: Double
   ): Int {
     return Math.min(arraySize - 1, Math.ceil(arraySize * loadFactor).toInt())
   }
 
   fun nextBufferSize(
-      arraySize: Int,
-      elements: Int,
-      loadFactor: Double
+    arraySize: Int,
+    elements: Int,
+    loadFactor: Double
   ): Int {
     if (arraySize == MAX_HASH_ARRAY_LENGTH) {
       throw RuntimeException(
-          String.format(
-              Locale.ROOT,
-              "Maximum array size exceeded for this load factor (elements: %d, load factor: %f)",
-              elements,
-              loadFactor
-          )
+        String.format(
+          Locale.ROOT,
+          "Maximum array size exceeded for this load factor (elements: %d, load factor: %f)",
+          elements,
+          loadFactor
+        )
       )
     }
 
     return arraySize shl 1
   }
-
 }
