@@ -16,14 +16,13 @@
 
 package kshark.internal.hppc
 
-import java.util.*
+import java.util.Locale
 
 /**
  * Code from com.carrotsearch.hppc.LongLongScatterMap copy pasted, inlined and converted to Kotlin.
  *
  * See https://github.com/carrotsearch/hppc .
  */
-@Suppress("TooManyFunctions")
 internal class LongObjectScatterMap<T> {
   /**
    * The array holding keys.
@@ -72,8 +71,8 @@ internal class LongObjectScatterMap<T> {
   }
 
   operator fun set(
-      key: Long,
-      value: T
+    key: Long,
+    value: T
   ): T? {
     val mask = this.mask
     if (key == 0L) {
@@ -155,7 +154,7 @@ internal class LongObjectScatterMap<T> {
     }
   }
 
-  fun entrySequence(): Sequence<Pair<Long, T>> {
+  fun entrySequence(): Sequence<LongObjectPair<T>> {
     val max = mask + 1
     var slot = -1
     return generateSequence {
@@ -230,8 +229,8 @@ internal class LongObjectScatterMap<T> {
    * Rehash from old buffers to new buffers.
    */
   private fun rehash(
-      fromKeys: LongArray,
-      fromValues: Array<T?>
+    fromKeys: LongArray,
+    fromValues: Array<T?>
   ) {
     // Rehash all stored key/value pairs into the new buffers.
     val keys = this.keys
@@ -274,12 +273,12 @@ internal class LongObjectScatterMap<T> {
       this.keys = prevKeys
       this.values = prevValues
       throw RuntimeException(
-          String.format(
-              Locale.ROOT,
-              "Not enough memory to allocate buffers for rehashing: %,d -> %,d",
-              this.mask + 1,
-              arraySize
-          ), e
+        String.format(
+          Locale.ROOT,
+          "Not enough memory to allocate buffers for rehashing: %,d -> %,d",
+          this.mask + 1,
+          arraySize
+        ), e
       )
     }
 
@@ -297,9 +296,9 @@ internal class LongObjectScatterMap<T> {
    * and rehash all keys, substituting new buffers at the end.
    */
   private fun allocateThenInsertThenRehash(
-      slot: Int,
-      pendingKey: Long,
-      pendingValue: T
+    slot: Int,
+    pendingKey: Long,
+    pendingValue: T
   ) {
 
     // Try to allocate new buffers first. If we OOM, we leave in a consistent state.

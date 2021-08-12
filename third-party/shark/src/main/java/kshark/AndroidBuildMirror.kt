@@ -5,18 +5,14 @@ package kshark
  * Retrieve a cached instances via [fromHeapGraph].
  */
 class AndroidBuildMirror(
-    /**
-     * Value of android.os.Build.MANUFACTURER
-     */
-    //Added by Kwai, Inc.
-    //Add default value, have compatibility with stripped hprof.
-    val manufacturer: String = "Crop",
-    /**
-     * Value of android.os.Build.VERSION.SDK_INT
-     */
-    //Added by Kwai, Inc.
-    //Add default value, have compatibility with stripped hprof.
-    val sdkInt: Int = 21
+  /**
+   * Value of android.os.Build.MANUFACTURER
+   */
+  val manufacturer: String,
+  /**
+   * Value of android.os.Build.VERSION.SDK_INT
+   */
+  val sdkInt: Int
 ) {
   companion object {
     /**
@@ -26,14 +22,9 @@ class AndroidBuildMirror(
       return graph.context.getOrPut(AndroidBuildMirror::class.java.name) {
         val buildClass = graph.findClassByName("android.os.Build")!!
         val versionClass = graph.findClassByName("android.os.Build\$VERSION")!!
-        val manufacturer = buildClass["MANUFACTURER"]!!.value
-        if (manufacturer.isNonNullReference
-            || manufacturer.readAsJavaString().isNullOrEmpty())
-          AndroidBuildMirror()
-        else {
-          val sdkInt = versionClass["SDK_INT"]!!.value.asInt!!
-          AndroidBuildMirror(manufacturer.readAsJavaString()!!, sdkInt)
-        }
+        val manufacturer = buildClass["MANUFACTURER"]!!.value.readAsJavaString()!!
+        val sdkInt = versionClass["SDK_INT"]!!.value.asInt!!
+        AndroidBuildMirror(manufacturer, sdkInt)
       }
     }
   }

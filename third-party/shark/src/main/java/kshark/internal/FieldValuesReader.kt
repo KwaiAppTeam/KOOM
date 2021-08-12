@@ -3,54 +3,43 @@ package kshark.internal
 import kshark.HprofRecord.HeapDumpRecord.ObjectRecord.ClassDumpRecord.FieldRecord
 import kshark.HprofRecord.HeapDumpRecord.ObjectRecord.InstanceDumpRecord
 import kshark.PrimitiveType
-import kshark.PrimitiveType.*
+import kshark.PrimitiveType.BOOLEAN
+import kshark.PrimitiveType.BYTE
+import kshark.PrimitiveType.CHAR
+import kshark.PrimitiveType.DOUBLE
+import kshark.PrimitiveType.FLOAT
+import kshark.PrimitiveType.INT
+import kshark.PrimitiveType.LONG
+import kshark.PrimitiveType.SHORT
 import kshark.ValueHolder
 import kshark.ValueHolder.BooleanHolder
+import kshark.ValueHolder.ByteHolder
+import kshark.ValueHolder.CharHolder
+import kshark.ValueHolder.DoubleHolder
+import kshark.ValueHolder.FloatHolder
 import kshark.ValueHolder.IntHolder
 import kshark.ValueHolder.LongHolder
 import kshark.ValueHolder.ReferenceHolder
+import kshark.ValueHolder.ShortHolder
 
 internal class FieldValuesReader(
-    private val record: InstanceDumpRecord,
-    private val identifierByteSize: Int
+  private val record: InstanceDumpRecord,
+  private val identifierByteSize: Int
 ) {
 
   private var position = 0
 
-  //Added by Kwai, Inc.
-  //Strip primitive type to improve performance.
-  fun readValue(field: FieldRecord): ValueHolder? {
+  fun readValue(field: FieldRecord): ValueHolder {
     return when (field.type) {
       PrimitiveType.REFERENCE_HPROF_TYPE -> ReferenceHolder(readId())
-      BOOLEAN_TYPE -> {
-        BooleanHolder(readBoolean())
-      }
-      CHAR_TYPE -> {
-        readChar()
-        null
-      }
-      FLOAT_TYPE -> {
-        readFloat()
-        null
-      }
-      DOUBLE_TYPE -> {
-        readDouble()
-        null
-      }
-      BYTE_TYPE -> {
-        readByte()
-        null
-      }
-      SHORT_TYPE -> {
-        readShort()
-        null
-      }
-      INT_TYPE -> {
-        IntHolder(readInt())
-      }
-      LONG_TYPE -> {
-        LongHolder(readLong())
-      }
+      BOOLEAN_TYPE -> BooleanHolder(readBoolean())
+      CHAR_TYPE -> CharHolder(readChar())
+      FLOAT_TYPE -> FloatHolder(readFloat())
+      DOUBLE_TYPE -> DoubleHolder(readDouble())
+      BYTE_TYPE -> ByteHolder(readByte())
+      SHORT_TYPE -> ShortHolder(readShort())
+      INT_TYPE -> IntHolder(readInt())
+      LONG_TYPE -> LongHolder(readLong())
       else -> throw IllegalStateException("Unknown type ${field.type}")
     }
   }
@@ -58,8 +47,8 @@ internal class FieldValuesReader(
   private fun readId(): Long {
     // As long as we don't interpret IDs, reading signed values here is fine.
     return when (identifierByteSize) {
-      //1 -> readByte().toLong()
-      //2 -> readShort().toLong()
+      1 -> readByte().toLong()
+      2 -> readShort().toLong()
       4 -> readInt().toLong()
       8 -> readLong()
       else -> throw IllegalArgumentException("ID Length must be 1, 2, 4, or 8")
@@ -72,10 +61,10 @@ internal class FieldValuesReader(
     return value != 0.toByte()
   }
 
-  private fun readByte() {
-    //val value = record.fieldValues[position]
+  private fun readByte(): Byte {
+    val value = record.fieldValues[position]
     position++
-    //return value
+    return value
   }
 
   private fun readInt(): Int {
@@ -84,10 +73,10 @@ internal class FieldValuesReader(
     return value
   }
 
-  private fun readShort() {
-    //val value = record.fieldValues.readShort(position)
+  private fun readShort(): Short {
+    val value = record.fieldValues.readShort(position)
     position += 2
-    //return value
+    return value
   }
 
   private fun readLong(): Long {
@@ -96,20 +85,18 @@ internal class FieldValuesReader(
     return value
   }
 
-  private fun readFloat() {
-    position += 4
-    //return Float.fromBits(readInt())
+  private fun readFloat(): Float {
+    return Float.fromBits(readInt())
   }
 
-  private fun readDouble() {
-    position += 8
-    //return Double.fromBits(readLong())
+  private fun readDouble(): Double {
+    return Double.fromBits(readLong())
   }
 
-  private fun readChar() {
-    //val string = String(record.fieldValues, position, 2, Charsets.UTF_16BE)
+  private fun readChar(): Char {
+    val string = String(record.fieldValues, position, 2, Charsets.UTF_16BE)
     position += 2
-    //return string[0]
+    return string[0]
   }
 
   companion object {
@@ -122,5 +109,4 @@ internal class FieldValuesReader(
     private val INT_TYPE = INT.hprofType
     private val LONG_TYPE = LONG.hprofType
   }
-
 }

@@ -6,4 +6,5 @@ include ':koom-native'
 include ':koom-base'
 include ':kwai-unwind'
 include ':kwai-android-base'
+include ':koom-java'
 rootProject.name = "KOOM"

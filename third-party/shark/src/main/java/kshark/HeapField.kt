@@ -9,19 +9,19 @@ import kshark.HeapObject.HeapPrimitiveArray
  * Represents a static field or an instance field.
  */
 class HeapField(
-    /**
-     * The class this field was declared in.
-     */
-    val declaringClass: HeapClass,
-    /**
-     * Name of the field
-     */
-    val name: String,
-    /**
-     * Value of the field. Also see shorthands [valueAsClass], [valueAsInstance],
-     * [valueAsObjectArray], [valueAsPrimitiveArray].
-     */
-    val value: HeapValue
+  /**
+   * The class this field was declared in.
+   */
+  val declaringClass: HeapClass,
+  /**
+   * Name of the field
+   */
+  val name: String,
+  /**
+   * Value of the field. Also see shorthands [valueAsClass], [valueAsInstance],
+   * [valueAsObjectArray], [valueAsPrimitiveArray].
+   */
+  val value: HeapValue
 ) {
 
   /**

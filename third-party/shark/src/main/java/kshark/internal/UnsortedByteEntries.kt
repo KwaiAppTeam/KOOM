@@ -10,10 +10,10 @@ import kshark.internal.aosp.ByteArrayTimSort
  * is sorted and turned into a [SortedBytesMap] by calling [moveToSortedMap].
  */
 internal class UnsortedByteEntries(
-    private val bytesPerValue: Int,
-    private val longIdentifiers: Boolean,
-    private val initialCapacity: Int = 4,
-    private val growthFactor: Double = 2.0
+  private val bytesPerValue: Int,
+  private val longIdentifiers: Boolean,
+  private val initialCapacity: Int = 4,
+  private val growthFactor: Double = 2.0
 ) {
 
   private val bytesPerEntry = bytesPerValue + if (longIdentifiers) 8 else 4
@@ -26,7 +26,7 @@ internal class UnsortedByteEntries(
   private var currentCapacity = 0
 
   fun append(
-      key: Long
+    key: Long
   ): MutableByteSubArray {
     if (entries == null) {
       currentCapacity = initialCapacity
@@ -52,22 +52,22 @@ internal class UnsortedByteEntries(
     // Sort entries by keys, which are ids of 4 or 8 bytes.
     ByteArrayTimSort.sort(entries, 0, assigned, bytesPerEntry, object : ByteArrayComparator {
       override fun compare(
-          entrySize: Int,
-          o1Array: ByteArray,
-          o1Index: Int,
-          o2Array: ByteArray,
-          o2Index: Int
+        entrySize: Int,
+        o1Array: ByteArray,
+        o1Index: Int,
+        o2Array: ByteArray,
+        o2Index: Int
       ): Int {
         return if (longIdentifiers) {
           readLong(o1Array, o1Index * entrySize)
-              .compareTo(
-                  readLong(o2Array, o2Index * entrySize)
-              )
+            .compareTo(
+              readLong(o2Array, o2Index * entrySize)
+            )
         } else {
           readInt(o1Array, o1Index * entrySize)
-              .compareTo(
-                  readInt(o2Array, o2Index * entrySize)
-              )
+            .compareTo(
+              readInt(o2Array, o2Index * entrySize)
+            )
         }
       }
     })
@@ -77,19 +77,19 @@ internal class UnsortedByteEntries(
     this.entries = null
     assigned = 0
     return SortedBytesMap(
-        longIdentifiers, bytesPerValue, sortedEntries
+      longIdentifiers, bytesPerValue, sortedEntries
     )
   }
 
   private fun readInt(
-      array: ByteArray,
-      index: Int
+    array: ByteArray,
+    index: Int
   ): Int {
     var pos = index
     return (array[pos++] and 0xff shl 24
-        or (array[pos++] and 0xff shl 16)
-        or (array[pos++] and 0xff shl 8)
-        or (array[pos] and 0xff))
+      or (array[pos++] and 0xff shl 16)
+      or (array[pos++] and 0xff shl 8)
+      or (array[pos] and 0xff))
   }
 
   @Suppress("NOTHING_TO_INLINE") // Syntactic sugar.
@@ -99,18 +99,18 @@ internal class UnsortedByteEntries(
   private inline infix fun Byte.and(other: Int): Int = toInt() and other
 
   private fun readLong(
-      array: ByteArray,
-      index: Int
+    array: ByteArray,
+    index: Int
   ): Long {
     var pos = index
     return (array[pos++] and 0xffL shl 56
-        or (array[pos++] and 0xffL shl 48)
-        or (array[pos++] and 0xffL shl 40)
-        or (array[pos++] and 0xffL shl 32)
-        or (array[pos++] and 0xffL shl 24)
-        or (array[pos++] and 0xffL shl 16)
-        or (array[pos++] and 0xffL shl 8)
-        or (array[pos] and 0xffL))
+      or (array[pos++] and 0xffL shl 48)
+      or (array[pos++] and 0xffL shl 40)
+      or (array[pos++] and 0xffL shl 32)
+      or (array[pos++] and 0xffL shl 24)
+      or (array[pos++] and 0xffL shl 16)
+      or (array[pos++] and 0xffL shl 8)
+      or (array[pos] and 0xffL))
   }
 
   private fun growEntries(newCapacity: Int) {
@@ -153,8 +153,8 @@ internal class UnsortedByteEntries(
     }
 
     fun writeTruncatedLong(
-        value: Long,
-        byteCount: Int
+      value: Long,
+      byteCount: Int
     ) {
       val index = subArrayIndex
       subArrayIndex += byteCount
@@ -190,6 +190,5 @@ internal class UnsortedByteEntries(
       values[pos] = (value and 0xffL).toByte()
     }
   }
-
 }
 

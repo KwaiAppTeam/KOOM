@@ -1,18 +1,4 @@
-/*
- * Copyright (C) 2015 Square, Inc.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+@file:Suppress("INVISIBLE_REFERENCE", "INVISIBLE_MEMBER")
 package kshark.internal
 
 import kshark.GcRoot
@@ -25,6 +11,7 @@ import kshark.HeapObject.HeapClass
 import kshark.HeapObject.HeapInstance
 import kshark.HeapObject.HeapObjectArray
 import kshark.HeapObject.HeapPrimitiveArray
+import kshark.HprofRecord.HeapDumpRecord.ObjectRecord.ClassDumpRecord.FieldRecord
 import kshark.IgnoredReferenceMatcher
 import kshark.LeakTraceReference.ReferenceType.ARRAY_ENTRY
 import kshark.LeakTraceReference.ReferenceType.INSTANCE_FIELD
@@ -34,55 +21,35 @@ import kshark.LibraryLeakReferenceMatcher
 import kshark.OnAnalysisProgressListener
 import kshark.OnAnalysisProgressListener.Step.FINDING_DOMINATORS
 import kshark.OnAnalysisProgressListener.Step.FINDING_PATHS_TO_RETAINED_OBJECTS
+import kshark.PrimitiveType
+import kshark.PrimitiveType.BOOLEAN
+import kshark.PrimitiveType.BYTE
+import kshark.PrimitiveType.CHAR
+import kshark.PrimitiveType.DOUBLE
+import kshark.PrimitiveType.FLOAT
 import kshark.PrimitiveType.INT
+import kshark.PrimitiveType.LONG
+import kshark.PrimitiveType.SHORT
 import kshark.ReferenceMatcher
 import kshark.ReferencePattern
 import kshark.ReferencePattern.InstanceFieldPattern
 import kshark.ReferencePattern.NativeGlobalVariablePattern
 import kshark.ReferencePattern.StaticFieldPattern
-import kshark.SharkLog
 import kshark.ValueHolder
+import kshark.ValueHolder.ReferenceHolder
+import kshark.internal.PathFinder.VisitTracker.Dominated
+import kshark.internal.PathFinder.VisitTracker.Visited
+import kshark.internal.ReferencePathNode.ChildNode
 import kshark.internal.ReferencePathNode.ChildNode.LibraryLeakChildNode
 import kshark.internal.ReferencePathNode.ChildNode.NormalNode
 import kshark.internal.ReferencePathNode.LibraryLeakNode
 import kshark.internal.ReferencePathNode.RootNode
 import kshark.internal.ReferencePathNode.RootNode.LibraryLeakRootNode
 import kshark.internal.ReferencePathNode.RootNode.NormalRootNode
-import kshark.internal.hppc.LongLongScatterMap
 import kshark.internal.hppc.LongScatterSet
 import java.util.ArrayDeque
 import java.util.Deque
 import java.util.LinkedHashMap
-import kotlin.Boolean
-import kotlin.Comparator
-import kotlin.IllegalStateException
-import kotlin.Int
-import kotlin.Long
-import kotlin.Pair
-import kotlin.Short
-import kotlin.String
-import kotlin.Suppress
-import kotlin.collections.HashSet
-import kotlin.collections.List
-import kotlin.collections.Map
-import kotlin.collections.MutableMap
-import kotlin.collections.Set
-import kotlin.collections.component1
-import kotlin.collections.component2
-import kotlin.collections.emptyMap
-import kotlin.collections.filter
-import kotlin.collections.first
-import kotlin.collections.forEach
-import kotlin.collections.forEachIndexed
-import kotlin.collections.isNotEmpty
-import kotlin.collections.iterator
-import kotlin.collections.map
-import kotlin.collections.mutableListOf
-import kotlin.collections.mutableMapOf
-import kotlin.collections.set
-import kotlin.collections.sortBy
-import kotlin.collections.sortedWith
-import kotlin.to
 
 /**
  * Not thread safe.
@@ -91,23 +58,63 @@ import kotlin.to
  * identified as "to visit last" and then visiting them as needed if no path is
  * found.
  */
-@Suppress("TooManyFunctions")
-class PathFinder(
-    private val graph: HeapGraph,
-    private val listener: OnAnalysisProgressListener,
-    referenceMatchers: List<ReferenceMatcher>,
-    private val enableSameInstanceThreshold: Boolean
+internal class PathFinder(
+  private val graph: HeapGraph,
+  private val listener: OnAnalysisProgressListener,
+  referenceMatchers: List<ReferenceMatcher>
 ) {
 
   class PathFindingResults(
-      val pathsToLeakingObjects: List<ReferencePathNode>,
-      val dominatedObjectIds: LongLongScatterMap
+    val pathsToLeakingObjects: List<ReferencePathNode>,
+    val dominatorTree: DominatorTree?
   )
 
+  sealed class VisitTracker {
+
+    abstract fun visited(
+      objectId: Long,
+      parentObjectId: Long
+    ): Boolean
+
+    class Dominated(expectedElements: Int) : VisitTracker() {
+      /**
+       * Tracks visited objecs and their dominator.
+       * If an object is not in [dominatorTree] then it hasn't been enqueued yet.
+       * If an object is in [dominatorTree] but not in [State.toVisitSet] nor [State.toVisitLastSet]
+       * then it has already been dequeued.
+       *
+       * If an object is dominated by more than one GC root then its dominator is set to
+       * [ValueHolder.NULL_REFERENCE].
+       */
+      val dominatorTree = DominatorTree(expectedElements)
+      override fun visited(
+        objectId: Long,
+        parentObjectId: Long
+      ): Boolean {
+        return dominatorTree.updateDominated(objectId, parentObjectId)
+      }
+    }
+
+    class Visited(expectedElements: Int) : VisitTracker() {
+      /**
+       * Set of visited objects.
+       */
+      private val visitedSet = LongScatterSet(expectedElements)
+      override fun visited(
+        objectId: Long,
+        parentObjectId: Long
+      ): Boolean {
+        return !visitedSet.add(objectId)
+      }
+    }
+  }
+
   private class State(
-      val leakingObjectIds: Set<Long>,
-      val sizeOfObjectInstances: Int,
-      val computeRetainedHeapSize: Boolean
+    val leakingObjectIds: LongScatterSet,
+    val sizeOfObjectInstances: Int,
+    val computeRetainedHeapSize: Boolean,
+    val javaLangObjectId: Long,
+    estimatedVisitedObjects: Int
   ) {
 
     /** Set of objects to visit */
@@ -122,21 +129,24 @@ class PathFinder(
     /**
      * Enables fast checking of whether a node is already in the queue.
      */
-    val toVisitSet = HashSet<Long>()
-    val toVisitLastSet = HashSet<Long>()
-
-    val visitedSet = LongScatterSet()
-
-    /**
-     * Map of objects to their leaking dominator.
-     * If an object has been added to [toVisitSet] or [visitedSet] and is missing from
-     * [dominatedObjectIds] then it's considered "undomitable" ie it is dominated by gc roots
-     * and cannot be dominated by a leaking object.
-     */
-    val dominatedObjectIds = LongLongScatterMap()
+    val toVisitSet = LongScatterSet()
+    val toVisitLastSet = LongScatterSet()
 
     val queuesNotEmpty: Boolean
       get() = toVisitQueue.isNotEmpty() || toVisitLastQueue.isNotEmpty()
+
+    val visitTracker = if (computeRetainedHeapSize) {
+      Dominated(estimatedVisitedObjects)
+    } else {
+      Visited(estimatedVisitedObjects)
+    }
+
+    /**
+     * A marker for when we're done exploring the graph of higher priority references and start
+     * visiting the lower priority references, at which point we won't add any reference to
+     * the high priority queue anymore.
+     */
+    var visitingLast = false
   }
 
   private val fieldNameByClassName: Map<String, Map<String, ReferenceMatcher>>
@@ -150,39 +160,40 @@ class PathFinder(
     val threadNames = mutableMapOf<String, ReferenceMatcher>()
     val jniGlobals = mutableMapOf<String, ReferenceMatcher>()
 
-    referenceMatchers.filter {
+    val appliedRefMatchers = referenceMatchers.filter {
       (it is IgnoredReferenceMatcher || (it is LibraryLeakReferenceMatcher && it.patternApplies(
-          graph
+        graph
       )))
     }
-        .forEach { referenceMatcher ->
-          when (val pattern = referenceMatcher.pattern) {
-            is ReferencePattern.JavaLocalPattern -> {
-              threadNames[pattern.threadName] = referenceMatcher
-            }
-            is StaticFieldPattern -> {
-              val mapOrNull = staticFieldNameByClassName[pattern.className]
-              val map = if (mapOrNull != null) mapOrNull else {
-                val newMap = mutableMapOf<String, ReferenceMatcher>()
-                staticFieldNameByClassName[pattern.className] = newMap
-                newMap
-              }
-              map[pattern.fieldName] = referenceMatcher
-            }
-            is InstanceFieldPattern -> {
-              val mapOrNull = fieldNameByClassName[pattern.className]
-              val map = if (mapOrNull != null) mapOrNull else {
-                val newMap = mutableMapOf<String, ReferenceMatcher>()
-                fieldNameByClassName[pattern.className] = newMap
-                newMap
-              }
-              map[pattern.fieldName] = referenceMatcher
-            }
-            is NativeGlobalVariablePattern -> {
-              jniGlobals[pattern.className] = referenceMatcher
-            }
-          }
+
+    appliedRefMatchers.forEach { referenceMatcher ->
+      when (val pattern = referenceMatcher.pattern) {
+        is ReferencePattern.JavaLocalPattern -> {
+          threadNames[pattern.threadName] = referenceMatcher
         }
+        is StaticFieldPattern -> {
+          val mapOrNull = staticFieldNameByClassName[pattern.className]
+          val map = if (mapOrNull != null) mapOrNull else {
+            val newMap = mutableMapOf<String, ReferenceMatcher>()
+            staticFieldNameByClassName[pattern.className] = newMap
+            newMap
+          }
+          map[pattern.fieldName] = referenceMatcher
+        }
+        is InstanceFieldPattern -> {
+          val mapOrNull = fieldNameByClassName[pattern.className]
+          val map = if (mapOrNull != null) mapOrNull else {
+            val newMap = mutableMapOf<String, ReferenceMatcher>()
+            fieldNameByClassName[pattern.className] = newMap
+            newMap
+          }
+          map[pattern.fieldName] = referenceMatcher
+        }
+        is NativeGlobalVariablePattern -> {
+          jniGlobals[pattern.className] = referenceMatcher
+        }
+      }
+    }
     this.fieldNameByClassName = fieldNameByClassName
     this.staticFieldNameByClassName = staticFieldNameByClassName
     this.threadNameReferenceMatchers = threadNames
@@ -190,22 +201,34 @@ class PathFinder(
   }
 
   fun findPathsFromGcRoots(
-      leakingObjectIds: Set<Long>,
-      computeRetainedHeapSize: Boolean
+    leakingObjectIds: Set<Long>,
+    computeRetainedHeapSize: Boolean
   ): PathFindingResults {
-    SharkLog.d { "findPathsFromGcRoots" }
-
     listener.onAnalysisProgress(FINDING_PATHS_TO_RETAINED_OBJECTS)
 
-    val sizeOfObjectInstances = determineSizeOfObjectInstances(graph)
+    val objectClass = graph.findClassByName("java.lang.Object")
+    val sizeOfObjectInstances = determineSizeOfObjectInstances(objectClass, graph)
+    val javaLangObjectId = objectClass?.objectId ?: -1
 
-    val state = State(leakingObjectIds, sizeOfObjectInstances, computeRetainedHeapSize)
+    // Estimate of how many objects we'll visit. This is a conservative estimate, we should always
+    // visit more than that but this limits the number of early array growths.
+    val estimatedVisitedObjects = (graph.instanceCount / 2).coerceAtLeast(4)
+
+    val state = State(
+      leakingObjectIds = leakingObjectIds.toLongScatterSet(),
+      sizeOfObjectInstances = sizeOfObjectInstances,
+      computeRetainedHeapSize = computeRetainedHeapSize,
+      javaLangObjectId = javaLangObjectId,
+      estimatedVisitedObjects = estimatedVisitedObjects
+    )
 
     return state.findPathsFromGcRoots()
   }
 
-  private fun determineSizeOfObjectInstances(graph: HeapGraph): Int {
-    val objectClass = graph.findClassByName("java.lang.Object")
+  private fun determineSizeOfObjectInstances(
+    objectClass: HeapClass?,
+    graph: HeapGraph
+  ): Int {
     return if (objectClass != null) {
       // In Android 16 ClassDumpRecord.instanceSize for java.lang.Object can be 8 yet there are 0
       // fields. This is likely because there is extra per instance data that isn't coming from
@@ -224,25 +247,23 @@ class PathFinder(
     }
   }
 
-  private fun State.findPathsFromGcRoots(): PathFindingResults {
-    SharkLog.d { "start findPathsFromGcRoots" }
+  private fun Set<Long>.toLongScatterSet(): LongScatterSet {
+    val longScatterSet = LongScatterSet()
+    longScatterSet.ensureCapacity(size)
+    forEach { longScatterSet.add(it) }
+    return longScatterSet
+  }
 
+  private fun State.findPathsFromGcRoots(): PathFindingResults {
     enqueueGcRoots()
 
     val shortestPathsToLeakingObjects = mutableListOf<ReferencePathNode>()
     visitingQueue@ while (queuesNotEmpty) {
       val node = poll()
-
-      if (checkSeen(node)) {
-        throw IllegalStateException(
-            "Node $node objectId=${node.objectId} should not be enqueued when already visited or enqueued"
-        )
-      }
-
-      if (node.objectId in leakingObjectIds) {
+      if (leakingObjectIds.contains(node.objectId)) {
         shortestPathsToLeakingObjects.add(node)
         // Found all refs, stop searching (unless computing retained size)
-        if (shortestPathsToLeakingObjects.size == leakingObjectIds.size) {
+        if (shortestPathsToLeakingObjects.size == leakingObjectIds.size()) {
           if (computeRetainedHeapSize) {
             listener.onAnalysisProgress(FINDING_DOMINATORS)
           } else {
@@ -257,42 +278,31 @@ class PathFinder(
         is HeapObjectArray -> visitObjectArray(heapObject, node)
       }
     }
-
-    SharkLog.d { "end findPathsFromGcRoots" }
-
-    return PathFindingResults(shortestPathsToLeakingObjects, dominatedObjectIds)
+    return PathFindingResults(
+      shortestPathsToLeakingObjects,
+      if (visitTracker is Dominated) visitTracker.dominatorTree else null
+    )
   }
 
   private fun State.poll(): ReferencePathNode {
-    return if (!toVisitQueue.isEmpty()) {
+    return if (!visitingLast && !toVisitQueue.isEmpty()) {
       val removedNode = toVisitQueue.poll()
       toVisitSet.remove(removedNode.objectId)
       removedNode
     } else {
+      visitingLast = true
       val removedNode = toVisitLastQueue.poll()
       toVisitLastSet.remove(removedNode.objectId)
       removedNode
     }
   }
 
-  private fun State.checkSeen(node: ReferencePathNode): Boolean {
-    val neverSeen = visitedSet.add(node.objectId)
-    return !neverSeen
-  }
-
   private fun State.enqueueGcRoots() {
-    SharkLog.d { "start enqueueGcRoots" }
-
-    SharkLog.d { "start sortedGcRoots" }
     val gcRoots = sortedGcRoots()
-    SharkLog.d { "end sortedGcRoots" }
 
     val threadNames = mutableMapOf<HeapInstance, String>()
     val threadsBySerialNumber = mutableMapOf<Int, Pair<HeapInstance, ThreadObject>>()
     gcRoots.forEach { (objectRecord, gcRoot) ->
-      if (computeRetainedHeapSize) {
-        undominateWithSkips(gcRoot.id)
-      }
       when (gcRoot) {
         is ThreadObject -> {
           threadsBySerialNumber[gcRoot.threadSerialNumber] = objectRecord.asInstance!! to gcRoot
@@ -304,7 +314,6 @@ class PathFinder(
             // Could not find the thread that this java frame is for.
             enqueue(NormalRootNode(gcRoot.id, gcRoot))
           } else {
-
             val (threadInstance, threadRoot) = threadPair
             val threadName = threadNames[threadInstance] ?: {
               val name = threadInstance[Thread::class, "name"]?.value?.readAsJavaString() ?: ""
@@ -324,20 +333,18 @@ class PathFinder(
 
               val childNode = if (referenceMatcher is LibraryLeakReferenceMatcher) {
                 LibraryLeakChildNode(
-                    objectId = gcRoot.id,
-                    parent = rootNode,
-                    refFromParentType = refFromParentType,
-                    refFromParentName = refFromParentName,
-                    matcher = referenceMatcher,
-                    declaredClassName = ""
+                  objectId = gcRoot.id,
+                  parent = rootNode,
+                  refFromParentType = refFromParentType,
+                  refFromParentName = refFromParentName,
+                  matcher = referenceMatcher
                 )
               } else {
                 NormalNode(
-                    objectId = gcRoot.id,
-                    parent = rootNode,
-                    refFromParentType = refFromParentType,
-                    refFromParentName = refFromParentName,
-                    declaredClassName = ""
+                  objectId = gcRoot.id,
+                  parent = rootNode,
+                  refFromParentType = refFromParentType,
+                  refFromParentName = refFromParentName
                 )
               }
               enqueue(childNode)
@@ -362,8 +369,6 @@ class PathFinder(
         else -> enqueue(NormalRootNode(gcRoot.id, gcRoot))
       }
     }
-
-    SharkLog.d { "end enqueueGcRoots" }
   }
 
   /**
@@ -391,32 +396,27 @@ class PathFinder(
     }
 
     return graph.gcRoots
-        .filter { gcRoot ->
-          // GC roots sometimes reference objects that don't exist in the heap dump
-          // See https://github.com/square/leakcanary/issues/1516
-          graph.objectExists(gcRoot.id)
+      .filter { gcRoot ->
+        // GC roots sometimes reference objects that don't exist in the heap dump
+        // See https://github.com/square/leakcanary/issues/1516
+        graph.objectExists(gcRoot.id)
+      }
+      .map { graph.findObjectById(it.id) to it }
+      .sortedWith(Comparator { (graphObject1, root1), (graphObject2, root2) ->
+        // Sorting based on pattern name first. In reverse order so that ThreadObject is before JavaLocalPattern
+        val gcRootTypeComparison = root2::class.java.name.compareTo(root1::class.java.name)
+        if (gcRootTypeComparison != 0) {
+          gcRootTypeComparison
+        } else {
+          rootClassName(graphObject1).compareTo(rootClassName(graphObject2))
         }
-        .map {
-          graph.findObjectById(it.id) to it
-        }
-        .sortedWith(Comparator { (graphObject1, root1), (graphObject2, root2) ->
-          // Sorting based on pattern name first. In reverse order so that ThreadObject is before JavaLocalPattern
-          val gcRootTypeComparison = root2::class.java.name.compareTo(root1::class.java.name)
-          if (gcRootTypeComparison != 0) {
-            gcRootTypeComparison
-          } else {
-            rootClassName(graphObject1).compareTo(rootClassName(graphObject2))
-          }
-        })
+      })
   }
 
   private fun State.visitClassRecord(
-      heapClass: HeapClass,
-      parent: ReferencePathNode
+    heapClass: HeapClass,
+    parent: ReferencePathNode
   ) {
-    //增加剪枝
-    if (heapClass.name.startsWith("android.R$")) return
-
     val ignoredStaticFields = staticFieldNameByClassName[heapClass.name] ?: emptyMap()
 
     for (staticField in heapClass.readStaticFields()) {
@@ -424,48 +424,40 @@ class PathFinder(
         continue
       }
 
-      //增加无用剪枝
       val fieldName = staticField.name
-      if (fieldName == "\$staticOverhead" || fieldName == "\$classOverhead"
-          || fieldName.startsWith("\$class\$")) {
+      if (fieldName == "\$staticOverhead" || fieldName == "\$classOverhead") {
         continue
       }
 
-      val objectId = staticField.value.asObjectId!!
-
-      if (computeRetainedHeapSize) {
-        undominateWithSkips(objectId)
-      }
+      // Note: instead of calling staticField.value.asObjectId!! we cast holder to ReferenceHolder
+      // and access value directly. This allows us to avoid unnecessary boxing of Long.
+      val objectId = (staticField.value.holder as ReferenceHolder).value
 
       val node = when (val referenceMatcher = ignoredStaticFields[fieldName]) {
         null -> NormalNode(
-            objectId = objectId,
-            parent = parent,
-            refFromParentType = STATIC_FIELD,
-            refFromParentName = fieldName,
-            declaredClassName = staticField.declaringClass.name
+          objectId = objectId,
+          parent = parent,
+          refFromParentType = STATIC_FIELD,
+          refFromParentName = fieldName
         )
         is LibraryLeakReferenceMatcher -> LibraryLeakChildNode(
-            objectId = objectId,
-            parent = parent,
-            refFromParentType = STATIC_FIELD,
-            refFromParentName = fieldName,
-            matcher = referenceMatcher,
-            declaredClassName = staticField.declaringClass.name
+          objectId = objectId,
+          parent = parent,
+          refFromParentType = STATIC_FIELD,
+          refFromParentName = fieldName,
+          matcher = referenceMatcher
         )
         is IgnoredReferenceMatcher -> null
       }
-      //增加判空，避免意外情况
-      if (node != null && node.objectId != ValueHolder.NULL_REFERENCE
-          && graph.findObjectByIdOrNull(node.objectId) != null) {
+      if (node != null) {
         enqueue(node)
       }
     }
   }
 
   private fun State.visitInstance(
-      instance: HeapInstance,
-      parent: ReferencePathNode
+    instance: HeapInstance,
+    parent: ReferencePathNode
   ) {
     val fieldReferenceMatchers = LinkedHashMap<String, ReferenceMatcher>()
 
@@ -479,83 +471,149 @@ class PathFinder(
         }
       }
     }
+    val classHierarchy =
+      instance.instanceClass.classHierarchyWithoutJavaLangObject(javaLangObjectId)
+    val fieldNamesAndValues =
+      instance.readAllNonNullFieldsOfReferenceType(classHierarchy)
 
-    val fieldNamesAndValues = instance.readFields()
-        .filter { it.value.isNonNullReference }
-        .toMutableList()
+    fieldNamesAndValues.sortBy { it.fieldName }
 
-    fieldNamesAndValues.sortBy { it.name }
-
-    fieldNamesAndValues.forEach { field ->
-      val objectId = field.value.asObjectId!!
-      if (computeRetainedHeapSize) {
-        updateDominatorWithSkips(parent.objectId, objectId)
-      }
-
-      val node = when (val referenceMatcher = fieldReferenceMatchers[field.name]) {
+    fieldNamesAndValues.forEach { instanceRefField ->
+      val node = when (val referenceMatcher = fieldReferenceMatchers[instanceRefField.fieldName]) {
         null -> NormalNode(
-            objectId = objectId,
-            parent = parent,
-            refFromParentType = INSTANCE_FIELD,
-            refFromParentName = field.name,
-            declaredClassName = field.declaringClass.name
+          objectId = instanceRefField.refObjectId,
+          parent = parent,
+          refFromParentType = INSTANCE_FIELD,
+          refFromParentName = instanceRefField.fieldName,
+          owningClassId = instanceRefField.declaringClassId
         )
         is LibraryLeakReferenceMatcher ->
           LibraryLeakChildNode(
-              objectId = objectId,
-              parent = parent,
-              refFromParentType = INSTANCE_FIELD,
-              refFromParentName = field.name,
-              matcher = referenceMatcher,
-              declaredClassName = field.declaringClass.name
+            objectId = instanceRefField.refObjectId,
+            parent = parent,
+            refFromParentType = INSTANCE_FIELD,
+            refFromParentName = instanceRefField.fieldName,
+            matcher = referenceMatcher,
+            owningClassId = instanceRefField.declaringClassId
           )
         is IgnoredReferenceMatcher -> null
       }
-
-      //增加判空，避免意外情况
-      if (node != null && node.objectId != ValueHolder.NULL_REFERENCE
-          && graph.findObjectByIdOrNull(node.objectId) != null) {
-        //SharkLog.d { "class:${instance.instanceClassName} field:${field.name}" }
-        enqueue(node, heapClassName = instance.instanceClassName, fieldName = field.name)
+      if (node != null) {
+        enqueue(node)
       }
     }
   }
 
+  private class InstanceRefField(
+    val declaringClassId: Long,
+    val refObjectId: Long,
+    val fieldName: String
+  )
+
+  private fun HeapInstance.readAllNonNullFieldsOfReferenceType(
+    classHierarchy: List<HeapClass>
+  ): MutableList<InstanceRefField> {
+    // Assigning to local variable to avoid repeated lookup and cast:
+    // HeapInstance.graph casts HeapInstance.hprofGraph to HeapGraph in its getter
+    val hprofGraph = graph
+    var fieldReader: FieldIdReader? = null
+    val result = mutableListOf<InstanceRefField>()
+    var skipBytesCount = 0
+
+    for (heapClass in classHierarchy) {
+      for (fieldRecord in heapClass.readRecordFields()) {
+        if (fieldRecord.type != PrimitiveType.REFERENCE_HPROF_TYPE) {
+          // Skip all fields that are not references. Track how many bytes to skip
+          skipBytesCount += hprofGraph.getRecordSize(fieldRecord)
+        } else {
+          // Initialize id reader if it's not yet initialized. Replaces `lazy` without synchronization
+          if (fieldReader == null) {
+            fieldReader = FieldIdReader(readRecord(), hprofGraph.identifierByteSize)
+          }
+
+          // Skip the accumulated bytes offset
+          fieldReader.skipBytes(skipBytesCount)
+          skipBytesCount = 0
+
+          val objectId = fieldReader.readId()
+          if (objectId != 0L) {
+            result.add(
+              InstanceRefField(
+                heapClass.objectId, objectId, heapClass.instanceFieldName(fieldRecord)
+              )
+            )
+          }
+        }
+      }
+    }
+    return result
+  }
+
+  /**
+   * Returns class hierarchy for an instance, but without it's root element, which is always
+   * java.lang.Object.
+   * Why do we want class hierarchy without java.lang.Object?
+   * In pre-M there were no ref fields in java.lang.Object; and FieldIdReader wouldn't be created
+   * Android M added shadow$_klass_ reference to class, so now it triggers extra record read.
+   * Solution: skip heap class for java.lang.Object completely when reading the records
+   * @param javaLangObjectId ID of the java.lang.Object to run comparison against
+   */
+  private fun HeapClass.classHierarchyWithoutJavaLangObject(
+    javaLangObjectId: Long
+  ): List<HeapClass> {
+    val result = mutableListOf<HeapClass>()
+    var parent: HeapClass? = this
+    while (parent != null && parent.objectId != javaLangObjectId) {
+      result += parent
+      parent = parent.superclass
+    }
+    return result
+  }
+
+  private fun HeapGraph.getRecordSize(field: FieldRecord) =
+    when (field.type) {
+      PrimitiveType.REFERENCE_HPROF_TYPE -> identifierByteSize
+      BOOLEAN.hprofType -> 1
+      CHAR.hprofType -> 2
+      FLOAT.hprofType -> 4
+      DOUBLE.hprofType -> 8
+      BYTE.hprofType -> 1
+      SHORT.hprofType -> 2
+      INT.hprofType -> 4
+      LONG.hprofType -> 8
+      else -> throw IllegalStateException("Unknown type ${field.type}")
+    }
+
   private fun State.visitObjectArray(
-      objectArray: HeapObjectArray,
-      parent: ReferencePathNode
+    objectArray: HeapObjectArray,
+    parent: ReferencePathNode
   ) {
     val record = objectArray.readRecord()
     val nonNullElementIds = record.elementIds.filter { objectId ->
       objectId != ValueHolder.NULL_REFERENCE && graph.objectExists(objectId)
     }
     nonNullElementIds.forEachIndexed { index, elementId ->
-      if (computeRetainedHeapSize) {
-        updateDominatorWithSkips(parent.objectId, elementId)
-      }
       val name = index.toString()
       enqueue(
-          NormalNode(
-              objectId = elementId,
-              parent = parent,
-              refFromParentType = ARRAY_ENTRY,
-              refFromParentName = name,
-              declaredClassName = ""
-          )
+        NormalNode(
+          objectId = elementId,
+          parent = parent,
+          refFromParentType = ARRAY_ENTRY,
+          refFromParentName = name
+        )
       )
     }
   }
 
-  //Added by Kwai, Inc
+  //Added by Kwai.
   //Using a pruning method to optimize performance by add threshold
   // of same class instance's enqueue times.
   private val SAME_INSTANCE_THRESHOLD = 1024
   private var instanceCountMap = mutableMapOf<Long, Short?>()
   private fun isOverThresholdInstance(graphObject: HeapInstance): Boolean {
-    if (!enableSameInstanceThreshold) return false
     if (graphObject.instanceClassName.startsWith("java.util")
-        || graphObject.instanceClassName.startsWith("android.util")
-        || graphObject.instanceClassName.startsWith("java.lang.String")
+            || graphObject.instanceClassName.startsWith("android.util")
+            || graphObject.instanceClassName.startsWith("java.lang.String")
     //|| graphObject.instanceClassName.startsWith("kotlin.collections")
     //|| graphObject.instanceClassName.startsWith("com.google.common")
     )
@@ -568,64 +626,92 @@ class PathFinder(
     return count >= SAME_INSTANCE_THRESHOLD
   }
 
+
   @Suppress("ReturnCount")
   private fun State.enqueue(
-      node: ReferencePathNode,
-      heapClassName: String = "",
-      fieldName: String = ""
+    node: ReferencePathNode
   ) {
     if (node.objectId == ValueHolder.NULL_REFERENCE) {
       return
     }
-    if (visitedSet.contains(node.objectId)) {
-      return
-    }
-    // Already enqueued => shorter or equal distance
-    if (toVisitSet.contains(node.objectId)) {
-      return
-    }
-
-    //if (node is RootNode) SharkLog.d { "enqueue GC Root:${LeakTrace.GcRootType.fromGcRoot(node.gcRoot)}" }
 
     val visitLast =
+      visitingLast ||
         node is LibraryLeakNode ||
-            // We deprioritize thread objects because on Lollipop the thread local values are stored
-            // as a field.
-            (node is RootNode && node.gcRoot is ThreadObject) ||
-            (node is NormalNode && node.parent is RootNode && node.parent.gcRoot is JavaFrame)
+        // We deprioritize thread objects because on Lollipop the thread local values are stored
+        // as a field.
+        (node is RootNode && node.gcRoot is ThreadObject) ||
+        (node is NormalNode && node.parent is RootNode && node.parent.gcRoot is JavaFrame)
 
-    if (toVisitLastSet.contains(node.objectId)) {
-      // Already enqueued => shorter or equal distance amongst library leak ref patterns.
+    val parentObjectId = if (node is RootNode) {
+      ValueHolder.NULL_REFERENCE
+    } else {
+      (node as ChildNode).parent.objectId
+    }
+
+    val alreadyEnqueued = visitTracker.visited(node.objectId, parentObjectId)
+
+    if (alreadyEnqueued) {
+      // Has already been enqueued and would be added to visit last => don't enqueue.
       if (visitLast) {
         return
-      } else {
-        toVisitQueue.add(node)
-        toVisitSet.add(node.objectId)
-        val nodeToRemove = toVisitLastQueue.first { it.objectId == node.objectId }
-        toVisitLastQueue.remove(nodeToRemove)
-        toVisitLastSet.remove(node.objectId)
+      }
+      // Has already been enqueued and exists in the to visit set => don't enqueue
+      if (toVisitSet.contains(node.objectId)) {
+        return
+      }
+      // Has already been enqueued, is not in toVisitSet, is not in toVisitLast => has been visited
+      if (!toVisitLastSet.contains(node.objectId)) {
         return
       }
     }
 
-    val isLeakingObject = node.objectId in leakingObjectIds
+    // Because of the checks and return statements right before, from this point on, if
+    // alreadyEnqueued then it's currently enqueued in the visit last set.
+    if (alreadyEnqueued) {
+      // Move from "visit last" to "visit first" queue.
+      toVisitQueue.add(node)
+      toVisitSet.add(node.objectId)
+      val nodeToRemove = toVisitLastQueue.first { it.objectId == node.objectId }
+      toVisitLastQueue.remove(nodeToRemove)
+      toVisitLastSet.remove(node.objectId)
+      return
+    }
+
+    val isLeakingObject = leakingObjectIds.contains(node.objectId)
 
     if (!isLeakingObject) {
       val skip = when (val graphObject = graph.findObjectById(node.objectId)) {
         is HeapClass -> false
-        is HeapInstance -> {
+        is HeapInstance ->
           when {
             graphObject.isPrimitiveWrapper -> true
-            //Added by Kwai, Inc
+            graphObject.instanceClassName == "java.lang.String" -> {
+              // We ignore the fact that String references a value array to avoid having
+              // to read the string record and find the object id for that array, since we know
+              // it won't be interesting anyway.
+              // That also means the value array isn't added to the dominator tree, so we need to
+              // add that back when computing shallow size in ShallowSizeCalculator.
+              // Another side effect is that if the array is referenced elsewhere, we might
+              // double count its side.
+              true
+            }
+            graphObject.instanceClass.instanceByteSize <= sizeOfObjectInstances -> true
+            graphObject.instanceClass.classHierarchy.all { heapClass ->
+              heapClass.objectId == javaLangObjectId || !heapClass.hasReferenceInstanceFields
+            } -> true
+            //Added by Kwai.
             //comment this when String leak are necessary to report.
             //graphObject.instanceClassName == "java.lang.String" -> true
-            graphObject.instanceClass.instanceByteSize <= sizeOfObjectInstances -> true
             isOverThresholdInstance(graphObject) -> true
             else -> false
           }
-        }
         is HeapObjectArray -> when {
-          graphObject.isPrimitiveWrapperArray -> true
+          graphObject.isSkippablePrimitiveWrapperArray -> {
+            // Same optimization as we did for String above, as we know primitive wrapper arrays
+            // aren't interesting.
+            true
+          }
           else -> false
         }
         is HeapPrimitiveArray -> true
@@ -642,162 +728,19 @@ class PathFinder(
       toVisitSet.add(node.objectId)
     }
   }
-
-  private fun State.updateDominatorWithSkips(
-      parentObjectId: Long,
-      objectId: Long
-  ) {
-
-    when (val graphObject = graph.findObjectById(objectId)) {
-      is HeapClass -> {
-        undominate(objectId, false)
-      }
-      is HeapInstance -> {
-        // String internal array is never enqueued
-        if (graphObject.instanceClassName == "java.lang.String") {
-          updateDominator(parentObjectId, objectId, true)
-          val valueId = graphObject["java.lang.String", "value"]?.value?.asObjectId
-          if (valueId != null) {
-            updateDominator(parentObjectId, valueId, true)
-          }
-        } else {
-          updateDominator(parentObjectId, objectId, false)
-        }
-      }
-      is HeapObjectArray -> {
-        // Primitive wrapper array elements are never enqueued
-        if (graphObject.isPrimitiveWrapperArray) {
-          updateDominator(parentObjectId, objectId, true)
-          for (wrapperId in graphObject.readRecord().elementIds) {
-            updateDominator(parentObjectId, wrapperId, true)
-          }
-        } else {
-          updateDominator(parentObjectId, objectId, false)
-        }
-      }
-      else -> {
-        updateDominator(parentObjectId, objectId, false)
-      }
-    }
-  }
-
-  @Suppress("ComplexCondition")
-  private fun State.updateDominator(
-      parent: Long,
-      objectId: Long,
-      neverEnqueued: Boolean
-  ) {
-    val currentDominatorSlot = dominatedObjectIds.getSlot(objectId)
-    if (currentDominatorSlot == -1 && (objectId in visitedSet || objectId in toVisitSet || objectId in toVisitLastSet)) {
-      return
-    }
-    val parentDominatorSlot = dominatedObjectIds.getSlot(parent)
-
-    val parentIsRetainedObject = parent in leakingObjectIds
-
-    if (!parentIsRetainedObject && parentDominatorSlot == -1) {
-      // parent is not a retained instance and parent has no dominator, but it must have been
-      // visited therefore we know parent belongs to undominated.
-      if (neverEnqueued) {
-        visitedSet.add(objectId)
-      }
-
-      if (currentDominatorSlot != -1) {
-        dominatedObjectIds.remove(objectId)
-      }
-      return
-    }
-    val nextDominator =
-        if (parentIsRetainedObject) parent else dominatedObjectIds.getSlotValue(parentDominatorSlot)
-    if (currentDominatorSlot == -1) {
-      dominatedObjectIds[objectId] = nextDominator
-    } else {
-      val parentDominators = mutableListOf<Long>()
-      val currentDominators = mutableListOf<Long>()
-      var stop = false
-      var dominator: Long = nextDominator
-      while (!stop) {
-        parentDominators.add(dominator)
-        val nextDominatorSlot = dominatedObjectIds.getSlot(dominator)
-        if (nextDominatorSlot == -1) {
-          stop = true
-        } else {
-          dominator = dominatedObjectIds.getSlotValue(nextDominatorSlot)
-        }
-      }
-      stop = false
-      dominator = dominatedObjectIds.getSlotValue(currentDominatorSlot)
-      while (!stop) {
-        currentDominators.add(dominator)
-        val nextDominatorSlot = dominatedObjectIds.getSlot(dominator)
-        if (nextDominatorSlot == -1) {
-          stop = true
-        } else {
-          dominator = dominatedObjectIds.getSlotValue(nextDominatorSlot)
-        }
-      }
-
-      var sharedDominator: Long? = null
-      exit@ for (parentD in parentDominators) {
-        for (currentD in currentDominators) {
-          if (currentD == parentD) {
-            sharedDominator = currentD
-            break@exit
-          }
-        }
-      }
-      if (sharedDominator == null) {
-        dominatedObjectIds.remove(objectId)
-        if (neverEnqueued) {
-          visitedSet.add(objectId)
-        }
-      } else {
-        dominatedObjectIds[objectId] = sharedDominator
-      }
-    }
-  }
-
-  private fun State.undominateWithSkips(objectId: Long) {
-    when (val graphObject = graph.findObjectById(objectId)) {
-      is HeapClass -> {
-        undominate(objectId, false)
-      }
-      is HeapInstance -> {
-        // String internal array is never enqueued
-        if (graphObject.instanceClassName == "java.lang.String") {
-          undominate(objectId, true)
-          val valueId = graphObject["java.lang.String", "value"]?.value?.asObjectId
-          if (valueId != null) {
-            undominate(valueId, true)
-          }
-        } else {
-          undominate(objectId, false)
-        }
-      }
-      is HeapObjectArray -> {
-        // Primitive wrapper array elements are never enqueued
-        if (graphObject.isPrimitiveWrapperArray) {
-          undominate(objectId, true)
-          for (wrapperId in graphObject.readRecord().elementIds) {
-            undominate(wrapperId, true)
-          }
-        } else {
-          undominate(objectId, false)
-        }
-      }
-      else -> {
-        undominate(objectId, false)
-      }
-    }
-  }
-
-  private fun State.undominate(
-      objectId: Long,
-      neverEnqueued: Boolean
-  ) {
-    dominatedObjectIds.remove(objectId)
-    if (neverEnqueued) {
-      visitedSet.add(objectId)
-    }
-  }
 }
+
+private val skippablePrimitiveWrapperArrayTypes = setOf(
+  Boolean::class,
+  Char::class,
+  Float::class,
+  Double::class,
+  Byte::class,
+  Short::class,
+  Int::class,
+  Long::class
+).map { it.javaObjectType.name + "[]" }
+
+internal val HeapObjectArray.isSkippablePrimitiveWrapperArray: Boolean
+  get() = arrayClassName in skippablePrimitiveWrapperArrayTypes
+

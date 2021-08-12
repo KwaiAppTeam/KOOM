@@ -19,19 +19,40 @@ import java.io.Serializable
  * cause the leak.
  */
 data class LeakTrace(
-    /**
-     * The Garbage Collection root that references the [LeakTraceReference.originObject] in
-     * the first [LeakTraceReference] of [referencePath].
-     */
-    val gcRootType: GcRootType,
-    val referencePath: List<LeakTraceReference>,
-    val leakingObject: LeakTraceObject,
-    /**
-     * The minimum number of bytes which would be freed if all references to the leaking object were
-     * released. Null if the retained heap size was not computed.
-     */
-    val retainedHeapByteSize: Int?
+  /**
+   * The Garbage Collection root that references the [LeakTraceReference.originObject] in
+   * the first [LeakTraceReference] of [referencePath].
+   */
+  val gcRootType: GcRootType,
+  val referencePath: List<LeakTraceReference>,
+  val leakingObject: LeakTraceObject
 ) : Serializable {
+
+  /**
+   * The minimum number of bytes which would be freed if the leak was fixed.
+   * Null if the retained heap size was not computed.
+   */
+  val retainedHeapByteSize: Int?
+    get() {
+      val allObjects = listOf(leakingObject) + referencePath.map { it.originObject }
+      return allObjects.filter { it.leakingStatus == LEAKING }
+        .mapNotNull { it.retainedHeapByteSize }
+        // The minimum released is the max held by a leaking object.
+        .max()
+    }
+
+  /**
+   * The minimum number of objects which would be unreachable if the leak was fixed. Null if the
+   * retained heap size was not computed.
+   */
+  val retainedObjectCount: Int?
+    get() {
+      val allObjects = listOf(leakingObject) + referencePath.map { it.originObject }
+      return allObjects.filter { it.leakingStatus == LEAKING }
+        .mapNotNull { it.retainedObjectCount }
+        // The minimum released is the max held by a leaking object.
+        .max()
+    }
 
   /**
    * A part of [referencePath] that contains the references suspected to cause the leak.
@@ -39,9 +60,9 @@ data class LeakTrace(
    */
   val suspectReferenceSubpath
     get() = referencePath.asSequence()
-        .filterIndexed { index, _ ->
-          referencePathElementIsSuspect(index)
-        }
+      .filterIndexed { index, _ ->
+        referencePathElementIsSuspect(index)
+      }
 
   /**
    * A SHA1 hash that represents this leak trace. This can be useful to group together similar
@@ -51,10 +72,10 @@ data class LeakTrace(
    */
   val signature: String
     get() = suspectReferenceSubpath
-        .joinToString(separator = "") { element ->
-          element.originObject.className + element.referenceGenericName
-        }
-        .createSHA1Hash()
+      .joinToString(separator = "") { element ->
+        element.originObject.className + element.referenceGenericName
+      }
+      .createSHA1Hash()
 
   /**
    * Returns true if the [referencePath] element at the provided [index] contains a reference
@@ -66,7 +87,7 @@ data class LeakTrace(
     return when (referencePath[index].originObject.leakingStatus) {
       UNKNOWN -> true
       NOT_LEAKING -> index == referencePath.lastIndex ||
-          referencePath[index + 1].originObject.leakingStatus != NOT_LEAKING
+        referencePath[index + 1].originObject.leakingStatus != NOT_LEAKING
       else -> false
     }
   }
@@ -83,41 +104,31 @@ data class LeakTrace(
       """.trimIndent()
 
     referencePath.forEachIndexed { index, element ->
-      val leakStatus = when (referencePath[index].originObject.leakingStatus) {
-        UNKNOWN -> "UNKNOWN"
-        NOT_LEAKING -> "NO (${referencePath[index].originObject.leakingStatusReason})"
-        LEAKING -> "YES (${referencePath[index].originObject.leakingStatusReason})"
-      }
-
-      /**
-       * When the GC Root is a Java Frame, Shark inserts the corresponding thread as an extra
-       * element in the leaktrace.
-       */
-      val typeName =
-          if (index == 0 && gcRootType == JAVA_FRAME) "thread" else element.originObject.typeName
-
-      result += "\n├─ ${element.originObject.className} $typeName"
-      if (showLeakingStatus) {
-        result += "\n│    Leaking: $leakStatus"
-      }
-
-      for (label in element.originObject.labels) {
-        result += "\n│    $label"
-      }
+      val originObject = element.originObject
+      result += "\n"
+      result += originObject.toString(
+        firstLinePrefix = "├─ ",
+        additionalLinesPrefix = "│    ",
+        showLeakingStatus = showLeakingStatus,
+        /**
+         * When the GC Root is a Java Frame, Shark inserts the corresponding thread as an extra
+         * element in the leaktrace.
+         */
+        typeName = if (index == 0 && gcRootType == JAVA_FRAME) {
+          "thread"
+        } else {
+          originObject.typeName
+        }
+      )
       result += getNextElementString(this, element, index, showLeakingStatus)
     }
 
     result += "\n"
-    result += "╰→ ${leakingObject.className} ${leakingObject.typeName}"
-    if (showLeakingStatus) {
-      result += "\n$ZERO_WIDTH_SPACE"
-      result += "     Leaking: YES (${leakingObject.leakingStatusReason})"
-    }
-    for (label in leakingObject.labels) {
-      result += "\n$ZERO_WIDTH_SPACE"
-      result += "     $label"
-    }
-
+    result += leakingObject.toString(
+      firstLinePrefix = "╰→ ",
+      additionalLinesPrefix = "$ZERO_WIDTH_SPACE     ",
+      showLeakingStatus = showLeakingStatus
+    )
     return result
   }
 
@@ -129,7 +140,7 @@ data class LeakTrace(
     STICKY_CLASS("System class"),
     THREAD_BLOCK("Thread block"),
     MONITOR_USED(
-        "Monitor (anything that called the wait() or notify() methods, or that is synchronized.)"
+      "Monitor (anything that called the wait() or notify() methods, or that is synchronized.)"
     ),
     THREAD_OBJECT("Thread object"),
     JNI_MONITOR("Root JNI monitor"),
@@ -148,7 +159,6 @@ data class LeakTrace(
         is GcRoot.JniMonitor -> JNI_MONITOR
         else -> throw IllegalStateException("Unexpected gc root $gcRoot")
       }
-
     }
   }
 
@@ -156,24 +166,26 @@ data class LeakTrace(
   private val elements: List<LeakTraceElement>? = null
 
   internal fun fromV20(retainedHeapByteSize: Int?) = LeakTrace(
-      gcRootType = elements!!.first().gcRootTypeFromV20(),
-      referencePath = elements.subList(
-          0, elements.lastIndex - 1
-      ).map { it.referencePathElementFromV20() },
-      leakingObject = elements.last().originObjectFromV20(),
-      retainedHeapByteSize = retainedHeapByteSize
+    gcRootType = elements!!.first().gcRootTypeFromV20(),
+    referencePath = when {
+      elements.isEmpty() -> emptyList()
+      else -> elements
+        .subList(0, elements.lastIndex - 1)
+        .map { it.referencePathElementFromV20() }
+    },
+    leakingObject = elements.last().originObjectFromV20()
   )
 
   companion object {
     private fun getNextElementString(
-        leakTrace: LeakTrace,
-        reference: LeakTraceReference,
-        index: Int,
-        showLeakingStatus: Boolean
+      leakTrace: LeakTrace,
+      reference: LeakTraceReference,
+      index: Int,
+      showLeakingStatus: Boolean
     ): String {
       val static = if (reference.referenceType == STATIC_FIELD) " static" else ""
       val referenceLine =
-          "    ↓$static ${reference.originObject.classSimpleName}.${reference.referenceDisplayName}"
+        "    ↓$static ${reference.owningClassSimpleName}.${reference.referenceDisplayName}"
 
       return if (showLeakingStatus && leakTrace.referencePathElementIsSuspect(index)) {
         val lengthBeforeReferenceName = referenceLine.lastIndexOf('.') + 1
@@ -187,8 +199,7 @@ data class LeakTrace(
       }
     }
 
-    private const val ZERO_WIDTH_SPACE = '\u200b'
-    private const val serialVersionUID: Long = -6315725584154386429
-
+    internal const val ZERO_WIDTH_SPACE = '\u200b'
+    private const val serialVersionUID = -6315725584154386429
   }
 }

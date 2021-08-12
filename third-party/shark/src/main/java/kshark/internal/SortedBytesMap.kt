@@ -1,5 +1,8 @@
 package kshark.internal
 
+import kshark.internal.hppc.LongObjectPair
+import kshark.internal.hppc.to
+
 /**
  * A read only map of `id` => `byte array` sorted by id, where `id` is a long if [longIdentifiers]
  * is true and an int otherwise. Each entry has a value byte array of size [bytesPerValue].
@@ -9,20 +12,28 @@ package kshark.internal
  * [get] and [contains] perform a binary search to locate a specific entry by key.
  */
 internal class SortedBytesMap(
-    private val longIdentifiers: Boolean,
-    private val bytesPerValue: Int,
-    private val sortedEntries: ByteArray
+  private val longIdentifiers: Boolean,
+  private val bytesPerValue: Int,
+  private val sortedEntries: ByteArray
 ) {
   private val bytesPerKey = if (longIdentifiers) 8 else 4
   private val bytesPerEntry = bytesPerKey + bytesPerValue
 
-  private val size = sortedEntries.size / bytesPerEntry
+  val size = sortedEntries.size / bytesPerEntry
 
   operator fun get(key: Long): ByteSubArray? {
     val keyIndex = binarySearch(key)
     if (keyIndex < 0) {
       return null
     }
+    return getAtIndex(keyIndex)
+  }
+
+  fun indexOf(key: Long): Int {
+    return binarySearch(key)
+  }
+
+  fun getAtIndex(keyIndex: Int): ByteSubArray {
     val valueIndex = keyIndex * bytesPerEntry + bytesPerKey
     return ByteSubArray(sortedEntries, valueIndex, bytesPerValue, longIdentifiers)
   }
@@ -32,16 +43,16 @@ internal class SortedBytesMap(
     return keyIndex >= 0
   }
 
-  fun entrySequence(): Sequence<Pair<Long, ByteSubArray>> {
+  fun entrySequence(): Sequence<LongObjectPair<ByteSubArray>> {
     return (0 until size).asSequence()
-        .map { keyIndex ->
-          val valueIndex = keyIndex * bytesPerEntry + bytesPerKey
-          keyAt(keyIndex) to ByteSubArray(sortedEntries, valueIndex, bytesPerValue, longIdentifiers)
-        }
+      .map { keyIndex ->
+        val valueIndex = keyIndex * bytesPerEntry + bytesPerKey
+        keyAt(keyIndex) to ByteSubArray(sortedEntries, valueIndex, bytesPerValue, longIdentifiers)
+      }
   }
 
   private fun binarySearch(
-      key: Long
+    key: Long
   ): Int {
     val startIndex = 0
     val endIndex = size
@@ -59,7 +70,7 @@ internal class SortedBytesMap(
     return lo.inv()
   }
 
-  private fun keyAt(index: Int): Long {
+  fun keyAt(index: Int): Long {
     val keyIndex = index * bytesPerEntry
     return if (longIdentifiers) {
       sortedEntries.readLong(keyIndex)

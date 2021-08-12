@@ -11,7 +11,7 @@ sealed class ReferencePattern : Serializable {
    * Matches local references held in the stack of frames of a given thread, identified by its name.
    */
   data class JavaLocalPattern(
-      val threadName: String
+    val threadName: String
   ) : ReferencePattern() {
     override fun toString() = "local variable on thread $threadName"
 
@@ -24,8 +24,8 @@ sealed class ReferencePattern : Serializable {
    * Matches static field references, identified by [className] and [fieldName].
    */
   data class StaticFieldPattern(
-      val className: String,
-      val fieldName: String
+    val className: String,
+    val fieldName: String
   ) : ReferencePattern() {
     override fun toString() = "static field $className#$fieldName"
 
@@ -43,8 +43,8 @@ sealed class ReferencePattern : Serializable {
    * class in the hierarchy wins.
    */
   data class InstanceFieldPattern(
-      val className: String,
-      val fieldName: String
+    val className: String,
+    val fieldName: String
   ) : ReferencePattern() {
     override fun toString() = "instance field $className#$fieldName"
 

@@ -8,7 +8,6 @@ sealed class ReferenceMatcher {
 
   /** The pattern that references will be matched against. */
   abstract val pattern: ReferencePattern
-
 }
 
 /**
@@ -19,17 +18,17 @@ sealed class ReferenceMatcher {
  * [LibraryLeak] instead of [ApplicationLeak].
  */
 data class LibraryLeakReferenceMatcher(
-    override val pattern: ReferencePattern,
-    /**
-     * A description that conveys what we know about this library leak.
-     */
-    val description: String = "",
-    /**
-     * Whether the identified leak may exist in the provided [HeapGraph]. Defaults to true. If
-     * the heap dump comes from a VM that runs a different version of the library that doesn't
-     * have the leak, then this should return false.
-     */
-    val patternApplies: (HeapGraph) -> Boolean = { true }
+  override val pattern: ReferencePattern,
+  /**
+   * A description that conveys what we know about this library leak.
+   */
+  val description: String = "",
+  /**
+   * Whether the identified leak may exist in the provided [HeapGraph]. Defaults to true. If
+   * the heap dump comes from a VM that runs a different version of the library that doesn't
+   * have the leak, then this should return false.
+   */
+  val patternApplies: (HeapGraph) -> Boolean = { true }
 ) : ReferenceMatcher() {
   override fun toString() = "library leak: $pattern"
 }
