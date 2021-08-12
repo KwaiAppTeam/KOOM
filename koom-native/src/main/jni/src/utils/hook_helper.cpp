@@ -18,14 +18,14 @@
  */
 
 #include <xhook.h>
+#include <log/log.h>
 #include "utils/hook_helper.h"
-#include "utils/log_util.h"
 
 bool HookHelper::HookMethods(std::vector<const std::string> &register_pattern,
     std::vector<const std::string> &ignore_pattern,
     std::vector<std::pair<const std::string, void * const>> &methods) {
   if (register_pattern.empty() || methods.empty()) {
-    RLOGE("Hook nothing");
+    ALOGE("Hook nothing");
     return false;
   }
 
@@ -33,21 +33,21 @@ bool HookHelper::HookMethods(std::vector<const std::string> &register_pattern,
   xhook_enable_debug(1);
 #endif
   for (auto &pattern : register_pattern) {
-      DLOGI("xhook_register pattern %s", pattern.c_str());
+      ALOGI("xhook_register pattern %s", pattern.c_str());
       for (auto &method : methods) {
       if (xhook_register(pattern.c_str(), method.first.c_str(),
                      method.second, nullptr) != EXIT_SUCCESS) {
-        RLOGE("xhook_register fail");
+        ALOGE("xhook_register fail");
         return false;
       }
     }
   }
 
   for (auto &pattern : ignore_pattern) {
-      DLOGI("xhook_register ignore pattern %s", pattern.c_str());
+      ALOGI("xhook_register ignore pattern %s", pattern.c_str());
       for (auto &method : methods) {
       if (xhook_ignore(pattern.c_str(), method.first.c_str()) != EXIT_SUCCESS) {
-        RLOGE("xhook_ignore fail");
+        ALOGE("xhook_ignore fail");
         return false;
       }
     }

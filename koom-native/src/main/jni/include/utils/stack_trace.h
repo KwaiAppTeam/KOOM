@@ -21,7 +21,6 @@
 #define KOOM_NATIVE_OOM_SRC_MAIN_JNI_INCLUDE_UTILS_STACK_TRACE_H_
 
 #include "constants.h"
-#include "utils/log_util.h"
 #include <cstddef>
 #include <iostream>
 #include <stdint.h>

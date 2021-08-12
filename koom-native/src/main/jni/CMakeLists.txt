@@ -12,7 +12,8 @@ project(${TARGET})
 
 include_directories(
         ${CMAKE_CURRENT_SOURCE_DIR}/include/
-        ${KWAI_ANDROID_BASE_DIR}/src/main/cpp/include/kwai_linker
+        ${KWAI_ANDROID_BASE_DIR}/src/main/cpp/include/
+        ${KWAI_ANDROID_BASE_DIR}/src/main/cpp/liblog/include/
         ${THIRD_PARTY_DIR}/xhook/src/main/cpp/xhook/src/
         )
 

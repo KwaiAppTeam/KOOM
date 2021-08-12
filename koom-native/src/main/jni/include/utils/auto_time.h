@@ -19,8 +19,8 @@
 
 #ifndef KOOM_NATIVE_OOM_SRC_MAIN_JNI_INCLUDE_UTILS_AUTO_TIME_H_
 #define KOOM_NATIVE_OOM_SRC_MAIN_JNI_INCLUDE_UTILS_AUTO_TIME_H_
+#include <log/log.h>
 #include <ctime>
-#include "utils/log_util.h"
 
 class AutoTime {
  public:
@@ -29,7 +29,7 @@ class AutoTime {
   }
   ~AutoTime() {
     clock_t end = clock();
-    DLOGI("%s consume time: %f s", tag_ ? tag_ : "", (static_cast<double>(end - start_) /
+    ALOGI("%s consume time: %f s", tag_ ? tag_ : "", (static_cast<double>(end - start_) /
     CLOCKS_PER_SEC));
   }
  private:

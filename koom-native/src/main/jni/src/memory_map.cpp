@@ -38,7 +38,6 @@
 #include <vector>
 #include <dlfcn.h>
 #include <cxxabi.h>
-#include <utils/log_util.h>
 
 #include "memory_map.h"
 

@@ -19,8 +19,9 @@
 
 #include "leak_monitor.h"
 #include "utils/auto_time.h"
-#include "utils/log_util.h"
-#include "kwai_dlfcn.h"
+#include "kwai_linker/kwai_dlfcn.h"
+#include <log/log.h>
+#include <log/kcheck.h>
 #include <asm/mman.h>
 #include <dlfcn.h>
 #include <utils/hook_helper.h>
@@ -102,7 +103,7 @@ LeakMonitor &LeakMonitor::GetInstance() {
 
 void LeakMonitor::InstallMonitor(std::vector<std::string> *selected_list,
                                  std::vector<std::string> *ignore_list) {
-  CHECK(!has_install_monitor_);
+  KCHECK(!has_install_monitor_);
 
   // Reinstall can't hook again, xhook can't support unhook
   if (is_hooked_) {
@@ -147,28 +148,28 @@ void LeakMonitor::InstallMonitor(std::vector<std::string> *selected_list,
 }
 
 void LeakMonitor::UninstallMonitor() {
-  CHECK(has_install_monitor_);
+  KCHECK(has_install_monitor_);
   has_install_monitor_ = false;
   live_alloc_records_.Clear();
 }
 
 int LeakMonitor::SyncRefresh() {
-  CHECK(has_install_monitor_);
+  KCHECK(has_install_monitor_);
   return HookHelper::SyncRefreshHook() ? EXIT_SUCCESS : EXIT_FAILURE;
 }
 
 int LeakMonitor::AsyncRefresh() {
-  CHECK(has_install_monitor_);
+  KCHECK(has_install_monitor_);
   return HookHelper::AsyncRefreshHook() ? EXIT_SUCCESS : EXIT_FAILURE;
 }
 
 void LeakMonitor::SetAllocThreshold(size_t threshold) {
-  CHECK(has_install_monitor_);
+  KCHECK(has_install_monitor_);
   alloc_threshold_ = threshold;
 }
 
 std::vector<std::shared_ptr<AllocRecord>> LeakMonitor::GetLeakAllocs() {
-  CHECK(has_install_monitor_);
+  KCHECK(has_install_monitor_);
   auto unreachable_allocs = CollectUnreachableMem();
   std::vector<std::shared_ptr<AllocRecord>> live_allocs;
   std::vector<std::shared_ptr<AllocRecord>> leak_allocs;
@@ -204,7 +205,7 @@ std::vector<std::shared_ptr<AllocRecord>> LeakMonitor::GetLeakAllocs() {
 }
 
 uint64_t LeakMonitor::CurrentAllocIndex() {
-  CHECK(has_install_monitor_);
+  KCHECK(has_install_monitor_);
   return alloc_index_.load(std::memory_order_relaxed);
 }
 
@@ -237,7 +238,7 @@ ALWAYS_INLINE void LeakMonitor::OnMonitor(uintptr_t address, size_t size) {
     return;
   }
 
-  DLOGI("%s address %p, size %d", __FUNCTION__, address, size);
+  ALOGI("%s address %p, size %d", __FUNCTION__, address, size);
   RegisterAlloc(address, size);
 }
 

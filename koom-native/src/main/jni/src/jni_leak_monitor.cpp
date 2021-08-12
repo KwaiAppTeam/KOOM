@@ -21,8 +21,9 @@
 #include "leak_monitor.h"
 #include "memory_map.h"
 #include <jni.h>
-#include <utils/log_util.h>
 #include <utils/scoped_local_ref.h>
+#include <log/log.h>
+#include <log/kcheck.h>
 #include <stdlib.h>
 #include <libgen.h>
 #include <vector>
@@ -32,13 +33,13 @@ namespace leak_monitor {
 #define FIND_CLASS(var, class_name)                                                                \
   do {                                                                                             \
     var = env->FindClass(class_name);                                                              \
-    CHECK(var);                                                                                    \
+    KCHECK(var);                                                                                   \
   } while (0)
 
 #define GET_METHOD_ID(var, clazz, name, descriptor)                                                \
   do {                                                                                             \
     var = env->GetMethodID(clazz, name, descriptor);                                               \
-    CHECK(var);                                                                                    \
+    KCHECK(var);                                                                                   \
   } while (0)
 
 struct ClassInfo {

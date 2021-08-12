@@ -22,7 +22,6 @@
 
 #include "constants.h"
 #include "utils/concurrent_hash_map.h"
-#include "utils/log_util.h"
 
 #include <list>
 #include <vector>
