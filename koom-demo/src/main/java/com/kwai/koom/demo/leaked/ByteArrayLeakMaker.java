@@ -1,10 +1,4 @@
-package com.kwai.koom.demo.leaked;
-
-import android.content.Context;
-
-import com.kwai.koom.javaoom.common.KConstants;
-
-/**
+/*
  * Copyright 2020 Kwai, Inc. All rights reserved.
  * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -21,6 +15,11 @@ import com.kwai.koom.javaoom.common.KConstants;
  *
  * @author Rui Li <lirui05@kuaishou.com>
  */
+
+package com.kwai.koom.demo.leaked;
+
+import android.content.Context;
+
 public class ByteArrayLeakMaker extends LeakMaker<ByteArrayLeakMaker.ByteArrayHolder> {
 
   @Override
@@ -32,7 +31,7 @@ public class ByteArrayLeakMaker extends LeakMaker<ByteArrayLeakMaker.ByteArrayHo
     private byte[] array;
 
     public ByteArrayHolder() {
-      array = new byte[KConstants.ArrayThreshold.DEFAULT_BIG_PRIMITIVE_ARRAY + 1];
+      array = new byte[512 * 1024];
     }
   }
 

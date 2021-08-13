@@ -1,15 +1,4 @@
-package com.kwai.koom.demo.leaked;
-
-import java.util.List;
-
-import android.app.Activity;
-import android.content.Context;
-import android.content.Intent;
-import android.os.Bundle;
-import androidx.annotation.Nullable;
-import androidx.appcompat.app.AppCompatActivity;
-
-/**
+/*
  * Copyright 2020 Kwai, Inc. All rights reserved.
  * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -26,6 +15,18 @@ import androidx.appcompat.app.AppCompatActivity;
  *
  * @author Rui Li <lirui05@kuaishou.com>
  */
+
+package com.kwai.koom.demo.leaked;
+
+import java.util.List;
+
+import android.app.Activity;
+import android.content.Context;
+import android.content.Intent;
+import android.os.Bundle;
+import androidx.annotation.Nullable;
+import androidx.appcompat.app.AppCompatActivity;
+
 public class ActivityLeakMaker extends LeakMaker<Activity> {
 
   @Override

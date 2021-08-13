@@ -33,7 +33,6 @@ android {
 }
 
 dependencies {
-    implementation project(':java-oom')
     implementation deps.androidx.appcompat
     implementation deps.androidx.constraintlayout
     implementation deps.material
