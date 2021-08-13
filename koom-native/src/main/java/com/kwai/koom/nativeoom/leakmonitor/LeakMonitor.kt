@@ -55,7 +55,7 @@ object LeakMonitor : LoopMonitor<LeakMonitorConfig>() {
   private external fun nativeAsyncRefreshMonitor()
 
   @JvmStatic
-  private external fun nativeSetAllocThreshold(size: Int)
+  private external fun nativeSetMonitorThreshold(size: Int)
 
   @JvmStatic
   private external fun nativeGetAllocIndex(): Long
@@ -113,7 +113,7 @@ object LeakMonitor : LoopMonitor<LeakMonitorConfig>() {
         return
       }
     }
-    nativeSetAllocThreshold(monitorConfig.mallocThreshold)
+    nativeSetMonitorThreshold(monitorConfig.monitorThreshold)
 
     super.startLoop(clearQueue, postAtFront, delayMillis)
   }

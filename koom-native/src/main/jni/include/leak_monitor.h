@@ -56,12 +56,12 @@ struct ThreadInfo {
 class LeakMonitor {
 public:
   static LeakMonitor &GetInstance();
-  bool InstallMonitor(std::vector<std::string> *selected_list,
+  bool Install(std::vector<std::string> *selected_list,
                       std::vector<std::string> *ignore_list);
-  void UninstallMonitor();
+  void Uninstall();
   int SyncRefresh();
   int AsyncRefresh();
-  void SetAllocThreshold(size_t threshold);
+  void SetMonitorThreshold(size_t threshold);
   std::vector<std::shared_ptr<AllocRecord>> GetLeakAllocs();
   uint64_t CurrentAllocIndex();
   void OnMonitor(uintptr_t address, size_t size);

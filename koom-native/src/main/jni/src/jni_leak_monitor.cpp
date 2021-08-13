@@ -58,7 +58,7 @@ static MemoryMap g_memory_map;
 static bool g_enable_local_symbolic = false;
 
 static void UninstallMonitor(JNIEnv *env, jclass) {
-  LeakMonitor::GetInstance().UninstallMonitor();
+  LeakMonitor::GetInstance().Uninstall();
   g_memory_map.~MemoryMap();
   env->DeleteGlobalRef(g_frame_info.global_ref);
   memset(&g_frame_info, 0, sizeof(g_frame_info));
@@ -103,7 +103,7 @@ static bool InstallMonitor(JNIEnv *env, jclass clz,
 
   std::vector<std::string> selected_so = array_to_vector(env, selected_array);
   std::vector<std::string> ignore_so = array_to_vector(env, ignore_array);
-  bool ret = LeakMonitor::GetInstance().InstallMonitor(&selected_so, &ignore_so);
+  bool ret = LeakMonitor::GetInstance().Install(&selected_so, &ignore_so);
   if (!ret) {
     UninstallMonitor(env, clz);
   }
@@ -114,11 +114,11 @@ static void SyncRefreshMonitor(JNIEnv *, jclass) { LeakMonitor::GetInstance().Sy
 
 static void AsyncRefreshMonitor(JNIEnv *, jclass) { LeakMonitor::GetInstance().AsyncRefresh(); }
 
-static void SetAllocThreshold(JNIEnv *, jclass, jint size) {
+static void SetMonitorThreshold(JNIEnv *, jclass, jint size) {
   if (size < kDefaultAllocThreshold) {
     size = kDefaultAllocThreshold;
   }
-  LeakMonitor::GetInstance().SetAllocThreshold(size);
+  LeakMonitor::GetInstance().SetMonitorThreshold(size);
 }
 
 static jlong GetAllocIndex(JNIEnv *, jclass) {
@@ -211,7 +211,7 @@ static const JNINativeMethod kLeakMonitorMethods[] = {
     {"nativeUninstallMonitor", "()V", reinterpret_cast<void *>(UninstallMonitor)},
     {"nativeSyncRefreshMonitor", "()V", reinterpret_cast<void *>(SyncRefreshMonitor)},
     {"nativeAsyncRefreshMonitor", "()V", reinterpret_cast<void *>(AsyncRefreshMonitor)},
-    {"nativeSetAllocThreshold", "(I)V", reinterpret_cast<void *>(SetAllocThreshold)},
+    {"nativeSetMonitorThreshold", "(I)V", reinterpret_cast<void *>(SetMonitorThreshold)},
     {"nativeGetAllocIndex", "()J", reinterpret_cast<void *>(GetAllocIndex)},
     {"nativeGetLeakAllocs", "(Ljava/util/Map;)V", reinterpret_cast<void *>(GetLeakAllocs)}};
 

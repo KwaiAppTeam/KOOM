@@ -8,135 +8,109 @@
 #include <sys/prctl.h>
 
 #define NOINLINE __attribute__((noinline))
-#define LOG_TAG "unreachable"
-#define NUM_TEST_CASE 10
+#define LOG_TAG "NativeLeakTest"
+#define NR_TEST_THREAD 10
+#define NR_TEST_CASE 10
+#define KB(x) ((x) * 1024L)
+#define MB(x) (KB(x) * 1024L)
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__)
 
 static NOINLINE void TestMallocLeak() {
-    for (int i = 0; i < NUM_TEST_CASE; i++) {
-        long ran = random();
-        if (ran > 0) {
-            size_t size = ran % 30000001;
-            void *mem_ran = malloc(size);
-            if (i % 2) {
-                LOGI("%s %p size %u", __FUNCTION__, mem_ran, size);
-            } else {
-                free(mem_ran);
-                mem_ran = nullptr;
-            }
-        }
+  for (int i = 0; i < NR_TEST_CASE; i++) {
+    size_t size = MB(std::rand() % 10);
+    auto ptr = malloc(size);
+    if (i % 2) {
+      LOGI("%s %p size %u", __FUNCTION__, ptr, size);
+    } else {
+      free(ptr);
     }
+  }
 }
 
 static NOINLINE void TestReallocLeak() {
-    for (int i = 0; i < NUM_TEST_CASE; i++) {
-        long ran = random();
-        if (ran > 0) {
-            size_t size = ran % 102470;
-            void *mem_ran = realloc(nullptr, size);
-            if (i % 2) {
-                LOGI("%s %p size %u", __FUNCTION__, mem_ran, size);
-            } else {
-                free(mem_ran);
-                mem_ran = nullptr;
-            }
-        }
+  for (int i = 0; i < NR_TEST_CASE; i++) {
+    size_t size = KB(std::rand() % 1000);
+    auto ptr = realloc(nullptr, size);
+    if (i % 2) {
+      LOGI("%s %p size %u", __FUNCTION__, ptr, size);
+    } else {
+      free(ptr);
     }
+  }
 }
 
 static NOINLINE void TestCallocLeak() {
-    for (int i = 0; i < NUM_TEST_CASE; i++) {
-        long ran = random();
-        if (ran > 0) {
-            size_t size = ran % 1023;
-            void *mem_ran = calloc(size, 8);
-            if (i % 2) {
-                LOGI("%s %p size %u", __FUNCTION__, mem_ran, size);
-            } else {
-                free(mem_ran);
-                mem_ran = nullptr;
-            }
-        }
+  for (int i = 0; i < NR_TEST_CASE; i++) {
+    size_t size = std::rand() % 1000;
+    auto ptr = calloc(size, 8);
+    if (i % 2) {
+      LOGI("%s %p size %u", __FUNCTION__, ptr, size);
+    } else {
+      free(ptr);
     }
+  }
 }
 
 static NOINLINE void TestMemalignLeak() {
-    for (int i = 0; i < NUM_TEST_CASE; i++) {
-        long ran = random();
-        if (ran > 0) {
-            size_t size = ran % 4095;
-            void *mem_ran = memalign(16, size);
-            if (i % 2) {
-                LOGI("%s %p size %u", __FUNCTION__, mem_ran, size);
-            } else {
-                free(mem_ran);
-                mem_ran = nullptr;
-            }
-        }
+  for (int i = 0; i < NR_TEST_CASE; i++) {
+    size_t size = KB(std::rand() % 1000);
+    auto ptr = memalign(16, size);
+    if (i % 2) {
+      LOGI("%s %p size %u", __FUNCTION__, ptr, size);
+    } else {
+      free(ptr);
     }
+
+  }
 }
 
 static NOINLINE void TestNewLeak() {
-    for (int i = 0; i < NUM_TEST_CASE; i++) {
-        long ran = random();
-        if (ran > 0) {
-            size_t size = ran % 127;
-            std::string *test_string = new std::string("test_string");
-            if (i % 2) {
-                LOGI("%s %p size %u", __FUNCTION__, test_string, size);
-            } else {
-                delete test_string;
-                test_string = nullptr;
-            }
-        }
+  for (int i = 0; i < NR_TEST_CASE; i++) {
+    auto str_ptr = new std::string("test_leak_string");
+    if (i % 2) {
+      LOGI("%s %p size %u", __FUNCTION__, str_ptr, str_ptr->size());
+    } else {
+      delete str_ptr;
     }
+  }
 }
 
 static NOINLINE void TestNewArrayLeak() {
-    for (int i = 0; i < NUM_TEST_CASE; i++) {
-        long ran = random();
-        if (ran > 0) {
-            size_t size = ran % 4095;
-            std::string *array = new std::string[size];
-            if (i % 2) {
-                LOGI("%s %p size %u", __FUNCTION__, array, size);
-            } else {
-                delete[] array;
-                array = nullptr;
-            }
-        }
+  for (int i = 0; i < NR_TEST_CASE; i++) {
+    size_t size = std::rand() % 1000;
+    auto array_ptr = new std::string[size];
+    if (i % 2) {
+      LOGI("%s %p size %u", __FUNCTION__, array_ptr, size * sizeof(std::string));
+    } else {
+      delete[] array_ptr;
     }
+  }
 }
 
 static NOINLINE void TestContainerLeak() {
-    std::vector<std::string> str_vector;
-    for (int i = 0; i < NUM_TEST_CASE; i++) {
-        str_vector.push_back("Container");
-        LOGI("%s %d", __FUNCTION__, __LINE__);
-    }
+  std::vector<std::string *> str_vector(NR_TEST_CASE);
+  for (int i = 0; i < NR_TEST_CASE; i++) {
+    str_vector[i] = new std::string("test_leak_container");
+  }
 }
 
 static NOINLINE jlong TestJavaRefNative() {
-    void **native_object = (void **)malloc(sizeof(void *) * NUM_TEST_CASE);
-    LOGI("%s Holder addr %p", __FUNCTION__, native_object);
-    for (int i = 0; i < NUM_TEST_CASE; i++) {
-        long ran = random();
-        if (ran > 0) {
-            size_t size = ran % 4095;
-            native_object[i] = malloc(size);
-            LOGI("%s %p size %u", __FUNCTION__, native_object[i], size);
-        }
-    }
-
-    return reinterpret_cast<jlong>(native_object);
+  auto native_ptr = (void **) malloc(sizeof(void *) * NR_TEST_CASE);
+  LOGI("%s Holder addr %p", __FUNCTION__, native_ptr);
+  for (int i = 0; i < NR_TEST_CASE; i++) {
+    size_t size = std::rand() % 1000;
+    native_ptr[i] = malloc(size);
+    LOGI("%s %p size %u", __FUNCTION__, native_ptr[i], size);
+  }
+  return reinterpret_cast<jlong>(native_ptr);
 }
 
 extern "C" JNIEXPORT jlong
 Java_com_kwai_koom_demo_nativeleak_NativeLeakTest_triggerLeak(
-        JNIEnv* env,
-        jclass ,
-        jobject unuse/* this */) {
-  auto alloc_test = []() -> void {
+    JNIEnv *env,
+    jclass,
+    jobject unuse/* this */) {
+  auto leak_test = []() {
     TestMallocLeak();
     TestCallocLeak();
     TestReallocLeak();
@@ -146,11 +120,10 @@ Java_com_kwai_koom_demo_nativeleak_NativeLeakTest_triggerLeak(
     TestContainerLeak();
   };
 
-//  for (int i = 0; i < 10; i++) {
-//    std::thread test_thread(alloc_test);
-//    test_thread.detach();
-//  }
-alloc_test();
+  for (int i = 0; i < NR_TEST_THREAD; i++) {
+    std::thread test_thread(leak_test);
+    test_thread.detach();
+  }
 
   return TestJavaRefNative();
 }
