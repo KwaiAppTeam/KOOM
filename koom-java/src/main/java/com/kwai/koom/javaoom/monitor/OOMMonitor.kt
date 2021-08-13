@@ -223,7 +223,7 @@ object OOMMonitor : LoopMonitor<OOMMonitorConfig>(), LifecycleEventObserver {
             startAnalysisService(hprofFile, jsonFile, "reanalysis")
           } else if (jsonFile.length() == 0L) {
             MonitorLog.i(TAG, "retry analysis, json file exists but length 0, this means " +
-                " koom crashed in last analysis, so delete the files", true)
+                "koom didn't success in last analysis, so delete the files", true)
 
             // 表示是重新触发过1次，依然失败的案例，直接将其删除避免后续重复分析
             jsonFile.delete()
@@ -263,7 +263,7 @@ object OOMMonitor : LoopMonitor<OOMMonitorConfig>(), LifecycleEventObserver {
     }
 
     if (!getApplication().isForeground) {
-      MonitorLog.e(TAG, "not foreground")
+      MonitorLog.e(TAG, "try startAnalysisService, but not foreground")
       mForegroundPendingRunnables.add(Runnable { startAnalysisService(hprofFile, jsonFile, reason) })
       return
     }

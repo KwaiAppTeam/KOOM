@@ -1,11 +1,4 @@
-package com.kwai.koom.demo.leaked;
-
-import android.content.Context;
-import android.graphics.Bitmap;
-
-import com.kwai.koom.javaoom.common.KConstants;
-
-/**
+/*
  * Copyright 2020 Kwai, Inc. All rights reserved.
  * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -22,12 +15,17 @@ import com.kwai.koom.javaoom.common.KConstants;
  *
  * @author Rui Li <lirui05@kuaishou.com>
  */
+
+package com.kwai.koom.demo.leaked;
+
+import android.content.Context;
+import android.graphics.Bitmap;
+
 public class BitmapLeakMaker extends LeakMaker<Bitmap> {
 
   @Override
   public void startLeak(Context context) {
-    Bitmap bitmap = Bitmap.createBitmap(KConstants.BitmapThreshold.DEFAULT_BIG_WIDTH + 1,
-        KConstants.BitmapThreshold.DEFAULT_BIG_HEIGHT + 1, Bitmap.Config.ARGB_8888);
+    Bitmap bitmap = Bitmap.createBitmap(1920, 1080, Bitmap.Config.ARGB_8888);
     uselessObjectList.add(bitmap);
   }
 }
