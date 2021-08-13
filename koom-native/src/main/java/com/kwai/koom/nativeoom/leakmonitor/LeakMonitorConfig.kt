@@ -28,18 +28,36 @@ class LeakMonitorConfig(
 
     val leakItemsThreshold: Int,
     val nativeHeapAllocatedThreshold: Int,
-    val mallocThreshold: Int,
+    val monitorThreshold: Int,
     val loopInterval: Long,
     val enableLocalSymbolic: Boolean,
     val leakListener: LeakListener
 ) : MonitorConfig<LeakMonitor>() {
 
   class Builder : MonitorConfig.Builder<LeakMonitorConfig> {
+    /**
+     * List of so to be monitored
+     */
     private var mSelectedSoList = emptyArray<String>()
+
+    /**
+     * List of so to be NOT monitored
+     */
     private var mIgnoredSoList = emptyArray<String>()
 
+    /**
+     * Leak reporting threshold, if leak items exceed thredhold NOT reporting
+     */
     private var mLeakItemsThreshold = 200
-    private var mMallocThreshold = 7
+
+    /**
+     * Exceed malloc threshold memory allocation will be monitored
+     */
+    private var mMonitorThreshold = 16
+
+    /**
+     * If Native Heap exceed NativeHeapAllocatedThreshold will trigger leak analysis
+     */
     private var mNativeHeapAllocatedThreshold = 0
 
     /**
@@ -47,8 +65,15 @@ class LeakMonitorConfig(
      */
     private var mLoopInterval = 300_000L
 
+    /**
+     * If enable local symbolic, leak backtrace will contain symbol info, or you only get rel_pc.
+     * Then you can use 'address2line' tool analysis rel_pc
+     */
     private var mEnableLocalSymbolic = false
 
+    /**
+     * You can receive leaks with your custom leak listener, it run in work thread.
+     */
     private var mLeakListener: LeakListener = object : LeakListener {
       override fun onLeak(leaks: MutableCollection<LeakRecord>) {
         leaks.forEach { MonitorLog.i(LeakMonitor.TAG, "$it") }
@@ -71,8 +96,8 @@ class LeakMonitorConfig(
       mNativeHeapAllocatedThreshold = nativeHeapAllocatedThreshold
     }
 
-    fun setMallocThreshold(mallocThreshold: Int) = apply {
-      mMallocThreshold = mallocThreshold
+    fun setMonitorThreshold(mallocThreshold: Int) = apply {
+      mMonitorThreshold = mallocThreshold
     }
 
     fun setLoopInterval(loopInterval: Long) = apply {
@@ -92,7 +117,7 @@ class LeakMonitorConfig(
         ignoredSoList = mIgnoredSoList,
         leakItemsThreshold = mLeakItemsThreshold,
         nativeHeapAllocatedThreshold = mNativeHeapAllocatedThreshold,
-        mallocThreshold = mMallocThreshold,
+        monitorThreshold = mMonitorThreshold,
         loopInterval = mLoopInterval,
         enableLocalSymbolic = mEnableLocalSymbolic,
         leakListener = mLeakListener

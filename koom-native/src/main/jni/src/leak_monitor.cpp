@@ -101,7 +101,7 @@ LeakMonitor &LeakMonitor::GetInstance() {
   return leak_monitor;
 }
 
-bool LeakMonitor::InstallMonitor(std::vector<std::string> *selected_list,
+bool LeakMonitor::Install(std::vector<std::string> *selected_list,
                                  std::vector<std::string> *ignore_list) {
   KCHECK(!has_install_monitor_);
 
@@ -151,7 +151,7 @@ bool LeakMonitor::InstallMonitor(std::vector<std::string> *selected_list,
   return false;
 }
 
-void LeakMonitor::UninstallMonitor() {
+void LeakMonitor::Uninstall() {
   KCHECK(has_install_monitor_);
   has_install_monitor_ = false;
   live_alloc_records_.Clear();
@@ -168,7 +168,7 @@ int LeakMonitor::AsyncRefresh() {
   return HookHelper::AsyncRefreshHook() ? EXIT_SUCCESS : EXIT_FAILURE;
 }
 
-void LeakMonitor::SetAllocThreshold(size_t threshold) {
+void LeakMonitor::SetMonitorThreshold(size_t threshold) {
   KCHECK(has_install_monitor_);
   alloc_threshold_ = threshold;
 }
