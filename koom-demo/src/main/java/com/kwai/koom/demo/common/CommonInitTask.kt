@@ -1,4 +1,4 @@
-package com.kwai.koom.demo.nativeleak.init
+package com.kwai.koom.demo.common
 
 import android.app.Application
 import com.kwai.koom.base.CommonConfig
@@ -8,7 +8,7 @@ object CommonInitTask : InitTask {
   override fun init(application: Application) {
     val config = CommonConfig.Builder()
         .setApplication(application)
-        .setProductNameInvoker { "kpn" }
+        .setProductNameInvoker { "KOOM" }
         .setVersionNameInvoker { "1.0.0" }
         .setServiceIdInvoker { "UNKNOWN" }
         .setChannelInvoker { "UNKNOWN" }
