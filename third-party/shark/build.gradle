@@ -12,7 +12,7 @@ dependencies {
     // enables us to ensure binary compatibility with Okio 1.x and allow us to use the deprecated (error level) Okio APIs to keep that
     // compatibility.
     // See https://github.com/square/leakcanary/issues/1624
-    compileOnly deps.okio_1x
+    implementation deps.okio_1x
 }
 
 apply from: rootProject.file('gradle/jcenter-publish.gradle')

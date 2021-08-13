@@ -1,10 +1,3 @@
-package com.kwai.koom.demo.leaked;
-
-import java.util.ArrayList;
-import java.util.List;
-
-import android.content.Context;
-
 /**
  * Copyright 2020 Kwai, Inc. All rights reserved.
  * <p>
@@ -22,6 +15,14 @@ import android.content.Context;
  *
  * @author Rui Li <lirui05@kuaishou.com>
  */
+
+package com.kwai.koom.demo.leaked;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import android.content.Context;
+
 public abstract class LeakMaker<T> {
   List<T> uselessObjectList = new ArrayList<>();
 
@@ -37,6 +38,17 @@ public abstract class LeakMaker<T> {
     leakMakerList.add(new StringLeakMaker());
     for (LeakMaker leakMaker : leakMakerList) {
       leakMaker.startLeak(context);
+    }
+
+    //mock线程泄露
+    for (int i = 0; i < 700; i++) {
+      new Thread(() -> {
+        try {
+          Thread.sleep(2000);
+        } catch (InterruptedException e) {
+          e.printStackTrace();
+        }
+      }).start();
     }
   }
 }

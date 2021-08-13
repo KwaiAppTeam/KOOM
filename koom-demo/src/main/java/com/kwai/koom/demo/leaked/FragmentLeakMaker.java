@@ -1,9 +1,4 @@
-package com.kwai.koom.demo.leaked;
-
-import android.content.Context;
-import androidx.fragment.app.Fragment;
-
-/**
+/*
  * Copyright 2020 Kwai, Inc. All rights reserved.
  * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -20,6 +15,12 @@ import androidx.fragment.app.Fragment;
  *
  * @author Rui Li <lirui05@kuaishou.com>
  */
+
+package com.kwai.koom.demo.leaked;
+
+import android.content.Context;
+import androidx.fragment.app.Fragment;
+
 public class FragmentLeakMaker extends LeakMaker<Fragment> {
 
   @Override

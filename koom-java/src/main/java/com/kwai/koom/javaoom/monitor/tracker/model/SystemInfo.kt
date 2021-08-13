@@ -117,12 +117,11 @@ internal object SystemInfo {
 
     memInfo.rate = 1.0f * memInfo.availableInKb / memInfo.totalInKb
 
-    MonitorLog.i(TAG,
-        "----OOM Monitor Memory----\n" +
-            "[java] max:${javaHeap.max} used ratio:${(javaHeap.rate * 100).toInt()}%\n" +
-            "[proc] VmSize:${procStatus.vssInKb}kB VmRss:${procStatus.rssInKb}kB Threads:${procStatus.thread}\n" +
-            "[meminfo] MemTotal:${memInfo.totalInKb}kB MemFree:${memInfo.freeInKb}kB MemAvailable:${memInfo.availableInKb}kB " +
-            "avaliable ratio:${(memInfo.rate * 100).toInt()}% CmaTotal:${memInfo.cmaTotal}kB ION_heap:${memInfo.IONHeap}kB\n")
+    MonitorLog.i(TAG, "----OOM Monitor Memory----")
+    MonitorLog.i(TAG,"[java] max:${javaHeap.max} used ratio:${(javaHeap.rate * 100).toInt()}%")
+    MonitorLog.i(TAG,"[proc] VmSize:${procStatus.vssInKb}kB VmRss:${procStatus.rssInKb}kB " + "Threads:${procStatus.thread}")
+    MonitorLog.i(TAG,"[meminfo] MemTotal:${memInfo.totalInKb}kB MemFree:${memInfo.freeInKb}kB " + "MemAvailable:${memInfo.availableInKb}kB")
+    MonitorLog.i(TAG,"avaliable ratio:${(memInfo.rate * 100).toInt()}% CmaTotal:${memInfo.cmaTotal}kB ION_heap:${memInfo.IONHeap}kB")
 
     //zoneinfo普通user模式没权限读，先搁置
     /*

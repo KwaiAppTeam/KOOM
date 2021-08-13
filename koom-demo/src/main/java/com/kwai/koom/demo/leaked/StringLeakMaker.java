@@ -2,8 +2,6 @@ package com.kwai.koom.demo.leaked;
 
 import android.content.Context;
 
-import com.kwai.koom.javaoom.common.KConstants;
-
 /**
  * Copyright 2020 Kwai, Inc. All rights reserved.
  * <p>
@@ -25,8 +23,7 @@ public class StringLeakMaker extends LeakMaker<String> {
 
   @Override
   void startLeak(Context context) {
-    String largeStr = new String(new byte[KConstants.ArrayThreshold
-        .DEFAULT_BIG_PRIMITIVE_ARRAY + 1]);
+    String largeStr = new String(new byte[512 * 1024]);
     uselessObjectList.add(largeStr);
   }
 }
