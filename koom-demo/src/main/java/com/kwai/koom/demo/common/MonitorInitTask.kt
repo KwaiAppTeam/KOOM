@@ -1,11 +1,12 @@
-package com.kwai.koom.demo.nativeleak.init
+package com.kwai.koom.demo.common
 
 import android.app.Application
 import android.os.SystemClock
 import android.util.Log
+import com.kwai.koom.demo.nativeleak.LeakMonitorInitTask
 
-object PerformanceInitTask : InitTask {
-  private const val TAG = "PerformanceInitTask"
+object MonitorInitTask : InitTask {
+  private const val TAG = "MonitorInitTask"
 
   override fun init(application: Application) {
     val start = SystemClock.elapsedRealtime()

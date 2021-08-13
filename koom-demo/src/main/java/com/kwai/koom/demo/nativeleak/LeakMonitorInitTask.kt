@@ -1,7 +1,8 @@
-package com.kwai.koom.demo.nativeleak.init
+package com.kwai.koom.demo.nativeleak
 
 import android.app.Application
 import com.kwai.koom.base.MonitorManager
+import com.kwai.koom.demo.common.InitTask
 import com.kwai.koom.nativeoom.leakmonitor.LeakMonitorConfig
 
 object LeakMonitorInitTask : InitTask {
@@ -17,6 +18,5 @@ object LeakMonitorInitTask : InitTask {
         .build()
 
     MonitorManager.addMonitorConfig(config)
-
   }
 }

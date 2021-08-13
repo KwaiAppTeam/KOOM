@@ -1,4 +1,4 @@
-package com.kwai.koom.demo.nativeleak.init
+package com.kwai.koom.demo.common
 
 import android.app.Application
 
