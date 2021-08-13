@@ -27,11 +27,13 @@ import androidx.annotation.RequiresApi
 import com.google.gson.Gson
 import com.kwai.koom.base.CommonConfig
 import com.kwai.koom.base.Logger
+import com.kwai.koom.base.MonitorBuildConfig
 import com.kwai.koom.base.MonitorLog
 import com.kwai.koom.base.MonitorLogger
 import com.kwai.koom.base.loadSoQuietly
 import com.kwai.koom.base.loop.LoopMonitor
 import com.kwai.koom.nativeoom.leakmonitor.allocationtag.AllocationTagLifecycleCallbacks
+import java.lang.RuntimeException
 import java.util.*
 import java.util.concurrent.atomic.AtomicInteger
 
@@ -41,7 +43,7 @@ object LeakMonitor : LoopMonitor<LeakMonitorConfig>() {
 
   @JvmStatic
   private external fun nativeInstallMonitor(selectedList: Array<String>,
-    ignoreList: Array<String>, enableLocalSymbolic: Boolean)
+    ignoreList: Array<String>, enableLocalSymbolic: Boolean): Boolean
 
   @JvmStatic
   private external fun nativeUninstallMonitor()
@@ -102,8 +104,15 @@ object LeakMonitor : LoopMonitor<LeakMonitorConfig>() {
 
     AllocationTagLifecycleCallbacks.register()
 
-    nativeInstallMonitor(monitorConfig.selectedSoList,
-      monitorConfig.ignoredSoList, monitorConfig.enableLocalSymbolic)
+    if (!nativeInstallMonitor(monitorConfig.selectedSoList,
+        monitorConfig.ignoredSoList, monitorConfig.enableLocalSymbolic)) {
+      if (MonitorBuildConfig.DEBUG) {
+        throw RuntimeException("LeakMonitor Install Fail")
+      } else {
+        MonitorLog.e(TAG, "LeakMonitor Install Fail")
+        return
+      }
+    }
     nativeSetAllocThreshold(monitorConfig.mallocThreshold)
 
     super.startLoop(clearQueue, postAtFront, delayMillis)
