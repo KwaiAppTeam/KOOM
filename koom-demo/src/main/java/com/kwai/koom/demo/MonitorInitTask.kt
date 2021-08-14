@@ -7,6 +7,7 @@ import com.kwai.koom.demo.common.CommonInitTask
 import com.kwai.koom.demo.common.InitTask
 import com.kwai.koom.demo.javaleak.OOMMonitorInitTask
 import com.kwai.koom.demo.nativeleak.LeakMonitorInitTask
+import com.kwai.koom.demo.threadleak.ThreadMonitorInitTask
 
 object MonitorInitTask : InitTask {
   private const val TAG = "MonitorInitTask"
@@ -20,6 +21,7 @@ object MonitorInitTask : InitTask {
 
     LeakMonitorInitTask.init(application)
     OOMMonitorInitTask.init(application)
+    ThreadMonitorInitTask.init(application)
 
     Log.i(TAG, "init custom config cost = ${SystemClock.elapsedRealtime() - start}")
   }

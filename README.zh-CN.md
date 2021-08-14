@@ -42,7 +42,7 @@ public class KOOMApplication extends Application {
 可以择机主动获取
 ```Java
 public void getReportManually() {
-    File reportDir = new File(KOOM.getInstance().getReportDir());
+    File reportDir = new File(KOOM.GetInstance().getReportDir());
     for (File report : reportDir.listFiles()) {
         // Upload the report or do something else.
     }
@@ -52,9 +52,9 @@ public void getReportManually() {
 也可以实时监听报告生成状态
 ```Java
 public void listenReportGenerateStatus() {
-    KOOM.getInstance().setHeapReportUploader(file -> {
+    KOOM.GetInstance().setHeapReportUploader(file -> {
         // Upload the report or do something else.
-        // File is deleted automatically when callback is done by default.
+        // File is deleted automatically when Callback is done by default.
     });
 }
 ```

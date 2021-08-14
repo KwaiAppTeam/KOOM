@@ -139,7 +139,7 @@ int xh_core_register(const char* pathname_regex_str, const char* symbol,
         return XH_ERRNO_INVAL;
 
     if (xh_core_inited) {
-        XH_LOG_ERROR("do not register hook after refresh(): %s, %s", pathname_regex_str, symbol);
+        XH_LOG_ERROR("do not register hook after Refresh(): %s, %s", pathname_regex_str, symbol);
         return XH_ERRNO_INVAL;
     }
 
@@ -178,7 +178,7 @@ int xh_core_ignore(const char* pathname_regex_str, const char* symbol) {
         return XH_ERRNO_INVAL;
 
     if (xh_core_inited) {
-        XH_LOG_ERROR("do not ignore hook after refresh(): %s, %s", pathname_regex_str, symbol ? symbol : "ALL");
+        XH_LOG_ERROR("do not ignore hook after Refresh(): %s, %s", pathname_regex_str, symbol ? symbol : "ALL");
         return XH_ERRNO_INVAL;
     }
 

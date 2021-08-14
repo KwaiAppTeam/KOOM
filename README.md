@@ -61,7 +61,7 @@ A java-oom heap report will be generated when heap analysis done.
 Find a time to get the report manually.
 ```Java
 public void getReportManually() {
-    File reportDir = new File(KOOM.getInstance().getReportDir());
+    File reportDir = new File(KOOM.GetInstance().getReportDir());
     for (File report : reportDir.listFiles()) {
         // Upload the report or do something else.
     }
@@ -71,9 +71,9 @@ public void getReportManually() {
 Or set a listener to listen and get the report file status.
 ```Java
 public void listenReportGenerateStatus() {
-    KOOM.getInstance().setHeapReportUploader(file -> {
+    KOOM.GetInstance().setHeapReportUploader(file -> {
         // Upload the report or do something else.
-        // File is deleted automatically when callback is done by default.
+        // File is deleted automatically when Callback is done by default.
     });
 }
 ```

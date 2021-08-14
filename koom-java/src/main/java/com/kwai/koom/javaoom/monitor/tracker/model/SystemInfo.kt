@@ -53,7 +53,7 @@ internal object SystemInfo {
   //var normalZoneInfo: ZoneInfo = ZoneInfo()
 
   fun refresh() {
-    MonitorLog.i(TAG, "refresh system memory info")
+    MonitorLog.i(TAG, "Refresh system memory info")
 
     lastJavaHeap = javaHeap
     lastMemInfo = memInfo

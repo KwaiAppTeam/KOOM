@@ -296,7 +296,7 @@ enum class AndroidReferenceMatchers {
       references += instanceFieldLeak(
         "android.widget.SpellChecker$1", "this$0",
         description = "SpellChecker holds on to a detached view that points to a destroyed activity."
-          + " mSpellRunnable is being enqueued, and that callback should be removed when "
+          + " mSpellRunnable is being enqueued, and that Callback should be removed when "
           + " closeSession() is called. Maybe closeSession() wasn't called, or maybe it was "
           + " called after the view was detached."
       ) {
@@ -468,7 +468,7 @@ enum class AndroidReferenceMatchers {
       references += instanceFieldLeak(
         "android.widget.Editor\$Blink", "this$0",
         description =
-        "The EditText Blink of the Cursor is implemented using a callback and Messages,"
+        "The EditText Blink of the Cursor is implemented using a Callback and Messages,"
           + " which trigger the display of the Cursor. If an AlertDialog or DialogFragment that"
           + " contains a blinking cursor is detached, a message is posted with a delay after the"
           + " dialog has been closed and as a result leaks the Activity."
@@ -570,7 +570,7 @@ enum class AndroidReferenceMatchers {
     override fun add(references: MutableList<ReferenceMatcher>) {
       references += instanceFieldLeak(
         "android.widget.Magnifier\$InternalPopupWindow", "mCallback",
-        description = "android.widget.Magnifier.InternalPopupWindow registers a frame callback" +
+        description = "android.widget.Magnifier.InternalPopupWindow registers a frame Callback" +
           " on android.view.ThreadedRenderer.SimpleRenderer which holds it as a native" +
           " reference. android.widget.Editor\$InsertionHandleView registers an" +
           " OnOperationCompleteCallback on Magnifier.InternalPopupWindow. These references are" +
@@ -724,7 +724,7 @@ enum class AndroidReferenceMatchers {
         "android.sec.clipboard.ClipboardUIManager", "mContext",
         description =
         "ClipboardUIManager is a static singleton that leaks an activity context."
-          + " Fix: trigger a call to ClipboardUIManager.getInstance() in Application.onCreate()"
+          + " Fix: trigger a call to ClipboardUIManager.GetInstance() in Application.onCreate()"
           + " , so that the ClipboardUIManager instance gets cached with a reference to the"
           + " application context. Example: https://gist.github.com/cypressious/"
           + "91c4fb1455470d803a602838dfcd5774"
@@ -761,7 +761,7 @@ enum class AndroidReferenceMatchers {
       references += instanceFieldLeak(
         "android.sec.clipboard.ClipboardExManager", "mContext",
         description = "android.sec.clipboard.ClipboardExManager\$IClipboardDataPasteEventImpl\$1" +
-          " is a native callback that holds IClipboardDataPasteEventImpl which holds" +
+          " is a native Callback that holds IClipboardDataPasteEventImpl which holds" +
           " ClipboardExManager which has a destroyed activity as mContext"
       ) {
         manufacturer == SAMSUNG && sdkInt == 23
@@ -769,7 +769,7 @@ enum class AndroidReferenceMatchers {
       references += instanceFieldLeak(
         "android.sec.clipboard.ClipboardExManager", "mPersonaManager",
         description = "android.sec.clipboard.ClipboardExManager\$IClipboardDataPasteEventImpl\$1" +
-          " is a native callback that holds IClipboardDataPasteEventImpl which holds" +
+          " is a native Callback that holds IClipboardDataPasteEventImpl which holds" +
           " ClipboardExManager which holds PersonaManager which has a destroyed activity as" +
           " mContext"
       ) {
@@ -1014,7 +1014,7 @@ enum class AndroidReferenceMatchers {
     ) {
       references += instanceFieldLeak(
         "com.lge.systemservice.core.SmartCoverManager", "mContext",
-        description = "SmartCoverManager\$CallbackRegister is a callback held by a native ref," +
+        description = "SmartCoverManager\$CallbackRegister is a Callback held by a native ref," +
           " and SmartCoverManager ends up leaking an activity context."
       ) {
         manufacturer == LG && sdkInt == 27
