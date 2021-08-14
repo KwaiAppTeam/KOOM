@@ -8,6 +8,15 @@ android {
         applicationId "com.kwai.koom.demo"
         versionCode 1
         versionName "1.0"
+
+        externalNativeBuild {
+            cmake {
+                abiFilters 'armeabi-v7a', 'arm64-v8a'
+                arguments '-DANDROID_TOOLCHAIN=clang', '-DANDROID_STL=c++_shared', '-DCMAKE_VERBOSE_MAKEFILE=ON'
+                cppFlags '-Wl,--gc-sections', '-fno-exceptions', '-fno-rtti', '-fvisibility=hidden'
+                cFlags '-Wl,--gc-sections', '-fvisibility=hidden'
+            }
+        }
     }
 
     buildTypes {
@@ -20,7 +29,7 @@ android {
     externalNativeBuild {
         cmake {
             path 'src/main/jni/CMakeLists.txt'
-            version '3.10.2'
+            version '3.18.1'
         }
     }
 
