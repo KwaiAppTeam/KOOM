@@ -141,8 +141,7 @@ bool LeakMonitor::Install(std::vector<std::string> *selected_list,
       std::make_pair("free", reinterpret_cast<void *>(WRAP(free)))};
 
   StackTrace::Init();
-  if (HookHelper::HookMethods(register_pattern, ignore_pattern, hook_entries) &&
-      HookHelper::SyncRefreshHook()) {
+  if (HookHelper::HookMethods(register_pattern, ignore_pattern, hook_entries)) {
     has_install_monitor_ = true;
     return true;
   }
@@ -156,16 +155,6 @@ void LeakMonitor::Uninstall() {
   has_install_monitor_ = false;
   live_alloc_records_.Clear();
   memory_analyzer_.reset(nullptr);
-}
-
-int LeakMonitor::SyncRefresh() {
-  KCHECK(has_install_monitor_);
-  return HookHelper::SyncRefreshHook() ? EXIT_SUCCESS : EXIT_FAILURE;
-}
-
-int LeakMonitor::AsyncRefresh() {
-  KCHECK(has_install_monitor_);
-  return HookHelper::AsyncRefreshHook() ? EXIT_SUCCESS : EXIT_FAILURE;
 }
 
 void LeakMonitor::SetMonitorThreshold(size_t threshold) {

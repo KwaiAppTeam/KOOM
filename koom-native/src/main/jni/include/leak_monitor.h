@@ -59,8 +59,6 @@ public:
   bool Install(std::vector<std::string> *selected_list,
                       std::vector<std::string> *ignore_list);
   void Uninstall();
-  int SyncRefresh();
-  int AsyncRefresh();
   void SetMonitorThreshold(size_t threshold);
   std::vector<std::shared_ptr<AllocRecord>> GetLeakAllocs();
   uint64_t CurrentAllocIndex();

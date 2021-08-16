@@ -110,10 +110,6 @@ static bool InstallMonitor(JNIEnv *env, jclass clz,
   return ret;
 }
 
-static void SyncRefreshMonitor(JNIEnv *, jclass) { LeakMonitor::GetInstance().SyncRefresh(); }
-
-static void AsyncRefreshMonitor(JNIEnv *, jclass) { LeakMonitor::GetInstance().AsyncRefresh(); }
-
 static void SetMonitorThreshold(JNIEnv *, jclass, jint size) {
   if (size < kDefaultAllocThreshold) {
     size = kDefaultAllocThreshold;
@@ -209,8 +205,6 @@ static const JNINativeMethod kLeakMonitorMethods[] = {
     {"nativeInstallMonitor", "([Ljava/lang/String;[Ljava/lang/String;Z)Z",
      reinterpret_cast<void *>(InstallMonitor)},
     {"nativeUninstallMonitor", "()V", reinterpret_cast<void *>(UninstallMonitor)},
-    {"nativeSyncRefreshMonitor", "()V", reinterpret_cast<void *>(SyncRefreshMonitor)},
-    {"nativeAsyncRefreshMonitor", "()V", reinterpret_cast<void *>(AsyncRefreshMonitor)},
     {"nativeSetMonitorThreshold", "(I)V", reinterpret_cast<void *>(SetMonitorThreshold)},
     {"nativeGetAllocIndex", "()J", reinterpret_cast<void *>(GetAllocIndex)},
     {"nativeGetLeakAllocs", "(Ljava/util/Map;)V", reinterpret_cast<void *>(GetLeakAllocs)}};

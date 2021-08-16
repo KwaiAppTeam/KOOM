@@ -28,7 +28,10 @@ class HookHelper {
   static bool HookMethods(std::vector<const std::string> &register_pattern,
       std::vector<const std::string> &ignore_pattern,
       std::vector<std::pair<const std::string, void * const>> &methods);
-  static bool SyncRefreshHook();
-  static bool AsyncRefreshHook();
+ private:
+  static bool HookImpl();
+  static std::vector<const std::string> register_pattern_;
+  static std::vector<const std::string> ignore_pattern_;
+  static std::vector<std::pair<const std::string, void * const>> methods_;
 };
 #endif // KOOM_NATIVE_OOM_SRC_MAIN_JNI_INCLUDE_UTILS_HOOK_HELPER_H_

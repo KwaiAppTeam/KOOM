@@ -49,12 +49,6 @@ object LeakMonitor : LoopMonitor<LeakMonitorConfig>() {
   private external fun nativeUninstallMonitor()
 
   @JvmStatic
-  private external fun nativeSyncRefreshMonitor()
-
-  @JvmStatic
-  private external fun nativeAsyncRefreshMonitor()
-
-  @JvmStatic
   private external fun nativeSetMonitorThreshold(size: Int)
 
   @JvmStatic
@@ -128,25 +122,6 @@ object LeakMonitor : LoopMonitor<LeakMonitorConfig>() {
 
     super.stopLoop()
     nativeUninstallMonitor()
-  }
-
-  /**
-   * Sync Refresh Monitor, will hook dynamic loaded libraries.
-   */
-  fun syncRefresh() {
-    if (!isInitialized) return
-
-    nativeSyncRefreshMonitor()
-  }
-
-  /**
-   * AsyncRefresh Monitor, hook the loaded libraries, but may miss some
-   * malloc info at beginning
-   */
-  fun asyncRefresh() {
-    if (!isInitialized) return
-
-    nativeAsyncRefreshMonitor()
   }
 
   /**
