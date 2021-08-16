@@ -36,7 +36,9 @@ add_library( # Sets the name of the library.
         src/xh_version.c
         src/xh_version.h
         src/xhook.c
-        src/xhook.h)
+        src/xhook.h
+        src/dlopencb.h
+        src/dlopencb.cpp)
 
 # Searches for a specified prebuilt library and stores the path as a
 # variable. Because CMake includes system libraries in the search path by

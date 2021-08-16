@@ -53,7 +53,6 @@ add_library( # Sets the name of the library.
         ${CMAKE_SOURCE_DIR}/src/thread/thread_holder.cpp
         ${CMAKE_SOURCE_DIR}/src/thread/thread_hook.cpp
         ${CMAKE_SOURCE_DIR}/src/thread/hook_looper.cpp
-        ${CMAKE_SOURCE_DIR}/src/dlopencb/dlopencb.cpp
         )
 
 # Searches for a specified prebuilt library and stores the path as a

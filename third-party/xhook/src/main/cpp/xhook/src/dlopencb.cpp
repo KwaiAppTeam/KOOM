@@ -1,13 +1,28 @@
-//
-// Created by shenguanchu.
-//
+/*
+ * Copyright (c) 2021. Kwai, Inc. All rights reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *         http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * Created by shenvsv on 2021.
+ *
+ */
 
 #define LOG_TAG "dlopencb"
 
 #include "dlopencb.h"
-#include <xhook.h>
-#include <common/constant.h>
-#include <common/log.h>
+#include "xhook.h"
+#include "xh_log.h"
+#include <link.h>
 
 //兼容编译失败，实际API 21以下不支持开启
 #if __ANDROID_API__ < 21
@@ -33,7 +48,8 @@ DlopenCb::DlopenCb() {
 }
 
 bool DlopenCb::is_debug = false;
-pthread_mutex_t DlopenCb::hook_mutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t DlopenCb::hook_mutex =
+    PTHREAD_MUTEX_INITIALIZER;
 
 static bool hookDlopen(const std::string &lib) {
   if (lib.find(".so") != std::string::npos) {
@@ -59,7 +75,7 @@ int Callback(struct dl_phdr_info *info, size_t size, void *data) {
 }
 
 void DlopenCb::Refresh(int source, std::string &loadLibName) {
-  koom::Log::info(dlopencb_tag, "Refresh start %d", source);
+  XH_LOG_INFO("Refresh start %d", source);
   std::set<std::string> addLibs;
   pthread_mutex_lock(&add_lib_mutex);
   auto callbackData =
@@ -80,20 +96,20 @@ void DlopenCb::Refresh(int source, std::string &loadLibName) {
       auto lib_ctr = lib.c_str();
       xhook_register(lib_ctr, "android_dlopen_ext", (void *) (HookDlopenExt), nullptr);
       xhook_register(lib_ctr, "dlopen", (void *) (HookDlopen), nullptr);
-      koom::Log::info(dlopencb_tag, "Refresh new lib added %s", lib_ctr);
+      XH_LOG_INFO("Refresh new lib added %s", lib_ctr);
     }
     xhook_refresh(0);
     pthread_mutex_unlock(&hook_mutex);
 
     // notify
-    koom::Log::info(dlopencb_tag, "Refresh hooked");
+    XH_LOG_INFO("Refresh hooked");
     pthread_mutex_lock(&callback_mutex);
     for (auto &callback:callbacks) {
       callback(addLibs, source, loadLibName);
     }
     pthread_mutex_unlock(&callback_mutex);
   } else {
-    koom::Log::info(dlopencb_tag, "Refresh no lib found");
+    XH_LOG_INFO("Refresh no lib found");
   }
 }
 
@@ -106,31 +122,32 @@ void *DlopenCb::HookDlopenExt(const char *filename, int flags, const android_dle
 }
 
 void *DlopenCb::HookDlopen(const char *filename, int flag) {
-  void *result = kwai::linker::DlFcn::dlopen(filename, flag);
-  if (result != nullptr) {
-    GetInstance().OnDlopen(filename, dlopen_source_origin);
-  }
-  return result;
+//  void *result = kwai::linker::DlFcn::dlopen(filename, flag);
+//  if (result != nullptr) {
+//    GetInstance().OnDlopen(filename, dlopen_source_origin);
+//  }
+//  return result;
+  return nullptr;
 }
 
 void DlopenCb::OnDlopen(const char *filename, int source) {
   if (filename == nullptr || strlen(filename) == 0) {
     return;
   }
-  koom::Log::info(dlopencb_tag, "OnDlopen %d, %s", source, filename);
+  XH_LOG_INFO("OnDlopen %d, %s", source, filename);
   auto name = std::string(filename);
   GetInstance().Refresh(source, name);
 }
 
 void DlopenCb::AddCallback(void (*callback)(std::set<std::string> &, int, std::string &)) {
-  koom::Log::info(dlopencb_tag, "AddCallback %p", callback);
+  XH_LOG_INFO("AddCallback %p", callback);
   pthread_mutex_lock(&callback_mutex);
   callbacks.insert(callback);
   pthread_mutex_unlock(&callback_mutex);
 }
 
 void DlopenCb::RemoveCallback(void (*callback)(std::set<std::string> &, int, std::string &)) {
-  koom::Log::info(dlopencb_tag, "RemoveCallback %p", callback);
+  XH_LOG_INFO("RemoveCallback %p", callback);
   pthread_mutex_lock(&callback_mutex);
   callbacks.erase(callback);
   pthread_mutex_unlock(&callback_mutex);
@@ -145,7 +162,7 @@ void DlopenCb::GetLoadedLibs(std::set<std::string> &libs, bool refresh) {
     std::string empty;
     Refresh(dlopen_source_get_libs, empty);
   }
-  koom::Log::info(dlopencb_tag, "GetLoadedLibs origin %d", hooked_libs.size());
+  XH_LOG_INFO("GetLoadedLibs origin %d", hooked_libs.size());
   pthread_mutex_lock(&add_lib_mutex);
   std::copy(
       hooked_libs.begin(), hooked_libs.end(),
