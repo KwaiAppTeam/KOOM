@@ -34,11 +34,11 @@ int dl_iterate_phdr(int (*__callback)(struct dl_phdr_info*, size_t, void*), void
 }
 #endif
 
-const char *dlopen_ignore_libs[] = {"koom-fd", "koom-thread", "liblog.so", "perfd", "memtrack",
-    "xhook", "backtrace", "callstack", "unwind", "exception-handler",
-    "debug", "kxqpplatform.so"/*市面上双开的应用dualaid*/,
-    "plt-base", "plt-unwind", "/product/lib", "/vendor/lib",
-    "weapon"};
+const char *dlopen_ignore_libs[] = {
+    "koom-thread",
+    "liblog.so", "perfd", "memtrack",
+    "xhook", "debug", "kxqpplatform.so",
+    "kwai-android-base", "/product/lib", "/vendor/lib"};
 
 const char *dlopencb_tag = "koom-thread";
 
