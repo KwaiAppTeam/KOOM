@@ -1,5 +1,5 @@
 #include "thread_hook.h"
-#include <dlopencb/dlopencb.h>
+#include <dlopencb.h>
 #include <linux/prctl.h>
 #include <sys/prctl.h>
 #include <xhook.h>
