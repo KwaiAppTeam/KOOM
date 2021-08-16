@@ -16,18 +16,18 @@
 //
 
 #include <android/log.h>
-#include <cerrno>
-#include <cstdio>
-#include <cstdlib>
 #include <dlfcn.h>
 #include <fcntl.h>
 #include <jni.h>
 #include <kwai_dlfcn.h>
 #include <pthread.h>
-#include <string>
 #include <unistd.h>
 #include <wait.h>
 #include <xhook.h>
+#include <cstdio>
+#include <cerrno>
+#include <string>
+#include <cstdlib>
 
 #define LOG_TAG "HprofDump"
 
@@ -348,7 +348,7 @@ int processHeap(const void *buf, int firstIndex, int maxLen, int heapSerialNo, i
                               STACK_TRACE_SERIAL_NUMBER_BYTE_SIZE + CLASS_ID_BYTE_SIZE;
       int instanceSize = getIntFromBytes((unsigned char *)buf, instanceDumpIndex);
 
-      //裁剪掉system space
+      // 裁剪掉system space
       if (isCurrentSystemHeap) {
         stripIndexListPair[stripIndex * 2] = firstIndex;
         stripIndexListPair[stripIndex * 2 + 1] = instanceDumpIndex + U4 /*占位*/ + instanceSize;
@@ -361,22 +361,22 @@ int processHeap(const void *buf, int firstIndex, int maxLen, int heapSerialNo, i
                                   heapSerialNo, arraySerialNo);
     } break;
 
-          /**
-           * __ AddU1(HPROF_OBJECT_ARRAY_DUMP);
-           * __ AddObjectId(obj);
-           * __ AddStackTraceSerialNumber(LookupStackTraceSerialNumber(obj));
-           * __ AddU4(length);
-           * __ AddClassId(LookupClassId(klass));
-           *
-           * // Dump the elements, which are always objects or null.
-           * __ AddIdList(obj->AsObjectArray<mirror::Object>().Ptr());
-           */
+      /**
+       * __ AddU1(HPROF_OBJECT_ARRAY_DUMP);
+       * __ AddObjectId(obj);
+       * __ AddStackTraceSerialNumber(LookupStackTraceSerialNumber(obj));
+       * __ AddU4(length);
+       * __ AddClassId(LookupClassId(klass));
+       *
+       * // Dump the elements, which are always objects or null.
+       * __ AddIdList(obj->AsObjectArray<mirror::Object>().Ptr());
+       */
     case HPROF_OBJECT_ARRAY_DUMP: {
       int length = getIntFromBytes((unsigned char *)buf, firstIndex + HEAP_TAG_BYTE_SIZE +
                                                          OBJECT_ID_BYTE_SIZE +
                                                          STACK_TRACE_SERIAL_NUMBER_BYTE_SIZE);
 
-      //裁剪掉system space
+      // 裁剪掉system space
       if (isCurrentSystemHeap) {
         stripIndexListPair[stripIndex * 2] = firstIndex;
         stripIndexListPair[stripIndex * 2 + 1] = firstIndex + HEAP_TAG_BYTE_SIZE +
@@ -432,8 +432,8 @@ int processHeap(const void *buf, int firstIndex, int maxLen, int heapSerialNo, i
       int length = getIntFromBytes((unsigned char *)buf, primitiveArrayDumpIndex);
       primitiveArrayDumpIndex += U4 /*Length*/;
 
-      //裁剪掉基本类型数组，无论是否在system space都进行裁剪
-      //区别是数组左坐标，app space时带数组元信息（类型、长度）方便回填
+      // 裁剪掉基本类型数组，无论是否在system space都进行裁剪
+      // 区别是数组左坐标，app space时带数组元信息（类型、长度）方便回填
       if (isCurrentSystemHeap) {
         stripIndexListPair[stripIndex * 2] = firstIndex;
       } else {
@@ -445,7 +445,7 @@ int processHeap(const void *buf, int firstIndex, int maxLen, int heapSerialNo, i
       int valueSize = getByteSizeFromType(((unsigned char *)buf)[primitiveArrayDumpIndex]);
       primitiveArrayDumpIndex += BASIC_TYPE_BYTE_SIZE /*value type*/ + valueSize * length;
 
-      //数组右坐标
+      // 数组右坐标
       stripIndexListPair[stripIndex * 2 + 1] = primitiveArrayDumpIndex;
 
       // app space时，不修改长度因为回填数组时会补齐
@@ -505,11 +505,11 @@ ssize_t hook_write(int fd, const void *buf, size_t count) {
     return total_write;
   }
 
-  //每次hook_write，初始化重置
+  // 每次hook_write，初始化重置
   reset();
 
   const unsigned char tag = ((unsigned char *)buf)[0];
-  //删除掉无关record tag类型匹配，只匹配heap相关提高性能
+  // 删除掉无关record tag类型匹配，只匹配heap相关提高性能
   switch (tag) {
     case HPROF_TAG_HEAP_DUMP:
     case HPROF_TAG_HEAP_DUMP_SEGMENT: {
@@ -521,7 +521,7 @@ ssize_t hook_write(int fd, const void *buf, size_t count) {
       break;
   }
 
-  //根据裁剪掉的zygote space和image space更新length
+  // 根据裁剪掉的zygote space和image space更新length
   int recordLength = 0;
   if (tag == HPROF_TAG_HEAP_DUMP || tag == HPROF_TAG_HEAP_DUMP_SEGMENT) {
     recordLength =
@@ -540,7 +540,7 @@ ssize_t hook_write(int fd, const void *buf, size_t count) {
   ssize_t total_write = 0;
   int startIndex = 0;
   for (int i = 0; i < stripIndex; i++) {
-    //将裁剪掉的区间，通过写时过滤掉
+    // 将裁剪掉的区间，通过写时过滤掉
     void *writeBuf = (void *)((unsigned char *)buf + startIndex);
     auto writeLen = (size_t)(stripIndexListPair[i * 2] - startIndex);
     if (writeLen > 0) {

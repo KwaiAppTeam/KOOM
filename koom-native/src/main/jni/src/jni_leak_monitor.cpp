@@ -16,17 +16,16 @@
  * Created by lbtrace on 2021.
  *
  */
-
-#include "android/log.h"
-#include "leak_monitor.h"
-#include "memory_map.h"
+#include <stdlib.h>
+#include <libgen.h>
 #include <jni.h>
 #include <utils/scoped_local_ref.h>
 #include <log/log.h>
 #include <log/kcheck.h>
-#include <stdlib.h>
-#include <libgen.h>
 #include <vector>
+#include "android/log.h"
+#include "leak_monitor.h"
+#include "memory_map.h"
 
 namespace kwai {
 namespace leak_monitor {
@@ -192,7 +191,7 @@ static void GetLeakAllocs(JNIEnv *env, jclass, jobject leak_record_map) {
     char address[sizeof(uintptr_t) * 2 + 1];
     snprintf(address, sizeof(uintptr_t) * 2 + 1, "%lx", CONFUSE(leak_alloc->address));
     ScopedLocalRef<jstring> memory_address(env, env->NewStringUTF(address));
-    ScopedLocalRef<jobjectArray> frames_ref(env, BuildFrames(env,frames));
+    ScopedLocalRef<jobjectArray> frames_ref(env, BuildFrames(env, frames));
     ScopedLocalRef<jobject> leak_record_ref(env, BuildLeakRecord(env,
                                                                  leak_alloc->index,
                                                                  leak_alloc->size,

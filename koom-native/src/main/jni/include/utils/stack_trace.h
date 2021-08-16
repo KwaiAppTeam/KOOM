@@ -20,11 +20,11 @@
 #ifndef KOOM_NATIVE_OOM_SRC_MAIN_JNI_INCLUDE_UTILS_STACK_TRACE_H_
 #define KOOM_NATIVE_OOM_SRC_MAIN_JNI_INCLUDE_UTILS_STACK_TRACE_H_
 
-#include "constants.h"
-#include <cstddef>
-#include <iostream>
 #include <stdint.h>
 #include <stdlib.h>
+#include <cstddef>
+#include <iostream>
+#include "constants.h"
 
 #define FAST_UNWIND_TLS_INITIAL_EXEC __thread __attribute__((tls_model("initial-exec")))
 
@@ -33,7 +33,7 @@
 #endif
 
 class StackTrace {
-public:
+ public:
   static void Init();
 
   static size_t FastUnwind(uintptr_t *buf, size_t num_entries);

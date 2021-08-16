@@ -17,9 +17,6 @@
  *
  */
 
-#include "leak_monitor.h"
-#include "utils/auto_time.h"
-#include "kwai_linker/kwai_dlfcn.h"
 #include <log/log.h>
 #include <log/kcheck.h>
 #include <asm/mman.h>
@@ -35,6 +32,9 @@
 #include <functional>
 #include <regex>
 #include <thread>
+#include "kwai_linker/kwai_dlfcn.h"
+#include "leak_monitor.h"
+#include "utils/auto_time.h"
 
 namespace kwai {
 namespace leak_monitor {
@@ -44,7 +44,7 @@ namespace leak_monitor {
     if (ptr) { \
       memset(ptr, 0, size); \
     } \
-  } while(0)
+  } while (0)
 
 #define WRAP(x) x##Monitor
 #define HOOK(ret_type, function, ...) \

@@ -16,15 +16,19 @@
  * Created by lbtrace on 2021.
  *
  */
-
+#ifndef KOOM_NATIVE_OOM_SRC_MAIN_JNI_INCLUDE_UTILS_CONCURRENT_HASH_MAP_H_
+#define KOOM_NATIVE_OOM_SRC_MAIN_JNI_INCLUDE_UTILS_CONCURRENT_HASH_MAP_H_
 #include <vector>
 #include <mutex>
 #include <map>
+#include <utility>
 
 template<typename K, typename V, typename Hash = std::hash<K>>
 class ConcurrentHashMap {
  public:
-  ConcurrentHashMap(unsigned bucketNumber = kDefaultBucketNum, const Hash &hash = Hash())
+  ConcurrentHashMap(
+      unsigned bucketNumber = kDefaultBucketNum,
+      const Hash &hash = Hash())
       : table_(bucketNumber),
         hash_(hash) {
   }
@@ -67,7 +71,7 @@ class ConcurrentHashMap {
   }
 
  private:
-  static const unsigned kDefaultBucketNum = 521;  //Prime Number is better
+  static const unsigned kDefaultBucketNum = 521;  // Prime Number is better
 
   class Bucket {
    public:
@@ -123,4 +127,5 @@ class ConcurrentHashMap {
   std::vector<Bucket> table_;
   Hash hash_;
 };
+#endif // KOOM_NATIVE_OOM_SRC_MAIN_JNI_INCLUDE_UTILS_CONCURRENT_HASH_MAP_H_
 

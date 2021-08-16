@@ -14,7 +14,6 @@
 ** limitations under the License.
 */
 
-// Author: Qiushi Xue <xueqiushi@kuaishou.com>
 
 #include <string.h>
 #include <type_traits>

@@ -24,13 +24,13 @@
 
 class AutoTime {
  public:
-  AutoTime(const char *tag = nullptr) :
+  explicit AutoTime(const char *tag = nullptr) :
       tag_(tag), start_(clock()) {
   }
   ~AutoTime() {
     clock_t end = clock();
-    ALOGI("%s consume time: %f s", tag_ ? tag_ : "", (static_cast<double>(end - start_) /
-    CLOCKS_PER_SEC));
+    ALOGI("%s consume time: %f s", tag_ ? tag_ : "",
+          (static_cast<double>(end - start_) / CLOCKS_PER_SEC));
   }
  private:
   const char *tag_;

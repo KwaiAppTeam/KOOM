@@ -20,9 +20,10 @@
 #include <dlfcn.h>
 #include <log/log.h>
 #include <sys/prctl.h>
+#include <regex>
 #include "memory_analyzer.h"
 #include "kwai_linker/kwai_dlfcn.h"
-#include <regex>
+
 
 namespace kwai {
 namespace leak_monitor {
@@ -88,5 +89,5 @@ std::vector<std::pair<uintptr_t, size_t>> MemoryAnalyzer::CollectUnreachableMem(
   }
   return std::move(unreachable_mem);
 }
-}
-}
+}// namespace leak_monitor
+}// namespace kwai

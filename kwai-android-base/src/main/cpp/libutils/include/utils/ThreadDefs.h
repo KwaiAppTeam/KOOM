@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-// Author: Qiushi Xue <xueqiushi@kuaishou.com>
 
 #ifndef _LIBS_UTILS_THREAD_DEFS_H
 #define _LIBS_UTILS_THREAD_DEFS_H

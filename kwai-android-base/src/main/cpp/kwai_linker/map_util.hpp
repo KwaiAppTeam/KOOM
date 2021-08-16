@@ -22,7 +22,7 @@
 #include <vector>
 
 #if __ANDROID_API__ < 21
-extern "C" __attribute__((weak)) int dl_iterate_phdr(int (*)(struct dl_phdr_info *, size_t, void
+extern "C" __attribute__((weak)) int dl_iterate_phdr(int(*)(struct dl_phdr_info *, size_t, void
     *), void *);
 #endif
 
@@ -294,6 +294,6 @@ class MapUtil {
     return true;
   }
 };
-} // namespace kwai
 } // namespace linker
+} // namespace kwai
 

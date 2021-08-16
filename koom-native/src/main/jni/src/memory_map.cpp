@@ -34,11 +34,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/mman.h>
-
-#include <vector>
 #include <dlfcn.h>
 #include <cxxabi.h>
-
+#include <vector>
 #include "memory_map.h"
 
 #if defined(__LP64__)

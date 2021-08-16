@@ -61,7 +61,7 @@ class ElfReader {
     }
   };
 
-  ElfReader(std::shared_ptr<ElfWrapper> elf_wrapper);
+  explicit ElfReader(std::shared_ptr<ElfWrapper> elf_wrapper);
   bool IsValidElf();
   bool Init();
   /**
@@ -98,4 +98,4 @@ class ElfReader {
 };
 } // namespace linker
 } // namespace kwai
-#endif //KOOM_KWAI_LINKER_SRC_MAIN_CPP_INCLUDE_ELF_READER_H_
+#endif // KOOM_KWAI_LINKER_SRC_MAIN_CPP_INCLUDE_ELF_READER_H_

@@ -89,4 +89,4 @@ class MemoryMap {
   std::set<MapEntry *, MapEntryCompare> entries_;
 };
 
-#endif //KOOM_KOOM_NATIVE_SRC_MAIN_JNI_INCLUDE_MEMORY_MAP_H_
+#endif // KOOM_KOOM_NATIVE_SRC_MAIN_JNI_INCLUDE_MEMORY_MAP_H_

@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-// Author: Qiushi Xue <xueqiushi@kuaishou.com>
 
 #ifndef ANDROID_THREAD_DEFS_H
 #define ANDROID_THREAD_DEFS_H

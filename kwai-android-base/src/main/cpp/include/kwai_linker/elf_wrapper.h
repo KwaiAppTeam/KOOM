@@ -29,7 +29,7 @@ namespace linker {
 class ElfWrapper {
  public:
   ElfWrapper() : start_(nullptr), size_(0) {}
-  virtual bool IsValid() {return false;};
+  virtual bool IsValid() {return false;}
   ElfW(Ehdr) *Start() {
     return reinterpret_cast<ElfW(Ehdr) *>(start_);
   }
@@ -46,7 +46,7 @@ class ElfWrapper {
  */
 class FileElfWrapper : public ElfWrapper {
  public:
-  FileElfWrapper(const char *name) : fd_(-1) {
+  explicit FileElfWrapper(const char *name) : fd_(-1) {
     if (!name) {
       return;
     }
@@ -91,7 +91,7 @@ class FileElfWrapper : public ElfWrapper {
  */
 class MemoryElfWrapper : public ElfWrapper {
  public:
-  MemoryElfWrapper(std::string &elf_data) {
+  explicit MemoryElfWrapper(std::string &elf_data) {
     if (elf_data.empty()) {
       return;
     }
@@ -108,4 +108,4 @@ class MemoryElfWrapper : public ElfWrapper {
 };
 } // namespace linker
 } // namespace kwai
-#endif //KOOM_KWAI_ANDROID_BASE_SRC_MAIN_CPP_INCLUDE_KWAI_LINKER_ELF_WRAPPER_H_
+#endif // KOOM_KWAI_ANDROID_BASE_SRC_MAIN_CPP_INCLUDE_KWAI_LINKER_ELF_WRAPPER_H_

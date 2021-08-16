@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-// Author: Qiushi Xue <xueqiushi@kuaishou.com>
 
 #ifndef SYSTEM_CORE_INCLUDE_ANDROID_GRAPHICS_H
 #define SYSTEM_CORE_INCLUDE_ANDROID_GRAPHICS_H

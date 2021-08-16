@@ -1,4 +1,3 @@
-// Author: Qiushi Xue <xueqiushi@kuaishou.com>
 
 #ifndef APM_STACK_ALLOCATOR_H
 #define APM_STACK_ALLOCATOR_H
@@ -39,7 +38,7 @@ namespace plt {
 // the container will allocate a small array which will "use up" the stack
 // buffer.
 template <typename T, size_t stack_capacity> class StackAllocator : public std::allocator<T> {
-public:
+ public:
   typedef typename std::allocator<T>::pointer pointer;
   typedef typename std::allocator<T>::size_type size_type;
 
@@ -114,7 +113,7 @@ public:
       std::allocator<T>::deallocate(p, n);
   }
 
-private:
+ private:
   Source *source_;
 };
 
@@ -131,7 +130,7 @@ private:
 // type. This object is really intended to be used only internally. You'll want
 // to use the wrappers below for different types.
 template <typename TContainerType, int stack_capacity> class StackContainer {
-public:
+ public:
   typedef TContainerType ContainerType;
   typedef typename ContainerType::value_type ContainedType;
   typedef StackAllocator<ContainedType, stack_capacity> Allocator;
@@ -164,12 +163,12 @@ public:
   const typename Allocator::Source &stack_data() const { return stack_data_; }
 #endif
 
-protected:
+ protected:
   typename Allocator::Source stack_data_;
   Allocator allocator_;
   ContainerType container_;
 
-private:
+ private:
   DISALLOW_COPY_AND_ASSIGN(StackContainer);
 };
 
@@ -182,7 +181,7 @@ private:
 template <typename T, size_t stack_capacity>
 class StackVector
     : public StackContainer<std::vector<T, StackAllocator<T, stack_capacity>>, stack_capacity> {
-public:
+ public:
   StackVector()
       : StackContainer<std::vector<T, StackAllocator<T, stack_capacity>>, stack_capacity>() {}
 
