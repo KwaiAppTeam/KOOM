@@ -17,6 +17,7 @@
  *
  */
 
+#define LOG_TAG "memory_analyzer"
 #include <dlfcn.h>
 #include <log/log.h>
 #include <sys/prctl.h>

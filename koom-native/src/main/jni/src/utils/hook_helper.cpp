@@ -17,6 +17,7 @@
  *
  */
 
+#define LOG_TAG "hook_helper"
 #include <xhook.h>
 #include <log/log.h>
 #include <dlopencb.h>
@@ -37,10 +38,19 @@ bool HookHelper::HookMethods(std::vector<const std::string> &register_pattern,
   register_pattern_ = std::move(register_pattern);
   ignore_pattern_ = std::move(ignore_pattern);
   methods_ = std::move(methods);
-  DlopenCb::GetInstance().AddCallback([](std::set<std::string> &, int, std::string &) {
-    HookImpl();
-  });
+  DlopenCb::GetInstance().AddCallback(Callback);
   return HookImpl();
+}
+
+void HookHelper::UnHookMethods() {
+  DlopenCb::GetInstance().RemoveCallback(Callback);
+  register_pattern_.clear();
+  ignore_pattern_.clear();
+  methods_.clear();
+}
+
+void HookHelper::Callback(std::set<std::string> &, int, std::string &) {
+  HookImpl();
 }
 
 bool HookHelper::HookImpl() {

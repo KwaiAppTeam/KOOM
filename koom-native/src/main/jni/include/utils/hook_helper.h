@@ -22,13 +22,17 @@
 
 #include <vector>
 #include <string>
+#include <mutex>
+#include <set>
 
 class HookHelper {
  public:
   static bool HookMethods(std::vector<const std::string> &register_pattern,
       std::vector<const std::string> &ignore_pattern,
       std::vector<std::pair<const std::string, void * const>> &methods);
+  static void UnHookMethods();
  private:
+  static void Callback(std::set<std::string> &, int, std::string &);
   static bool HookImpl();
   static std::vector<const std::string> register_pattern_;
   static std::vector<const std::string> ignore_pattern_;

@@ -17,6 +17,7 @@
  *
  */
 
+#define LOG_TAG "leak_monitor"
 #include "leak_monitor.h"
 #include "utils/auto_time.h"
 #include "kwai_linker/kwai_dlfcn.h"
@@ -146,13 +147,17 @@ bool LeakMonitor::Install(std::vector<std::string> *selected_list,
     return true;
   }
 
+  HookHelper::UnHookMethods();
+  live_alloc_records_.Clear();
+  memory_analyzer_.reset(nullptr);
   ALOGE("%s Fail", __FUNCTION__);
   return false;
 }
 
 void LeakMonitor::Uninstall() {
-  KCHECK(has_install_monitor_);
+  KCHECKV(has_install_monitor_)
   has_install_monitor_ = false;
+  HookHelper::UnHookMethods();
   live_alloc_records_.Clear();
   memory_analyzer_.reset(nullptr);
 }

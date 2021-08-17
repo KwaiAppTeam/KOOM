@@ -26,6 +26,7 @@
  * SUCH DAMAGE.
  */
 
+#define LOG_TAG "memory_map"
 #include <ctype.h>
 #include <elf.h>
 #include <inttypes.h>

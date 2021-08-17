@@ -17,6 +17,7 @@
  *
  */
 
+#define LOG_TAG "jni_leak_monitor"
 #include "android/log.h"
 #include "leak_monitor.h"
 #include "memory_map.h"
@@ -103,11 +104,7 @@ static bool InstallMonitor(JNIEnv *env, jclass clz,
 
   std::vector<std::string> selected_so = array_to_vector(env, selected_array);
   std::vector<std::string> ignore_so = array_to_vector(env, ignore_array);
-  bool ret = LeakMonitor::GetInstance().Install(&selected_so, &ignore_so);
-  if (!ret) {
-    UninstallMonitor(env, clz);
-  }
-  return ret;
+  return LeakMonitor::GetInstance().Install(&selected_so, &ignore_so);
 }
 
 static void SetMonitorThreshold(JNIEnv *, jclass, jint size) {

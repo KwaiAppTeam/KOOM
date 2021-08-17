@@ -30,6 +30,7 @@ import com.kwai.koom.base.Logger
 import com.kwai.koom.base.MonitorBuildConfig
 import com.kwai.koom.base.MonitorLog
 import com.kwai.koom.base.MonitorLogger
+import com.kwai.koom.base.isArm64
 import com.kwai.koom.base.loadSoQuietly
 import com.kwai.koom.base.loop.LoopMonitor
 import com.kwai.koom.nativeoom.leakmonitor.allocationtag.AllocationTagLifecycleCallbacks
@@ -60,68 +61,80 @@ object LeakMonitor : LoopMonitor<LeakMonitorConfig>() {
   private val mIndex = AtomicInteger()
 
   override fun init(commonConfig: CommonConfig, monitorConfig: LeakMonitorConfig) {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N || !isArm64()) {
+      MonitorLog.e(TAG, "Native LeakMonitor NOT running in below Android N or Arm 32 bit app")
+      return
+    }
     if (!loadSoQuietly("native-oom")) return
 
     super.init(commonConfig, monitorConfig)
   }
 
   override fun call(): LoopState {
-    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) {
-      return LoopState.Terminate
-    }
-
     if (monitorConfig.nativeHeapAllocatedThreshold > 0
         && Debug.getNativeHeapAllocatedSize() > monitorConfig.nativeHeapAllocatedThreshold) {
       return LoopState.Continue
     }
 
-    val leakRecordMap = mutableMapOf<String, LeakRecord>()
-        .apply { nativeGetLeakAllocs(this) }
-        .also { AllocationTagLifecycleCallbacks.bindAllocationTag(it) }
-        .also { MonitorLog.i(TAG, "LeakRecordMap size: ${it.size}") }
-
-    if (leakRecordMap.isEmpty()) {
-      return LoopState.Continue
-    }
-
-    monitorConfig.leakListener.onLeak(leakRecordMap.values)
+    mutableMapOf<String, LeakRecord>()
+      .apply { nativeGetLeakAllocs(this) }
+      .also { AllocationTagLifecycleCallbacks.bindAllocationTag(it) }
+      .also { MonitorLog.i(TAG, "LeakRecordMap size: ${it.size}") }
+      .also { monitorConfig.leakListener.onLeak(it.values) }
     return LoopState.Continue
   }
 
   override fun getLoopInterval() = monitorConfig.loopInterval
 
   /**
-   * 耗时操作， 可异步
+   * Start Leak Monitor, then it will periodically detect leaks
+   * Note: time-consuming, usually NOT run in UI thread.
    */
   override fun startLoop(clearQueue: Boolean, postAtFront: Boolean, delayMillis: Long) {
     throwIfNotInitialized { return }
-
-    AllocationTagLifecycleCallbacks.register()
-
-    if (!nativeInstallMonitor(monitorConfig.selectedSoList,
-        monitorConfig.ignoredSoList, monitorConfig.enableLocalSymbolic)) {
-      if (MonitorBuildConfig.DEBUG) {
-        throw RuntimeException("LeakMonitor Install Fail")
-      } else {
-        MonitorLog.e(TAG, "LeakMonitor Install Fail")
-        return
+    getLoopHandler().post(Runnable {
+      if (!nativeInstallMonitor(monitorConfig.selectedSoList,
+          monitorConfig.ignoredSoList, monitorConfig.enableLocalSymbolic)) {
+        if (MonitorBuildConfig.DEBUG) {
+          throw RuntimeException("LeakMonitor Install Fail")
+        } else {
+          MonitorLog.e(TAG, "LeakMonitor Install Fail")
+          return@Runnable
+        }
       }
-    }
-    nativeSetMonitorThreshold(monitorConfig.monitorThreshold)
 
-    super.startLoop(clearQueue, postAtFront, delayMillis)
+      nativeSetMonitorThreshold(monitorConfig.monitorThreshold)
+      AllocationTagLifecycleCallbacks.register()
+
+      super.startLoop(clearQueue, postAtFront, delayMillis)
+    })
   }
 
   /**
-   * 耗时操作， 可异步
+   * Stop Leak Monitor.
    */
   override fun stopLoop() {
     throwIfNotInitialized { return }
+    getLoopHandler().post {
+      super.stopLoop()
+      AllocationTagLifecycleCallbacks.unregister()
+      nativeUninstallMonitor()
+    }
+  }
 
-    AllocationTagLifecycleCallbacks.unregister()
-
-    super.stopLoop()
-    nativeUninstallMonitor()
+  /**
+   * Directly check leaks, you can receive leak info via LeakListener
+   * Note: time-consuming, usually, you don't need directly check leaks
+   */
+  fun checkLeaks() {
+    if (!isInitialized) return
+    getLoopHandler().post {
+      mutableMapOf<String, LeakRecord>()
+        .apply { nativeGetLeakAllocs(this) }
+        .also { AllocationTagLifecycleCallbacks.bindAllocationTag(it) }
+        .also { MonitorLog.i(TAG, "LeakRecordMap size: ${it.size}") }
+        .also { monitorConfig.leakListener.onLeak(it.values) }
+    }
   }
 
   /**
