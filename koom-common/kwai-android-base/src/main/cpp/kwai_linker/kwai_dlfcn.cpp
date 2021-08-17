@@ -36,7 +36,7 @@
 namespace kwai {
 namespace linker {
 
-//extern "C" int dl_iterate_phdr(int (*__callback)(struct dl_phdr_info *, size_t, void *),
+// extern "C" int dl_iterate_phdr(int (*__callback)(struct dl_phdr_info *, size_t, void *),
 //                               void *__data) __attribute__((weak));
 int dl_iterate_phdr_wrapper(int (*__callback)(struct dl_phdr_info *, size_t, void *),
                             void *__data) {

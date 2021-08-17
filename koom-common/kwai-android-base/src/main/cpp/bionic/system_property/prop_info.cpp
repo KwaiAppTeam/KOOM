@@ -26,7 +26,6 @@
  * SUCH DAMAGE.
  */
 
-// Author: Qiushi Xue <xueqiushi@kuaishou.com>
 
 #include <bionic/system_property/prop_info.h>
 #include <stdatomic.h>

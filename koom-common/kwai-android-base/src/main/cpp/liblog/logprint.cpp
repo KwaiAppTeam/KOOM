@@ -15,7 +15,6 @@
 ** limitations under the License.
 */
 
-// Author: Qiushi Xue <xueqiushi@kuaishou.com>
 
 #ifndef __MINGW32__
 #define HAVE_STRSEP

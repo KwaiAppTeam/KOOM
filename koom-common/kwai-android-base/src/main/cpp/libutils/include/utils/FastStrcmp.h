@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-// Author: Qiushi Xue <xueqiushi@kuaishou.com>
 
 #ifndef _ANDROID_UTILS_FASTSTRCMP_H__
 #define _ANDROID_UTILS_FASTSTRCMP_H__

@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-// Author: Qiushi Xue <xueqiushi@kuaishou.com>
 
 #ifndef _CUTILS_LIST_H_
 #define _CUTILS_LIST_H_

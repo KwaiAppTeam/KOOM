@@ -26,7 +26,6 @@
  * SUCH DAMAGE.
  */
 
-// Author: Qiushi Xue <xueqiushi@kuaishou.com>
 
 #pragma once
 

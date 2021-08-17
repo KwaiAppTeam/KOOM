@@ -24,7 +24,7 @@ namespace kwai {
 namespace linker {
 
 class DlFcn {
-public:
+ public:
   struct SoDlInfo {
     /**
      * The full path name of so
@@ -86,7 +86,7 @@ public:
 
   static int android_api_;
 
-private:
+ private:
   static void init_api();
 };
 

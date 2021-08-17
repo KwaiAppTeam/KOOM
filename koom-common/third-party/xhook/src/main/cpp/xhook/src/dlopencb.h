@@ -18,13 +18,14 @@
  */
 
 #pragma once
+#include <android/dlext.h>
+#include <pthread.h>
 #include <cstddef>
 #include <string>
 #include <set>
-#include <android/dlext.h>
-//#include <kwai_linker/kwai_dlfcn.h>
+// #include <kwai_linker/kwai_dlfcn.h>
 #include <vector>
-#include <pthread.h>
+
 
 class __attribute__((visibility("default"))) DlopenCb {
  private:
@@ -34,16 +35,16 @@ class __attribute__((visibility("default"))) DlopenCb {
   pthread_mutex_t add_lib_mutex = PTHREAD_MUTEX_INITIALIZER;
   pthread_mutex_t callback_mutex = PTHREAD_MUTEX_INITIALIZER;
   DlopenCb();
-  ~DlopenCb() {};
+  ~DlopenCb() {}
   void Refresh(int source, std::string &loadLibName);
   void OnDlopen(const char *filename, int source);
   static void *HookDlopenExt(const char *filename, int flags, const android_dlextinfo *info);
   static void *HookDlopen(const char *filename, int flag);
  public:
-  const static int dlopen_source_refresh = 0;
-  const static int dlopen_source_android = 1;
-  const static int dlopen_source_origin = 2;
-  const static int dlopen_source_get_libs = 3;
+  static const int dlopen_source_refresh = 0;
+  static const int dlopen_source_android = 1;
+  static const int dlopen_source_origin = 2;
+  static const int dlopen_source_get_libs = 3;
   static DlopenCb &GetInstance() {
     static DlopenCb instance;
     return instance;
