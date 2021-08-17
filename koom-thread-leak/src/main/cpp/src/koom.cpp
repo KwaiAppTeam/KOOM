@@ -11,7 +11,7 @@
 namespace koom {
 
 int Util::android_api;
-bool Log::logEnable;
+bool Log::logEnable = false;
 
 JavaVM *java_vm_;
 jclass nativeHandlerClass;

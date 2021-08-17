@@ -172,3 +172,8 @@ void DlopenCb::GetLoadedLibs(std::set<std::string> &libs, bool refresh) {
   pthread_mutex_unlock(&add_lib_mutex);
 }
 
+DlopenCb &DlopenCb::GetInstance() {
+  static DlopenCb instance;
+  return instance;
+}
+

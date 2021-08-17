@@ -6,11 +6,12 @@ class ThreadMonitorConfig(val loopInterval: Long,
     val startDelay: Long,
     val disableNativeStack: Boolean, val disableJavaStack: Boolean,
     val threadLeakDelay: Long,
-    val listener: ThreadMonitorResultListener?) :
+    val enableNativeLog:Boolean,
+    val listener: ThreadMonitorLeakListener?) :
     MonitorConfig<ThreadMonitor>() {
 
   class Builder : MonitorConfig.Builder<ThreadMonitorConfig> {
-    private var mListener: ThreadMonitorResultListener? = null
+    private var mListener: ThreadMonitorLeakListener? = null
     private var mLoopInterval = 5 * 1000L
     private var mStartDelay = 0L
 
@@ -42,7 +43,7 @@ class ThreadMonitorConfig(val loopInterval: Long,
       mThreadLeakDelay = leakDelay
     }
 
-    fun setListener(listener: ThreadMonitorResultListener) = apply {
+    fun setListener(listener: ThreadMonitorLeakListener) = apply {
       mListener = listener
     }
 
@@ -52,6 +53,7 @@ class ThreadMonitorConfig(val loopInterval: Long,
         disableJavaStack = disableJavaStack,
         disableNativeStack = disableNativeStack,
         threadLeakDelay = mThreadLeakDelay,
+        enableNativeLog = enableNativeLog,
         listener = mListener
     )
   }

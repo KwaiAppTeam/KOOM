@@ -18,8 +18,6 @@ enum HookAction {
   ACTION_INIT,
   ACTION_REFRESH,
   ACTION_SET_NAME,
-  ACTION_COLLECT_START,
-  ACTION_COLLECT_END
 };
 struct SimpleHookInfo {
   long long time;
