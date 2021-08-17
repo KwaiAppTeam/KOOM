@@ -26,9 +26,9 @@ include_directories(
 )
 
 link_directories(
-        ${KWAI_ANDROID_BASE_DIR}/libs/${ANDROID_ABI}/
+        ${KWAI_ANDROID_BASE_DIR}/src/main/libs/${ANDROID_ABI}/
         ${THIRD_PARTY_DIR}/xhook/src/main/libs/${ANDROID_ABI}/
-        ${KWAI_UNWIND_DIR}/libs/${ANDROID_ABI}/
+        ${KWAI_UNWIND_DIR}/src/main/libs/${ANDROID_ABI}/
 )
 
 

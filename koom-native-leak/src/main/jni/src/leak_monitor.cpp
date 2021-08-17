@@ -34,6 +34,7 @@
 #include <utils/stack_trace.h>
 
 #include <functional>
+#include <kwai_util/kwai_macros.h>
 #include <regex>
 #include <thread>
 
@@ -43,31 +44,28 @@
 namespace kwai {
 namespace leak_monitor {
 
-#define CLEAR_MEMORY(ptr, size) \
-  do {                          \
-    if (ptr) {                  \
-      memset(ptr, 0, size);     \
-    }                           \
+#define CLEAR_MEMORY(ptr, size)                                                                    \
+  do {                                                                                             \
+    if (ptr) {                                                                                     \
+      memset(ptr, 0, size);                                                                        \
+    }                                                                                              \
   } while (0)
 
 #define WRAP(x) x##Monitor
-#define HOOK(ret_type, function, ...) \
-  static ALWAYS_INLINE ret_type WRAP(function)(__VA_ARGS__)
+#define HOOK(ret_type, function, ...) static ALWAYS_INLINE ret_type WRAP(function)(__VA_ARGS__)
 
 // Define allocator proxies; aligned_alloc included in API 28 and valloc/pvalloc
 // can ignore in LP64 So we can't proxy aligned_alloc/valloc/pvalloc.
 HOOK(void, free, void *ptr) {
   free(ptr);
   if (ptr) {
-    LeakMonitor::GetInstance().UnregisterAlloc(
-        reinterpret_cast<uintptr_t>(ptr));
+    LeakMonitor::GetInstance().UnregisterAlloc(reinterpret_cast<uintptr_t>(ptr));
   }
 }
 
 HOOK(void *, malloc, size_t size) {
   auto result = malloc(size);
-  LeakMonitor::GetInstance().OnMonitor(reinterpret_cast<intptr_t>(result),
-                                       size);
+  LeakMonitor::GetInstance().OnMonitor(reinterpret_cast<intptr_t>(result), size);
   CLEAR_MEMORY(result, size);
   return result;
 }
@@ -75,33 +73,28 @@ HOOK(void *, malloc, size_t size) {
 HOOK(void *, realloc, void *ptr, size_t size) {
   auto result = realloc(ptr, size);
   if (ptr != nullptr) {
-    LeakMonitor::GetInstance().UnregisterAlloc(
-        reinterpret_cast<uintptr_t>(ptr));
+    LeakMonitor::GetInstance().UnregisterAlloc(reinterpret_cast<uintptr_t>(ptr));
   }
-  LeakMonitor::GetInstance().OnMonitor(reinterpret_cast<intptr_t>(result),
-                                       size);
+  LeakMonitor::GetInstance().OnMonitor(reinterpret_cast<intptr_t>(result), size);
   return result;
 }
 
 HOOK(void *, calloc, size_t item_count, size_t item_size) {
   auto result = calloc(item_count, item_size);
-  LeakMonitor::GetInstance().OnMonitor(reinterpret_cast<intptr_t>(result),
-                                       item_count * item_size);
+  LeakMonitor::GetInstance().OnMonitor(reinterpret_cast<intptr_t>(result), item_count * item_size);
   return result;
 }
 
 HOOK(void *, memalign, size_t alignment, size_t byte_count) {
   auto result = memalign(alignment, byte_count);
-  LeakMonitor::GetInstance().OnMonitor(reinterpret_cast<intptr_t>(result),
-                                       byte_count);
+  LeakMonitor::GetInstance().OnMonitor(reinterpret_cast<intptr_t>(result), byte_count);
   CLEAR_MEMORY(result, byte_count);
   return result;
 }
 
 HOOK(int, posix_memalign, void **memptr, size_t alignment, size_t size) {
   auto result = posix_memalign(memptr, alignment, size);
-  LeakMonitor::GetInstance().OnMonitor(reinterpret_cast<intptr_t>(*memptr),
-                                       size);
+  LeakMonitor::GetInstance().OnMonitor(reinterpret_cast<intptr_t>(*memptr), size);
   CLEAR_MEMORY(*memptr, size);
   return result;
 }
@@ -127,8 +120,7 @@ bool LeakMonitor::Install(std::vector<std::string> *selected_list,
   }
 
   std::vector<const std::string> register_pattern = {"^/data/.*\\.so$"};
-  std::vector<const std::string> ignore_pattern = {".*/libnative-oom.so$",
-                                                   ".*/libxhook_lib.so$"};
+  std::vector<const std::string> ignore_pattern = {".*/libnative-oom.so$", ".*/libxhook_lib.so$"};
 
   if (ignore_list != nullptr) {
     for (std::string &item : *ignore_list) {
@@ -147,8 +139,7 @@ bool LeakMonitor::Install(std::vector<std::string> *selected_list,
       std::make_pair("realloc", reinterpret_cast<void *>(WRAP(realloc))),
       std::make_pair("calloc", reinterpret_cast<void *>(WRAP(calloc))),
       std::make_pair("memalign", reinterpret_cast<void *>(WRAP(memalign))),
-      std::make_pair("posix_memalign",
-                     reinterpret_cast<void *>(WRAP(posix_memalign))),
+      std::make_pair("posix_memalign", reinterpret_cast<void *>(WRAP(posix_memalign))),
       std::make_pair("free", reinterpret_cast<void *>(WRAP(free)))};
 
   if (HookHelper::HookMethods(register_pattern, ignore_pattern, hook_entries)) {
@@ -248,5 +239,5 @@ ALWAYS_INLINE void LeakMonitor::OnMonitor(uintptr_t address, size_t size) {
 
   RegisterAlloc(address, size);
 }
-}  // namespace leak_monitor
-}  // namespace kwai
+} // namespace leak_monitor
+} // namespace kwai

@@ -1,25 +1,30 @@
-// Copyright 2020 Kwai, Inc. All rights reserved.
-
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//         http://www.apache.org/licenses/LICENSE-2.0
-
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-//         limitations under the License.
-
-// Author: Qiushi Xue <xueqiushi@kuaishou.com>
+/*
+ * Copyright (c) 2020. Kwai, Inc. All rights reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *         http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * Created by Qiushi Xue <xueqiushi@kuaishou.com> on 2020.
+ *
+ */
 
 #include "map_util.hpp"
 #include <cstdlib>
 #include <cstring>
 #include <dlfcn.h>
 #include <fcntl.h>
+#include <kwai_linker/elf_reader.h>
 #include <kwai_linker/kwai_dlfcn.h>
+#include <kwai_util/kwai_macros.h>
 #include <link.h>
 #include <log/kcheck.h>
 #include <log/log.h>
@@ -27,17 +32,12 @@
 #include <sys/mman.h>
 #include <sys/types.h>
 #include <unistd.h>
-#include <kwai_util/kwai_macros.h>
-#include <kwai_linker/elf_reader.h>
-
 
 #define LOG_TAG "kwai_dlfcn"
 
 namespace kwai {
 namespace linker {
 
-// extern "C" int dl_iterate_phdr(int (*__callback)(struct dl_phdr_info *, size_t, void *),
-//                               void *__data) __attribute__((weak));
 int dl_iterate_phdr_wrapper(int (*__callback)(struct dl_phdr_info *, size_t, void *),
                             void *__data) {
   if (dl_iterate_phdr) {
@@ -150,7 +150,7 @@ KWAI_EXPORT void *DlFcn::dlopen_elf(const char *lib_name, int flags) {
     return nullptr;
   }
 
-  SoDlInfo *so_dl_info = new (std::nothrow)SoDlInfo;
+  SoDlInfo *so_dl_info = new (std::nothrow) SoDlInfo;
   if (!so_dl_info) {
     ALOGE("no memory for %s", so_full_name.c_str());
     return nullptr;
