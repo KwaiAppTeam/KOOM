@@ -16,6 +16,8 @@
  * Created by lbtrace on 2021.
  *
  */
+#ifndef KOOM_NATIVE_OOM_SRC_MAIN_JNI_INCLUDE_UTILS_CONCURRENT_HASH_MAP_H_
+#define KOOM_NATIVE_OOM_SRC_MAIN_JNI_INCLUDE_UTILS_CONCURRENT_HASH_MAP_H_
 
 #include <map>
 #include <mutex>
@@ -120,3 +122,4 @@ class ConcurrentHashMap {
   std::vector<Bucket> table_;
   Hash hash_;
 };
+#endif  // KOOM_NATIVE_OOM_SRC_MAIN_JNI_INCLUDE_UTILS_CONCURRENT_HASH_MAP_H_

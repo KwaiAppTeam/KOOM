@@ -83,20 +83,6 @@ object MonitorManager {
   }
 
   @JvmStatic
-  fun onApplicationPreAttachContext() {
-    for (entry in MONITOR_MAP) {
-      entry.value.onApplicationPreAttachContext()
-    }
-  }
-
-  @JvmStatic
-  fun onApplicationPostAttachContext() {
-    for (entry in MONITOR_MAP) {
-      entry.value.onApplicationPostAttachContext()
-    }
-  }
-
-  @JvmStatic
   fun onApplicationPreCreate() {
     for (entry in MONITOR_MAP) {
       entry.value.onApplicationPreCreate()
@@ -105,13 +91,6 @@ object MonitorManager {
     registerApplicationExtension()
 
     registerMonitorEventObserver()
-  }
-
-  @JvmStatic
-  fun onApplicationPostCreate() {
-    for (entry in MONITOR_MAP) {
-      entry.value.onApplicationPostCreate()
-    }
   }
 
   private fun registerMonitorEventObserver() {

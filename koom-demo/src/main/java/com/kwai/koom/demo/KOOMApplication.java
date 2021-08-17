@@ -19,25 +19,13 @@
 package com.kwai.koom.demo;
 
 import android.app.Application;
-import android.content.Context;
-
-import com.kwai.koom.base.MonitorManager;
 
 public class KOOMApplication extends Application {
-
-  @Override
-  protected void attachBaseContext(Context base) {
-    super.attachBaseContext(base);
-    MonitorManager.onApplicationPreAttachContext();
-    MonitorManager.onApplicationPostAttachContext();
-  }
 
   @Override
   public void onCreate() {
     super.onCreate();
     MonitorInitTask.INSTANCE.init(this);
-    MonitorManager.onApplicationPreCreate();
-    MonitorManager.onApplicationPostCreate();
   }
 
 }
