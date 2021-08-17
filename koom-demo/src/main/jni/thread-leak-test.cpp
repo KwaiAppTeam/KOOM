@@ -19,10 +19,14 @@ static NOINLINE void TestThreadLeak() {
     LOGI("test_thread_1 run");
   });
 
+  test_thread_1->detach();
+
   test_thread_2 = new std::thread([]() {
     pthread_setname_np(pthread_self(), "test_thread_2");
     LOGI("test_thread_2 run");
   });
+
+  test_thread_2->join();
 
   test_thread_3 = new std::thread([]() {
     pthread_setname_np(pthread_self(), "test_thread_3");
@@ -33,27 +37,6 @@ static NOINLINE void TestThreadLeak() {
     pthread_setname_np(pthread_self(), "test_thread_4");
     LOGI("test_thread_4 run");
   });
-
-  std::thread detach_thread([]() {
-    pthread_setname_np(pthread_self(), "detach_thread");
-    LOGI("detach_thread run");
-    std::this_thread::sleep_for(std::chrono::seconds(5));
-    test_thread_1->detach();
-    LOGI("test_thread_1 detach");
-    test_thread_2->join();
-    LOGI("test_thread_2 join");
-    delete test_thread_1;
-    delete test_thread_2;
-
-    std::this_thread::sleep_for(std::chrono::seconds(10));
-    test_thread_3->detach();
-    LOGI("test_thread_3 detach");
-    test_thread_4->join();
-    LOGI("test_thread_4 join");
-    delete test_thread_3;
-    delete test_thread_4;
-  });
-  detach_thread.detach();
 }
 
 extern "C"

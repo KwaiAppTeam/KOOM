@@ -13,8 +13,6 @@ namespace koom {
 namespace Constant {
 #define ALWAYS_INLINE __attribute__((always_inline))
 const static int max_call_stack_depth = 18;
-const static int max_hook_libs = 400;
-const static int max_thread_num = 32768;
 
 const static int64_t ns_per_ms = 1000000LL;
 const static int64_t ns_per_second = 1000000000LL;

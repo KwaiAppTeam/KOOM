@@ -4,10 +4,11 @@
 #include <sys/prctl.h>
 #include <xhook.h>
 #include <syscall.h>
+#include <link.h>
 
 namespace koom {
 
-const char *thread_tag = "koom-thread";
+const char *thread_tag = "thread-hook";
 
 const char *ignore_libs[] = {};
 
@@ -44,7 +45,7 @@ int Callback(struct dl_phdr_info *info, size_t size, void *data) {
 void ThreadHooker::InitHook() {
   koom::Log::info(thread_tag, "HookSo init hook");
   std::set<std::string> libs;
-//  dlopencb::setDebug(true);
+  DlopenCb::SetDebug(true);
   DlopenCb::GetInstance().GetLoadedLibs(libs);
   HookLibs(libs, Constant::dlopen_source_init);
   DlopenCb::GetInstance().AddCallback(DlopenCallback);
