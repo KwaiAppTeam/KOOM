@@ -60,6 +60,8 @@ object LeakMonitor : LoopMonitor<LeakMonitorConfig>() {
 
   private val mIndex = AtomicInteger()
 
+  private var mIsStart = false
+
   override fun init(commonConfig: CommonConfig, monitorConfig: LeakMonitorConfig) {
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N || !isArm64()) {
       MonitorLog.e(TAG, "Native LeakMonitor NOT running in below Android N or Arm 32 bit app")
@@ -70,6 +72,9 @@ object LeakMonitor : LoopMonitor<LeakMonitorConfig>() {
     super.init(commonConfig, monitorConfig)
   }
 
+  /**
+   * NOT directly invoke it
+   */
   override fun call(): LoopState {
     if (monitorConfig.nativeHeapAllocatedThreshold > 0
         && Debug.getNativeHeapAllocatedSize() > monitorConfig.nativeHeapAllocatedThreshold) {
@@ -93,8 +98,14 @@ object LeakMonitor : LoopMonitor<LeakMonitorConfig>() {
   override fun startLoop(clearQueue: Boolean, postAtFront: Boolean, delayMillis: Long) {
     throwIfNotInitialized { return }
     getLoopHandler().post(Runnable {
+      if (mIsStart) {
+        MonitorLog.e(TAG, "LeakMonitor already start")
+        return@Runnable
+      }
+      mIsStart = true
       if (!nativeInstallMonitor(monitorConfig.selectedSoList,
           monitorConfig.ignoredSoList, monitorConfig.enableLocalSymbolic)) {
+        mIsStart = false
         if (MonitorBuildConfig.DEBUG) {
           throw RuntimeException("LeakMonitor Install Fail")
         } else {
@@ -115,11 +126,16 @@ object LeakMonitor : LoopMonitor<LeakMonitorConfig>() {
    */
   override fun stopLoop() {
     throwIfNotInitialized { return }
-    getLoopHandler().post {
+    getLoopHandler().post(Runnable {
+      if (!mIsStart) {
+        MonitorLog.e(TAG, "LeakMonitor already stop")
+        return@Runnable
+      }
+      mIsStart = false
       super.stopLoop()
       AllocationTagLifecycleCallbacks.unregister()
       nativeUninstallMonitor()
-    }
+    })
   }
 
   /**
@@ -128,13 +144,17 @@ object LeakMonitor : LoopMonitor<LeakMonitorConfig>() {
    */
   fun checkLeaks() {
     if (!isInitialized) return
-    getLoopHandler().post {
+    getLoopHandler().post(Runnable {
+      if (!mIsStart) {
+        MonitorLog.e(TAG, "Please first start LeakMonitor")
+        return@Runnable
+      }
       mutableMapOf<String, LeakRecord>()
         .apply { nativeGetLeakAllocs(this) }
         .also { AllocationTagLifecycleCallbacks.bindAllocationTag(it) }
         .also { MonitorLog.i(TAG, "LeakRecordMap size: ${it.size}") }
         .also { monitorConfig.leakListener.onLeak(it.values) }
-    }
+    })
   }
 
   /**

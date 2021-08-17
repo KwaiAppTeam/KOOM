@@ -17,19 +17,18 @@
  *
  */
 
-#include <vector>
-#include <mutex>
 #include <map>
+#include <mutex>
+#include <vector>
 
-template<typename K, typename V, typename Hash = std::hash<K>>
+template <typename K, typename V, typename Hash = std::hash<K>>
 class ConcurrentHashMap {
  public:
-  ConcurrentHashMap(unsigned bucketNumber = kDefaultBucketNum, const Hash &hash = Hash())
-      : table_(bucketNumber),
-        hash_(hash) {
-  }
+  ConcurrentHashMap(unsigned bucketNumber = kDefaultBucketNum,
+                    const Hash &hash = Hash())
+      : table_(bucketNumber), hash_(hash) {}
 
-  template<typename Predicate>
+  template <typename Predicate>
   void Dump(Predicate &p) {
     for (auto &bucket : table_) {
       bucket.Dump(p);
@@ -44,9 +43,7 @@ class ConcurrentHashMap {
     table_[Hashcode(key)].Put(key, std::move(value));
   }
 
-  void Erase(const K &key) {
-    table_[Hashcode(key)].Erase(key);
-  }
+  void Erase(const K &key) { table_[Hashcode(key)].Erase(key); }
 
   std::size_t Size() const {
     std::size_t size = 0;
@@ -67,7 +64,7 @@ class ConcurrentHashMap {
   }
 
  private:
-  static const unsigned kDefaultBucketNum = 521;  //Prime Number is better
+  static const unsigned kDefaultBucketNum = 521;  // Prime Number is better
 
   class Bucket {
    public:
@@ -87,7 +84,7 @@ class ConcurrentHashMap {
       item_.erase(key);
     }
 
-    template<typename Predicate>
+    template <typename Predicate>
     void Dump(Predicate &p) {
       std::lock_guard<std::mutex> lock(mutex_);
       for (auto it = item_.begin(); it != item_.end(); it++) {
@@ -123,4 +120,3 @@ class ConcurrentHashMap {
   std::vector<Bucket> table_;
   Hash hash_;
 };
-

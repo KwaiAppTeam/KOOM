@@ -20,8 +20,8 @@
 #ifndef KOOM_KOOM_NATIVE_SRC_MAIN_JNI_INCLUDE_MEMORY_ANALYZER_H_
 #define KOOM_KOOM_NATIVE_SRC_MAIN_JNI_INCLUDE_MEMORY_ANALYZER_H_
 
-#include <vector>
 #include <string>
+#include <vector>
 
 namespace kwai {
 namespace leak_monitor {
@@ -31,11 +31,12 @@ class MemoryAnalyzer {
   ~MemoryAnalyzer();
   bool IsValid();
   std::vector<std::pair<uintptr_t, size_t>> CollectUnreachableMem();
+
  private:
   using GetUnreachableFn = std::string (*)(bool, size_t);
   GetUnreachableFn get_unreachable_fn_;
   void *handle_;
 };
-}
-}
-#endif //KOOM_KOOM_NATIVE_SRC_MAIN_JNI_INCLUDE_MEMORY_ANALYZER_H_
+}  // namespace leak_monitor
+}  // namespace kwai
+#endif  // KOOM_KOOM_NATIVE_SRC_MAIN_JNI_INCLUDE_MEMORY_ANALYZER_H_

@@ -18,18 +18,20 @@
  */
 
 #define LOG_TAG "hook_helper"
-#include <xhook.h>
-#include <log/log.h>
-#include <dlopencb.h>
 #include "utils/hook_helper.h"
+
+#include <dlopencb.h>
+#include <log/log.h>
+#include <xhook.h>
 
 std::vector<const std::string> HookHelper::register_pattern_;
 std::vector<const std::string> HookHelper::ignore_pattern_;
-std::vector<std::pair<const std::string, void * const>> HookHelper::methods_;
+std::vector<std::pair<const std::string, void *const>> HookHelper::methods_;
 
-bool HookHelper::HookMethods(std::vector<const std::string> &register_pattern,
+bool HookHelper::HookMethods(
+    std::vector<const std::string> &register_pattern,
     std::vector<const std::string> &ignore_pattern,
-    std::vector<std::pair<const std::string, void * const>> &methods) {
+    std::vector<std::pair<const std::string, void *const>> &methods) {
   if (register_pattern.empty() || methods.empty()) {
     ALOGE("Hook nothing");
     return false;
@@ -59,8 +61,8 @@ bool HookHelper::HookImpl() {
   for (auto &pattern : register_pattern_) {
     ALOGI("xhook_register pattern %s", pattern.c_str());
     for (auto &method : methods_) {
-      if (xhook_register(pattern.c_str(), method.first.c_str(),
-                         method.second, nullptr) != EXIT_SUCCESS) {
+      if (xhook_register(pattern.c_str(), method.first.c_str(), method.second,
+                         nullptr) != EXIT_SUCCESS) {
         ALOGE("xhook_register fail");
         pthread_mutex_unlock(&DlopenCb::hook_mutex);
         return false;

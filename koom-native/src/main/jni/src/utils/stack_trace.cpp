@@ -23,9 +23,12 @@ static const uint32_t kT32InstrLen = 2;
 static const uint32_t kA32InstrLen = 4;
 static const uint32_t kA64InstrLen = 4;
 static FAST_UNWIND_TLS_INITIAL_EXEC uintptr_t stack_top = 0;
-static FAST_UNWIND_TLS_INITIAL_EXEC pthread_once_t once_control_tls = PTHREAD_ONCE_INIT;
+static FAST_UNWIND_TLS_INITIAL_EXEC pthread_once_t once_control_tls =
+    PTHREAD_ONCE_INIT;
 
-inline __attribute__((__always_inline__)) uintptr_t get_thread_stack_top() { return stack_top; }
+inline __attribute__((__always_inline__)) uintptr_t get_thread_stack_top() {
+  return stack_top;
+}
 
 struct frame_record {
   uintptr_t next_frame, return_addr;
@@ -34,9 +37,9 @@ struct frame_record {
 void fast_unwind_init() {
   pthread_attr_t attr;
   pthread_getattr_np(pthread_self(), &attr);
-  stack_top = (uintptr_t)(attr.stack_size + static_cast<char *>(attr.stack_base));
+  stack_top =
+      (uintptr_t)(attr.stack_size + static_cast<char *>(attr.stack_base));
 }
-
 
 KWAI_EXPORT void StackTrace::Init() {
   stack_top = -1;
@@ -79,8 +82,8 @@ KWAI_EXPORT size_t StackTrace::FastUnwind(uintptr_t *buf, size_t num_entries) {
       buf[num_frames] = GetAdjustPC(frame->return_addr);
     }
     ++num_frames;
-    if (frame->next_frame < begin + sizeof(frame_record) || frame->next_frame >= end ||
-        frame->next_frame % sizeof(void *) != 0) {
+    if (frame->next_frame < begin + sizeof(frame_record) ||
+        frame->next_frame >= end || frame->next_frame % sizeof(void *) != 0) {
       break;
     }
     begin = frame->next_frame;

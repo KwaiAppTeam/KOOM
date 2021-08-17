@@ -27,7 +27,11 @@
  */
 
 #define LOG_TAG "memory_map"
+#include "memory_map.h"
+
 #include <ctype.h>
+#include <cxxabi.h>
+#include <dlfcn.h>
 #include <elf.h>
 #include <inttypes.h>
 #include <link.h>
@@ -37,10 +41,6 @@
 #include <sys/mman.h>
 
 #include <vector>
-#include <dlfcn.h>
-#include <cxxabi.h>
-
-#include "memory_map.h"
 
 #if defined(__LP64__)
 #define PAD_PTR "016" PRIxPTR
@@ -57,8 +57,8 @@ static MapEntry *ParseLine(char *line) {
   int flags;
   char permissions[5];
   int name_pos;
-  if (sscanf(line, "%" PRIxPTR "-%" PRIxPTR " %4s %" PRIxPTR " %*x:%*x %*d %n", &start, &end,
-             permissions, &offset, &name_pos) < 2) {
+  if (sscanf(line, "%" PRIxPTR "-%" PRIxPTR " %4s %" PRIxPTR " %*x:%*x %*d %n",
+             &start, &end, permissions, &offset, &name_pos) < 2) {
     return nullptr;
   }
 
@@ -86,9 +86,10 @@ static MapEntry *ParseLine(char *line) {
   return entry;
 }
 
-template<typename T>
+template <typename T>
 static inline bool GetVal(MapEntry *entry, uintptr_t addr, T *store) {
-  if (!(entry->flags & PROT_READ) || addr < entry->start || addr + sizeof(T) > entry->end) {
+  if (!(entry->flags & PROT_READ) || addr < entry->start ||
+      addr + sizeof(T) > entry->end) {
     return false;
   }
   // Make sure the address is aligned properly.
@@ -113,26 +114,32 @@ static void ReadLoadbias(MapEntry *entry) {
   entry->load_bias = 0;
   uintptr_t addr = entry->start;
   ElfW(Ehdr) ehdr;
-  if (!GetVal<ElfW(Half)>(entry, addr + offsetof(ElfW(Ehdr), e_phnum), &ehdr.e_phnum)) {
+  if (!GetVal<ElfW(Half)>(entry, addr + offsetof(ElfW(Ehdr), e_phnum),
+                          &ehdr.e_phnum)) {
     return;
   }
-  if (!GetVal<ElfW(Off)>(entry, addr + offsetof(ElfW(Ehdr), e_phoff), &ehdr.e_phoff)) {
+  if (!GetVal<ElfW(Off)>(entry, addr + offsetof(ElfW(Ehdr), e_phoff),
+                         &ehdr.e_phoff)) {
     return;
   }
   addr += ehdr.e_phoff;
   for (size_t i = 0; i < ehdr.e_phnum; i++) {
     ElfW(Phdr) phdr;
-    if (!GetVal<ElfW(Word)>(entry, addr + offsetof(ElfW(Phdr), p_type), &phdr.p_type)) {
+    if (!GetVal<ElfW(Word)>(entry, addr + offsetof(ElfW(Phdr), p_type),
+                            &phdr.p_type)) {
       return;
     }
-    if (!GetVal<ElfW(Word)>(entry, addr + offsetof(ElfW(Phdr), p_flags), &phdr.p_flags)) {
+    if (!GetVal<ElfW(Word)>(entry, addr + offsetof(ElfW(Phdr), p_flags),
+                            &phdr.p_flags)) {
       return;
     }
-    if (!GetVal<ElfW(Off)>(entry, addr + offsetof(ElfW(Phdr), p_offset), &phdr.p_offset)) {
+    if (!GetVal<ElfW(Off)>(entry, addr + offsetof(ElfW(Phdr), p_offset),
+                           &phdr.p_offset)) {
       return;
     }
     if ((phdr.p_type == PT_LOAD) && (phdr.p_flags & PF_X)) {
-      if (!GetVal<ElfW(Addr)>(entry, addr + offsetof(ElfW(Phdr), p_vaddr), &phdr.p_vaddr)) {
+      if (!GetVal<ElfW(Addr)>(entry, addr + offsetof(ElfW(Phdr), p_vaddr),
+                              &phdr.p_vaddr)) {
         return;
       }
       entry->load_bias = phdr.p_vaddr - phdr.p_offset;
@@ -205,7 +212,8 @@ MapEntry *MemoryMap::CalculateRelPc(uintptr_t pc, uintptr_t *rel_pc) {
     // map is the previous one.
     if (!entry->valid && it != entries_.begin()) {
       MapEntry *prev_entry = *--it;
-      if (prev_entry->flags == PROT_READ && prev_entry->offset < entry->offset &&
+      if (prev_entry->flags == PROT_READ &&
+          prev_entry->offset < entry->offset &&
           prev_entry->name == entry->name) {
         Init(prev_entry);
 
@@ -234,39 +242,37 @@ std::string MemoryMap::FormatSymbol(MapEntry *entry, uintptr_t pc) {
     info.dli_fname = nullptr;
   }
 
-  const char *soname = (entry != nullptr) ? entry->name.c_str() : info.dli_fname;
+  const char *soname =
+      (entry != nullptr) ? entry->name.c_str() : info.dli_fname;
   if (soname == nullptr) {
     soname = "<unknown>";
   }
 
   char offset_buf[128];
   if (entry != nullptr && entry->elf_start_offset != 0) {
-    snprintf(offset_buf, sizeof(offset_buf), " (offset 0x%" PRIxPTR ")", entry->elf_start_offset);
+    snprintf(offset_buf, sizeof(offset_buf), " (offset 0x%" PRIxPTR ")",
+             entry->elf_start_offset);
   } else {
     offset_buf[0] = '\0';
   }
 
   char buf[1024];
   if (symbol != nullptr) {
-    char *demangled_name = abi::__cxa_demangle(symbol, nullptr, nullptr, nullptr);
+    char *demangled_name =
+        abi::__cxa_demangle(symbol, nullptr, nullptr, nullptr);
     const char *name;
     if (demangled_name != nullptr) {
       name = demangled_name;
     } else {
       name = symbol;
     }
-    snprintf(buf, sizeof(buf),
-             "  %s%s (%s+%" PRIuPTR ")\n",
-             soname, offset_buf, name,
-             pc - offset);
+    snprintf(buf, sizeof(buf), "  %s%s (%s+%" PRIuPTR ")\n", soname, offset_buf,
+             name, pc - offset);
     free(demangled_name);
   } else {
-    snprintf(buf, sizeof(buf),
-             "  %s%s\n",
-             soname, offset_buf);
+    snprintf(buf, sizeof(buf), "  %s%s\n", soname, offset_buf);
   }
   str += buf;
 
   return std::move(str);
 }
-

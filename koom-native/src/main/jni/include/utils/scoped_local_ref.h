@@ -24,27 +24,19 @@
 template <typename T>
 class ScopedLocalRef {
  public:
-  ScopedLocalRef(JNIEnv *env, T local_ref) :
-      env_(env), local_ref_(local_ref) {
-  }
+  ScopedLocalRef(JNIEnv *env, T local_ref) : env_(env), local_ref_(local_ref) {}
 
-  ScopedLocalRef(ScopedLocalRef &&s) :
-      env_(s.env_), local_ref_(s.release()) {
-  }
+  ScopedLocalRef(ScopedLocalRef &&s) : env_(s.env_), local_ref_(s.release()) {}
 
-  ScopedLocalRef& operator=(ScopedLocalRef &&s) noexcept {
+  ScopedLocalRef &operator=(ScopedLocalRef &&s) noexcept {
     reset(s.release());
     env_ = s.env_;
     return *this;
   }
 
-  explicit ScopedLocalRef(JNIEnv *env) :
-      env_(env), local_ref_(nullptr) {
-  }
+  explicit ScopedLocalRef(JNIEnv *env) : env_(env), local_ref_(nullptr) {}
 
-  ~ScopedLocalRef() {
-    reset();
-  }
+  ~ScopedLocalRef() { reset(); }
 
   void reset(T ptr = nullptr) {
     if (ptr != local_ref_) {
@@ -61,17 +53,11 @@ class ScopedLocalRef {
     return local_ref;
   }
 
-  T get() const {
-    return local_ref_;
-  }
+  T get() const { return local_ref_; }
 
-  bool operator==(std::nullptr_t) const {
-    return local_ref_ == nullptr;
-  }
+  bool operator==(std::nullptr_t) const { return local_ref_ == nullptr; }
 
-  bool operator!=(std::nullptr_t) const {
-    return local_ref_ != nullptr;
-  }
+  bool operator!=(std::nullptr_t) const { return local_ref_ != nullptr; }
 
  private:
   ScopedLocalRef(const ScopedLocalRef &) = delete;
@@ -81,4 +67,4 @@ class ScopedLocalRef {
   T local_ref_;
 };
 
-#endif // KOOM_NATIVE_OOM_SRC_MAIN_JNI_INCLUDE_UTILS_SCOPED_LOCAL_REF_H_
+#endif  // KOOM_NATIVE_OOM_SRC_MAIN_JNI_INCLUDE_UTILS_SCOPED_LOCAL_REF_H_

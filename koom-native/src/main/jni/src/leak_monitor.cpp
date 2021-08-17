@@ -19,50 +19,55 @@
 
 #define LOG_TAG "leak_monitor"
 #include "leak_monitor.h"
-#include "utils/auto_time.h"
-#include "kwai_linker/kwai_dlfcn.h"
-#include <log/log.h>
-#include <log/kcheck.h>
+
 #include <asm/mman.h>
+#include <assert.h>
 #include <dlfcn.h>
-#include <utils/hook_helper.h>
+#include <log/kcheck.h>
+#include <log/log.h>
 #include <pthread.h>
-#include <utils/stack_trace.h>
 #include <sys/mman.h>
 #include <sys/prctl.h>
 #include <unistd.h>
 #include <unwind.h>
-#include <assert.h>
+#include <utils/hook_helper.h>
+#include <utils/stack_trace.h>
+
 #include <functional>
 #include <regex>
 #include <thread>
+
+#include "kwai_linker/kwai_dlfcn.h"
+#include "utils/auto_time.h"
 
 namespace kwai {
 namespace leak_monitor {
 
 #define CLEAR_MEMORY(ptr, size) \
-  do {    \
-    if (ptr) { \
-      memset(ptr, 0, size); \
-    } \
-  } while(0)
+  do {                          \
+    if (ptr) {                  \
+      memset(ptr, 0, size);     \
+    }                           \
+  } while (0)
 
 #define WRAP(x) x##Monitor
 #define HOOK(ret_type, function, ...) \
-    static ALWAYS_INLINE ret_type WRAP(function)(__VA_ARGS__)
+  static ALWAYS_INLINE ret_type WRAP(function)(__VA_ARGS__)
 
-// Define allocator proxies; aligned_alloc included in API 28 and valloc/pvalloc can ignore in LP64
-// So we can't proxy aligned_alloc/valloc/pvalloc.
+// Define allocator proxies; aligned_alloc included in API 28 and valloc/pvalloc
+// can ignore in LP64 So we can't proxy aligned_alloc/valloc/pvalloc.
 HOOK(void, free, void *ptr) {
   free(ptr);
   if (ptr) {
-    LeakMonitor::GetInstance().UnregisterAlloc(reinterpret_cast<uintptr_t>(ptr));
+    LeakMonitor::GetInstance().UnregisterAlloc(
+        reinterpret_cast<uintptr_t>(ptr));
   }
 }
 
 HOOK(void *, malloc, size_t size) {
   auto result = malloc(size);
-  LeakMonitor::GetInstance().OnMonitor(reinterpret_cast<intptr_t>(result), size);
+  LeakMonitor::GetInstance().OnMonitor(reinterpret_cast<intptr_t>(result),
+                                       size);
   CLEAR_MEMORY(result, size);
   return result;
 }
@@ -70,29 +75,33 @@ HOOK(void *, malloc, size_t size) {
 HOOK(void *, realloc, void *ptr, size_t size) {
   auto result = realloc(ptr, size);
   if (ptr != nullptr) {
-    LeakMonitor::GetInstance().UnregisterAlloc(reinterpret_cast<uintptr_t>(ptr));
+    LeakMonitor::GetInstance().UnregisterAlloc(
+        reinterpret_cast<uintptr_t>(ptr));
   }
-  LeakMonitor::GetInstance().OnMonitor(reinterpret_cast<intptr_t>(result), size);
+  LeakMonitor::GetInstance().OnMonitor(reinterpret_cast<intptr_t>(result),
+                                       size);
   return result;
 }
 
 HOOK(void *, calloc, size_t item_count, size_t item_size) {
   auto result = calloc(item_count, item_size);
   LeakMonitor::GetInstance().OnMonitor(reinterpret_cast<intptr_t>(result),
-                                         item_count * item_size);
+                                       item_count * item_size);
   return result;
 }
 
 HOOK(void *, memalign, size_t alignment, size_t byte_count) {
   auto result = memalign(alignment, byte_count);
-  LeakMonitor::GetInstance().OnMonitor(reinterpret_cast<intptr_t>(result), byte_count);
+  LeakMonitor::GetInstance().OnMonitor(reinterpret_cast<intptr_t>(result),
+                                       byte_count);
   CLEAR_MEMORY(result, byte_count);
   return result;
 }
 
-HOOK(int, posix_memalign, void** memptr, size_t alignment, size_t size) {
+HOOK(int, posix_memalign, void **memptr, size_t alignment, size_t size) {
   auto result = posix_memalign(memptr, alignment, size);
-  LeakMonitor::GetInstance().OnMonitor(reinterpret_cast<intptr_t>(*memptr), size);
+  LeakMonitor::GetInstance().OnMonitor(reinterpret_cast<intptr_t>(*memptr),
+                                       size);
   CLEAR_MEMORY(*memptr, size);
   return result;
 }
@@ -103,7 +112,7 @@ LeakMonitor &LeakMonitor::GetInstance() {
 }
 
 bool LeakMonitor::Install(std::vector<std::string> *selected_list,
-                                 std::vector<std::string> *ignore_list) {
+                          std::vector<std::string> *ignore_list) {
   KCHECK(!has_install_monitor_);
 
   // Reinstall can't hook again
@@ -117,9 +126,8 @@ bool LeakMonitor::Install(std::vector<std::string> *selected_list,
   }
 
   std::vector<const std::string> register_pattern = {"^/data/.*\\.so$"};
-  std::vector<const std::string> ignore_pattern = {
-      ".*/libnative-oom.so$",
-      ".*/libxhook_lib.so$"};
+  std::vector<const std::string> ignore_pattern = {".*/libnative-oom.so$",
+                                                   ".*/libxhook_lib.so$"};
 
   if (ignore_list != nullptr) {
     for (std::string &item : *ignore_list) {
@@ -138,7 +146,8 @@ bool LeakMonitor::Install(std::vector<std::string> *selected_list,
       std::make_pair("realloc", reinterpret_cast<void *>(WRAP(realloc))),
       std::make_pair("calloc", reinterpret_cast<void *>(WRAP(calloc))),
       std::make_pair("memalign", reinterpret_cast<void *>(WRAP(memalign))),
-      std::make_pair("posix_memalign", reinterpret_cast<void *>(WRAP(posix_memalign))),
+      std::make_pair("posix_memalign",
+                     reinterpret_cast<void *>(WRAP(posix_memalign))),
       std::make_pair("free", reinterpret_cast<void *>(WRAP(free)))};
 
   StackTrace::Init();
@@ -174,20 +183,20 @@ std::vector<std::shared_ptr<AllocRecord>> LeakMonitor::GetLeakAllocs() {
   std::vector<std::shared_ptr<AllocRecord>> leak_allocs;
 
   // Collect live memory blocks
-  auto collect_func =
-      [&](std::shared_ptr<AllocRecord> &alloc_info) -> void { live_allocs.push_back(alloc_info); };
+  auto collect_func = [&](std::shared_ptr<AllocRecord> &alloc_info) -> void {
+    live_allocs.push_back(alloc_info);
+  };
   live_alloc_records_.Dump(collect_func);
 
-  auto is_leak =
-      [&](decltype(unreachable_allocs)::value_type &unreachable, std::shared_ptr<AllocRecord> &live) ->
-      bool {
+  auto is_leak = [&](decltype(unreachable_allocs)::value_type &unreachable,
+                     std::shared_ptr<AllocRecord> &live) -> bool {
     auto live_start = CONFUSE(live->address);
     auto live_end = live_start + live->size;
     auto unreachable_start = unreachable.first;
     auto unreachable_end = unreachable_start + unreachable.second;
     // TODO why
     return live_start == unreachable_start ||
-        live_start >= unreachable_start && live_end <= unreachable_end;
+           live_start >= unreachable_start && live_end <= unreachable_end;
   };
   // Check leak allocation (unreachable && not free)
   for (auto &live : live_allocs) {
@@ -237,8 +246,7 @@ ALWAYS_INLINE void LeakMonitor::OnMonitor(uintptr_t address, size_t size) {
     return;
   }
 
-  ALOGI("%s address %p, size %d", __FUNCTION__, address, size);
   RegisterAlloc(address, size);
 }
-} // namespace leak_monitor
-} // namespace kwai
+}  // namespace leak_monitor
+}  // namespace kwai
