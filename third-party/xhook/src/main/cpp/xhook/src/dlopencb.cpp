@@ -95,7 +95,7 @@ void DlopenCb::Refresh(int source, std::string &loadLibName) {
     for (const auto &lib : addLibs) {
       auto lib_ctr = lib.c_str();
       xhook_register(lib_ctr, "android_dlopen_ext", (void *) (HookDlopenExt), nullptr);
-      xhook_register(lib_ctr, "dlopen", (void *) (HookDlopen), nullptr);
+//      xhook_register(lib_ctr, "dlopen", (void *) (HookDlopen), nullptr);
       XH_LOG_INFO("Refresh new lib added %s", lib_ctr);
     }
     xhook_refresh(0);

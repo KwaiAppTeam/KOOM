@@ -12,11 +12,10 @@ object ThreadMonitorInitTask : InitTask {
   override fun init(application: Application) {
     val config = ThreadMonitorConfig.Builder()
         .enableNativeLog()
-        .setLoopInterval(2 * 1000)
 //        .setStartDelay(5 * 1000)
 //        .disableNative()
 //        .enableThreadAddCustomLog()
-        .enableThreadLeakCheck(1, 10 * 1000)
+        .enableThreadLeakCheck(2 * 1000L, 10 * 1000L)
         .setListener(object : ThreadMonitorResultListener {
           override fun onReport(type: String, msg: String) {
             Log.i(type, msg)
@@ -34,7 +33,5 @@ object ThreadMonitorInitTask : InitTask {
         .build()
 
     MonitorManager.addMonitorConfig(config)
-    val monitor = MonitorManager.getMonitor(ThreadMonitor::class.java)
-    monitor.startTrack()
   }
 }
