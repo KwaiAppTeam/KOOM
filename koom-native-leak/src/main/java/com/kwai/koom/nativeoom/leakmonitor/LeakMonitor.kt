@@ -75,6 +75,7 @@ object LeakMonitor : LoopMonitor<LeakMonitorConfig>() {
   /**
    * NOT directly invoke it
    */
+  @Deprecated("Unfriendly API use checkLeaks()", ReplaceWith("checkLeaks"))
   override fun call(): LoopState {
     if (monitorConfig.nativeHeapAllocatedThreshold > 0
         && Debug.getNativeHeapAllocatedSize() > monitorConfig.nativeHeapAllocatedThreshold) {
@@ -95,6 +96,11 @@ object LeakMonitor : LoopMonitor<LeakMonitorConfig>() {
    * Start Leak Monitor, then it will periodically detect leaks
    * Note: time-consuming, usually NOT run in UI thread.
    */
+  fun start() {
+    startLoop(false, true, monitorConfig.loopInterval)
+  }
+
+  @Deprecated("Unfriendly API use start()", ReplaceWith("start"))
   override fun startLoop(clearQueue: Boolean, postAtFront: Boolean, delayMillis: Long) {
     throwIfNotInitialized { return }
     getLoopHandler().post(Runnable {
@@ -124,6 +130,11 @@ object LeakMonitor : LoopMonitor<LeakMonitorConfig>() {
   /**
    * Stop Leak Monitor.
    */
+  fun stop() {
+    stopLoop()
+  }
+
+  @Deprecated("Unfriendly API use stop()", ReplaceWith("stop"))
   override fun stopLoop() {
     throwIfNotInitialized { return }
     getLoopHandler().post(Runnable {

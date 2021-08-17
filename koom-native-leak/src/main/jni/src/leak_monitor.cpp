@@ -150,7 +150,6 @@ bool LeakMonitor::Install(std::vector<std::string> *selected_list,
                      reinterpret_cast<void *>(WRAP(posix_memalign))),
       std::make_pair("free", reinterpret_cast<void *>(WRAP(free)))};
 
-  StackTrace::Init();
   if (HookHelper::HookMethods(register_pattern, ignore_pattern, hook_entries)) {
     has_install_monitor_ = true;
     return true;

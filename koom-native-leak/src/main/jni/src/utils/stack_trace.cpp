@@ -41,11 +41,6 @@ void fast_unwind_init() {
       (uintptr_t)(attr.stack_size + static_cast<char *>(attr.stack_base));
 }
 
-KWAI_EXPORT void StackTrace::Init() {
-  stack_top = -1;
-  pthread_once(&once_control_tls, fast_unwind_init);
-}
-
 static inline uintptr_t GetAdjustPC(uintptr_t pc) {
 #if defined(__aarch64__) || defined(__arm__)
   if (pc < kA64InstrLen) {

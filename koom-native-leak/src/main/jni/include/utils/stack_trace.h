@@ -37,8 +37,6 @@
 
 class StackTrace {
  public:
-  static void Init();
-
   static size_t FastUnwind(uintptr_t *buf, size_t num_entries);
 };
 

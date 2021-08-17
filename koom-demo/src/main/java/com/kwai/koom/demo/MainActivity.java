@@ -27,6 +27,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.kwai.koom.base.Monitor_SoKt;
 import com.kwai.koom.demo.leaked.LeakMaker;
 import com.kwai.koom.demo.nativeleak.NativeLeakTest;
+import com.kwai.koom.demo.nativeleak.NativeLeakTestActivity;
 import com.kwai.koom.demo.threadleak.ThreadLeakTest;
 import com.kwai.koom.nativeoom.leakmonitor.LeakMonitor;
 
@@ -53,15 +54,7 @@ public class MainActivity extends AppCompatActivity {
     });
 
     findViewById(R.id.btn_test_native_leak).setOnClickListener(v -> {
-      if (Monitor_SoKt.loadSoQuietly("native-leak-test")) {
-        LeakMonitor.INSTANCE.startLoop(true, false, 0);
-        try {
-          TimeUnit.MILLISECONDS.sleep(500);
-        } catch (InterruptedException interruptedException) {
-          interruptedException.printStackTrace();
-        }
-        NativeLeakTest.triggerLeak(new Object());
-      }
+      NativeLeakTestActivity.start(MainActivity.this);
     });
 
     findViewById(R.id.btn_test_thread_leak).setOnClickListener(v -> {
