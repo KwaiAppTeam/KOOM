@@ -20,14 +20,15 @@
 #ifndef KOOM_NATIVE_OOM_SRC_MAIN_JNI_INCLUDE_LEAK_MONITOR_H_
 #define KOOM_NATIVE_OOM_SRC_MAIN_JNI_INCLUDE_LEAK_MONITOR_H_
 
-#include "constants.h"
-#include "utils/concurrent_hash_map.h"
-#include "memory_analyzer.h"
+#include <linux/prctl.h>
+#include <sys/prctl.h>
 
 #include <list>
 #include <vector>
-#include <linux/prctl.h>
-#include <sys/prctl.h>
+
+#include "constants.h"
+#include "memory_analyzer.h"
+#include "utils/concurrent_hash_map.h"
 
 #define CONFUSE(address) (~(address))
 
@@ -54,13 +55,11 @@ struct ThreadInfo {
 };
 
 class LeakMonitor {
-public:
+ public:
   static LeakMonitor &GetInstance();
   bool Install(std::vector<std::string> *selected_list,
-                      std::vector<std::string> *ignore_list);
+               std::vector<std::string> *ignore_list);
   void Uninstall();
-  int SyncRefresh();
-  int AsyncRefresh();
   void SetMonitorThreshold(size_t threshold);
   std::vector<std::shared_ptr<AllocRecord>> GetLeakAllocs();
   uint64_t CurrentAllocIndex();
@@ -68,10 +67,13 @@ public:
   void RegisterAlloc(uintptr_t address, size_t size);
   void UnregisterAlloc(uintptr_t address);
 
-private:
+ private:
   LeakMonitor()
-      : alloc_index_(0), has_install_monitor_(false), live_alloc_records_(),
-        alloc_threshold_(kDefaultAllocThreshold), memory_analyzer_() {};
+      : alloc_index_(0),
+        has_install_monitor_(false),
+        live_alloc_records_(),
+        alloc_threshold_(kDefaultAllocThreshold),
+        memory_analyzer_() {}
   ~LeakMonitor() = default;
   LeakMonitor(const LeakMonitor &);
   LeakMonitor &operator=(const LeakMonitor &);
@@ -81,6 +83,6 @@ private:
   std::atomic<bool> has_install_monitor_;
   std::atomic<size_t> alloc_threshold_;
 };
-} // namespace leak_monitor
-} // namespace kwai
-#endif // KOOM_NATIVE_OOM_SRC_MAIN_JNI_INCLUDE_LEAK_MONITOR_H_
+}  // namespace leak_monitor
+}  // namespace kwai
+#endif  // KOOM_NATIVE_OOM_SRC_MAIN_JNI_INCLUDE_LEAK_MONITOR_H_

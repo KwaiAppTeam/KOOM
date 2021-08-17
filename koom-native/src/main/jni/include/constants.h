@@ -28,4 +28,4 @@ const uint32_t kMaxBacktraceSize = 12;
 const uint32_t kMaxThreadNameLen = 16;
 const uint32_t kDefaultAllocThreshold = 15;
 
-#endif // KOOM_NATIVE_OOM_SRC_MAIN_JNI_INCLUDE_CONSTANTS_H_
+#endif  // KOOM_NATIVE_OOM_SRC_MAIN_JNI_INCLUDE_CONSTANTS_H_

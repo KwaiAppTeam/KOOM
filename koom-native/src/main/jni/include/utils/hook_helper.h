@@ -20,15 +20,24 @@
 #ifndef KOOM_NATIVE_OOM_SRC_MAIN_JNI_INCLUDE_UTILS_HOOK_HELPER_H_
 #define KOOM_NATIVE_OOM_SRC_MAIN_JNI_INCLUDE_UTILS_HOOK_HELPER_H_
 
-#include <vector>
+#include <mutex>
+#include <set>
 #include <string>
+#include <vector>
 
 class HookHelper {
  public:
-  static bool HookMethods(std::vector<const std::string> &register_pattern,
+  static bool HookMethods(
+      std::vector<const std::string> &register_pattern,
       std::vector<const std::string> &ignore_pattern,
-      std::vector<std::pair<const std::string, void * const>> &methods);
-  static bool SyncRefreshHook();
-  static bool AsyncRefreshHook();
+      std::vector<std::pair<const std::string, void *const>> &methods);
+  static void UnHookMethods();
+
+ private:
+  static void Callback(std::set<std::string> &, int, std::string &);
+  static bool HookImpl();
+  static std::vector<const std::string> register_pattern_;
+  static std::vector<const std::string> ignore_pattern_;
+  static std::vector<std::pair<const std::string, void *const>> methods_;
 };
-#endif // KOOM_NATIVE_OOM_SRC_MAIN_JNI_INCLUDE_UTILS_HOOK_HELPER_H_
+#endif  // KOOM_NATIVE_OOM_SRC_MAIN_JNI_INCLUDE_UTILS_HOOK_HELPER_H_
