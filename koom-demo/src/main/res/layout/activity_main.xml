@@ -20,20 +20,11 @@
       android:layout_centerInParent="true"
       android:text="Test Native Leak" />
 
-
-  <Button
-      android:id="@+id/btn_test_native_leak2"
-      android:layout_width="wrap_content"
-      android:layout_height="wrap_content"
-      android:layout_below="@id/btn_report_leak"
-      android:layout_centerInParent="true"
-      android:text="Test Native Leak" />
-
   <Button
       android:id="@+id/btn_test_thread_leak"
       android:layout_width="wrap_content"
       android:layout_height="wrap_content"
-      android:layout_below="@id/btn_test_native_leak2"
+      android:layout_below="@id/btn_test_native_leak"
       android:layout_centerInParent="true"
       android:text="Test Thread Leak" />
 
