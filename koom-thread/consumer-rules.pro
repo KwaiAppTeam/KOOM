@@ -1,1 +1,0 @@
--keep class com.kwai.performance.overhead.thread.monitor.NativeHandler { *; }
