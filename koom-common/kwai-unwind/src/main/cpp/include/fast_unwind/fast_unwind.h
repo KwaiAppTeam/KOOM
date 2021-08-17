@@ -16,9 +16,9 @@
 
 #pragma once
 
+#include <sys/cdefs.h>
 #include <backtrace/backtrace_constants.h>
 #include <cstdint>
-#include <sys/cdefs.h>
 
 __BEGIN_DECLS
 

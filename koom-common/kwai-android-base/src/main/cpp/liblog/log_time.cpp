@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-// Author: Qiushi Xue <xueqiushi@kuaishou.com>
 
 #include <ctype.h>
 #include <limits.h>

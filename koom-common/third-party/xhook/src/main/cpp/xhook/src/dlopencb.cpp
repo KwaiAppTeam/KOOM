@@ -19,12 +19,14 @@
 
 #define LOG_TAG "dlopencb"
 
+#include <link.h>
+#include <utility>
 #include "dlopencb.h"
 #include "xhook.h"
 #include "xh_log.h"
-#include <link.h>
 
-//兼容编译失败，实际API 21以下不支持开启
+
+// 兼容编译失败，实际API 21以下不支持开启
 #if __ANDROID_API__ < 21
 void* android_dlopen_ext(const char* __filename, int __flags, const android_dlextinfo* __info) {
     return 0;

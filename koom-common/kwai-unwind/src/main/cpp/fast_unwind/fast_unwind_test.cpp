@@ -14,8 +14,6 @@
 
 // Author: Qiushi Xue <xueqiushi@kuaishou.com>
 
-#include <atomic>
-#include <cstring>
 #include <fast_unwind/fast_unwind.h>
 #include <fast_unwind/fast_unwind_test.h>
 #include <kwai_util/kwai_macros.h>
@@ -25,6 +23,8 @@
 #include <malloc.h>
 #include <pthread.h>
 #include <sys/prctl.h>
+#include <atomic>
+#include <cstring>
 
 #define LOG_TAG "unwind"
 

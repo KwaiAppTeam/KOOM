@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-// Author: Qiushi Xue <xueqiushi@kuaishou.com>
 
 #pragma once
 
@@ -101,14 +100,14 @@ int android_log_destroy(android_log_context *ctx);
 /* android_log_list C++ helpers */
 extern "C++" {
 class android_log_event_list {
-private:
+ private:
   android_log_context ctx;
   int ret;
 
   android_log_event_list(const android_log_event_list &) = delete;
   void operator=(const android_log_event_list &) = delete;
 
-public:
+ public:
   explicit android_log_event_list(int tag) : ret(0) {
     ctx = create_android_logger(static_cast<uint32_t>(tag));
   }
