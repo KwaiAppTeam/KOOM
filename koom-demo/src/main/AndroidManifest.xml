@@ -21,8 +21,7 @@
     <activity android:name=".javaleak.test.ActivityLeakMaker$LeakedActivity" />
 
     <activity
-      android:name=".nativeleak.NativeLeakTestActivity"
-      android:exported="true" />
+      android:name=".nativeleak.NativeLeakTestActivity" />
 
     <activity android:name=".javaleak.JavaLeakTestActivity"/>
   </application>

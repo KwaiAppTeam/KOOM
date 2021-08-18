@@ -37,11 +37,7 @@ class CommonConfig private constructor(
 
     // MonitorBuildConfig 通用属性
     internal val debugMode: Boolean,
-    internal val productNameInvoker: () -> String,
     internal val versionNameInvoker: () -> String,
-    internal val serviceIdInvoker: () -> String,
-    internal val channelInvoker: () -> String,
-    internal val deviceIdInvoker: () -> String,
     internal val romInvoker: () -> String,
 
     internal val logger: Logger,
@@ -58,10 +54,7 @@ class CommonConfig private constructor(
     private lateinit var mApplication: Application
 
     private var mDebugMode = true
-    private lateinit var mProductNameInvoker: () -> String
     private lateinit var mVersionNameInvoker: () -> String
-    private lateinit var mServiceIdInvoker: (() -> String)
-    private lateinit var mChannelInvoker: (() -> String)
     private lateinit var mDeviceIdInvoker: (() -> String)
     private lateinit var mRomInvoker: (() -> String)
 
@@ -85,24 +78,8 @@ class CommonConfig private constructor(
       mDebugMode = debugMode
     }
 
-    fun setProductNameInvoker(productNameInvoker: () -> String) = apply {
-      mProductNameInvoker = productNameInvoker
-    }
-
     fun setVersionNameInvoker(versionNameInvoker: () -> String) = apply {
       mVersionNameInvoker = versionNameInvoker
-    }
-
-    fun setChannelInvoker(channelInvoker: () -> String) = apply {
-      mChannelInvoker = channelInvoker
-    }
-
-    fun setServiceIdInvoker(serviceIdInvoker: () -> String) = apply {
-      mServiceIdInvoker = serviceIdInvoker
-    }
-
-    fun setDeviceIdInvoker(deviceIdInvoker: () -> String) = apply {
-      mDeviceIdInvoker = deviceIdInvoker
     }
 
     fun setRomInvoker(romInvoker: () -> String) = apply {
@@ -147,11 +124,7 @@ class CommonConfig private constructor(
         application = mApplication,
 
         debugMode = mDebugMode,
-        productNameInvoker = mProductNameInvoker,
         versionNameInvoker = mVersionNameInvoker,
-        serviceIdInvoker = mServiceIdInvoker,
-        channelInvoker = mChannelInvoker,
-        deviceIdInvoker = mDeviceIdInvoker,
         romInvoker = mRomInvoker,
 
         rootFileInvoker = mRootFileInvoker ?: {
