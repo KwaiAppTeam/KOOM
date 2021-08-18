@@ -20,9 +20,14 @@ package com.kwai.koom.javaoom.monitor
 
 import android.os.Build
 import android.os.SystemClock
+
+import java.io.File
+import java.util.*
+
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.LifecycleOwner
+
 import com.kwai.koom.base.CommonConfig
 import com.kwai.koom.base.Logger
 import com.kwai.koom.base.MonitorBuildConfig
@@ -35,9 +40,10 @@ import com.kwai.koom.base.isForeground
 import com.kwai.koom.base.isMainProcess
 import com.kwai.koom.base.loop.LoopMonitor
 import com.kwai.koom.base.registerProcessLifecycleObserver
+
 import com.kwai.koom.javaoom.hprof.ForkJvmHeapDumper
 import com.kwai.koom.javaoom.monitor.OOMFileManager.hprofAnalysisDir
-import com.kwai.koom.javaoom.monitor.OOMFileManager.oomDumDir
+import com.kwai.koom.javaoom.monitor.OOMFileManager.manualDumpDir
 import com.kwai.koom.javaoom.monitor.analysis.AnalysisExtraData
 import com.kwai.koom.javaoom.monitor.analysis.AnalysisReceiver
 import com.kwai.koom.javaoom.monitor.analysis.HeapAnalysisService
@@ -47,8 +53,6 @@ import com.kwai.koom.javaoom.monitor.tracker.HeapOOMTracker
 import com.kwai.koom.javaoom.monitor.tracker.PhysicalMemoryOOMTracker
 import com.kwai.koom.javaoom.monitor.tracker.ThreadOOMTracker
 import com.kwai.koom.javaoom.monitor.tracker.model.SystemInfo
-import java.io.File
-import java.util.*
 
 object OOMMonitor : LoopMonitor<OOMMonitorConfig>(), LifecycleEventObserver {
   private const val TAG = "OOMMonitor"
@@ -69,10 +73,10 @@ object OOMMonitor : LoopMonitor<OOMMonitorConfig>(), LifecycleEventObserver {
   private var mIsLoopPendingStart = false
 
   @Volatile
-  private var mHasDumped = false // 进程运行期间，只触发dump分析一次
+  private var mHasDumped = false // Only trigger one time in process running lifecycle.
 
   @Volatile
-  private var mHasAnalysedLatestHprof = false // 进程运行期间，只触发待分析的hprof一次
+  private var mHasProcessOldHprof = false // Only trigger one time in process running lifecycle.
 
   override fun init(commonConfig: CommonConfig, monitorConfig: OOMMonitorConfig) {
     super.init(commonConfig, monitorConfig)
@@ -104,7 +108,7 @@ object OOMMonitor : LoopMonitor<OOMMonitorConfig>(), LifecycleEventObserver {
     mIsLoopStarted = true
 
     super.startLoop(clearQueue, postAtFront, delayMillis)
-    getLoopHandler().postDelayed({ async { analysisLatestHprofFile() } }, delayMillis)
+    getLoopHandler().postDelayed({ async { processOldHprofFile() } }, delayMillis)
   }
 
   override fun stopLoop() {
@@ -171,7 +175,6 @@ object OOMMonitor : LoopMonitor<OOMMonitorConfig>(), LifecycleEventObserver {
     }
 
     if (mTrackReasons.isNotEmpty() && monitorConfig.enableHprofDumpAnalysis) {
-      //todo 触发了dump分析，但是已经超过了分析时间窗口，先暂停轮询
       if (isExceedAnalysisPeriod() || isExceedAnalysisTimes()) {
         MonitorLog.e(TAG, "Triggered, but exceed analysis times or period!")
       } else {
@@ -187,67 +190,47 @@ object OOMMonitor : LoopMonitor<OOMMonitorConfig>(), LifecycleEventObserver {
     return LoopState.Continue
   }
 
-  /**
-   * 如果存在，压缩上传或重新触发本地内存镜像分析的相关文件
-   * 具体：
-   * 假设有文件只有hprof，无json文件，则触发且只触发一次重新分析
-   * 假设文件有hprof和完整的json，则表明上次没有成功上传，重新上传
-   */
-  private fun analysisLatestHprofFile() {
-    try {
-      if (mHasAnalysedLatestHprof) {
-        return
+  private fun processOldHprofFile() {
+    MonitorLog.i(TAG, "processHprofFile")
+    if (mHasProcessOldHprof) {
+      return
+    }
+    mHasProcessOldHprof = true;
+    reAnalysisHprof()
+    manualDumpHprof()
+  }
+
+  private fun reAnalysisHprof() {
+    for (file in hprofAnalysisDir.listFiles().orEmpty()) {
+      if (!file.exists()) continue
+
+      if (!file.name.startsWith(MonitorBuildConfig.VERSION_NAME)) {
+        MonitorLog.i(TAG, "delete other version files ${file.name}")
+        file.delete()
+        continue
       }
-      MonitorLog.i(TAG, "analysisLatestHprofFile")
-      mHasAnalysedLatestHprof = true
 
-      //todo 目前镜像分析只上传了成功分析的
-      for (hprofFile in hprofAnalysisDir.listFiles().orEmpty()) {
-        if (!hprofFile.exists()) continue
-
-        if (!hprofFile.name.startsWith(MonitorBuildConfig.VERSION_NAME)) {
-          MonitorLog.i(TAG, "delete other version files")
-          hprofFile.delete()
-          continue
-        }
-
-        if (hprofFile.canonicalPath.endsWith(".hprof")) {
-          val jsonFile = File(hprofFile.canonicalPath.replace(".hprof", ".json"))
-
-          if (!jsonFile.exists()) {
-            MonitorLog.i(TAG, "retry analysis, json not exist, then start service")
-
-            // 创建json file，表示只触发1次，后续分析失败也不再继续分析
-            jsonFile.createNewFile()
-
-            startAnalysisService(hprofFile, jsonFile, "reanalysis")
-          } else if (jsonFile.length() == 0L) {
-            MonitorLog.i(TAG, "retry analysis, json file exists but length 0, this means " +
-                "koom didn't success in last analysis, so delete the files", true)
-
-            // 表示是重新触发过1次，依然失败的案例，直接将其删除避免后续重复分析
-            jsonFile.delete()
-            hprofFile.delete()
-          } else {
-            MonitorLog.i(TAG, "retry analysis, json file length normal, this means it is" +
-                " success in last analysis, delete hprof and json files")
-
-            //有待观察是否需要上传
-            jsonFile.delete()
-            hprofFile.delete()
-          }
+      if (file.canonicalPath.endsWith(".hprof")) {
+        val jsonFile = File(file.canonicalPath.replace(".hprof", ".json"))
+        if (!jsonFile.exists()) {
+          MonitorLog.i(TAG, "create json file and then start service")
+          jsonFile.createNewFile()
+          startAnalysisService(file, jsonFile, "reanalysis")
+        } else {
+            MonitorLog.i(TAG,
+            if (jsonFile.length() == 0L) "last analysis isn't succeed, delete file"
+            else "delete old files", true)
+          jsonFile.delete()
+          file.delete()
         }
       }
+    }
+  }
 
-      for (hprofFile in oomDumDir.listFiles().orEmpty()) {
-        MonitorLog.i(TAG, "OOM Dump upload:${hprofFile.absolutePath}")
-        // TODO HPROF来源
-        monitorConfig.hprofUploader?.upload(hprofFile, OOMHprofUploader.HprofType.STRIPPED)
-      }
-
-    } catch (e: Exception) {
-      e.printStackTrace()
-      MonitorLog.e(TAG, "retryAnalysisFailed: " + e.message, true)
+  private fun manualDumpHprof() {
+    for (hprofFile in manualDumpDir.listFiles().orEmpty()) {
+      MonitorLog.i(TAG, "manualDumpHprof upload:${hprofFile.absolutePath}")
+      monitorConfig.hprofUploader?.upload(hprofFile, OOMHprofUploader.HprofType.STRIPPED)
     }
   }
 
@@ -270,7 +253,6 @@ object OOMMonitor : LoopMonitor<OOMMonitorConfig>(), LifecycleEventObserver {
 
     OOMPreferenceManager.increaseAnalysisTimes()
 
-    // 构造额外需要参数，oom原因、当前页面、使用时长
     val extraData = AnalysisExtraData().apply {
       this.reason = reason
       this.currentPage = getApplication().currentActivity?.localClassName.orEmpty()
@@ -293,8 +275,11 @@ object OOMMonitor : LoopMonitor<OOMMonitorConfig>(), LifecycleEventObserver {
           override fun onSuccess() {
             MonitorLog.i(TAG, "heap analysis success, do upload", true)
 
-            MonitorLogger.addExceptionEvent(jsonFile.readText(), Logger.ExceptionType.OOM_STACKS)
+            val content = jsonFile.readText()
 
+            MonitorLogger.addExceptionEvent(content, Logger.ExceptionType.OOM_STACKS)
+
+            monitorConfig.reportUploader?.upload(jsonFile, content)
             monitorConfig.hprofUploader?.upload(hprofFile, OOMHprofUploader.HprofType.ORIGIN)
           }
         })
@@ -303,7 +288,6 @@ object OOMMonitor : LoopMonitor<OOMMonitorConfig>(), LifecycleEventObserver {
   private fun dumpAndAnalysis() {
     MonitorLog.i(TAG, "dumpAndAnalysis");
     runCatching {
-      //剩余空间检查
       if (!OOMFileManager.isSpaceEnough()) {
         MonitorLog.e(TAG, "available space not enough", true)
         return@runCatching
@@ -329,9 +313,7 @@ object OOMMonitor : LoopMonitor<OOMMonitorConfig>(), LifecycleEventObserver {
       }
 
       MonitorLog.i(TAG, "end hprof dump", true)
-      //停留1s，确保文件已写入
-      Thread.sleep(1000)
-      //hprof已写入，开始内存镜像分析
+      Thread.sleep(1000) // make sure file synced to disk.
       MonitorLog.i(TAG, "start hprof analysis")
 
       startAnalysisService(hprofFile, jsonFile, mTrackReasons.joinToString())
@@ -346,6 +328,7 @@ object OOMMonitor : LoopMonitor<OOMMonitorConfig>(), LifecycleEventObserver {
     when (event) {
       Lifecycle.Event.ON_START -> {
         if (!mHasDumped && mIsLoopPendingStart) {
+          MonitorLog.i(TAG, "foreground")
           startLoop()
         }
 
@@ -354,7 +337,7 @@ object OOMMonitor : LoopMonitor<OOMMonitorConfig>(), LifecycleEventObserver {
       }
       Lifecycle.Event.ON_STOP -> {
         mIsLoopPendingStart = mIsLoopStarted
-
+        MonitorLog.i(TAG, "background")
         stopLoop()
       }
       else -> Unit

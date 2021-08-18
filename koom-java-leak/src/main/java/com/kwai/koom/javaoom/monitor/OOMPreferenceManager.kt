@@ -23,7 +23,7 @@ import com.kwai.koom.base.MonitorBuildConfig
 import com.kwai.koom.base.allKeys
 
 internal object OOMPreferenceManager {
-  private const val PREFERENCE_NAME = "apm_hprof_analysis"
+  private const val PREFERENCE_NAME = "koom_hprof_analysis"
 
   private val mPreferences by lazy { mSharedPreferencesInvoker(PREFERENCE_NAME) }
 

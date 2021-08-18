@@ -16,23 +16,15 @@
  * @author Rui Li <lirui05@kuaishou.com>
  */
 
-package com.kwai.koom.demo.leaked;
+package com.kwai.koom.demo.javaleak.test;
 
 import android.content.Context;
+import androidx.fragment.app.Fragment;
 
-public class ByteArrayLeakMaker extends LeakMaker<ByteArrayLeakMaker.ByteArrayHolder> {
+public class FragmentLeakMaker extends LeakMaker<Fragment> {
 
   @Override
-  public void startLeak(Context context) {
-    uselessObjectList.add(new ByteArrayHolder());
+  void startLeak(Context context) {
+
   }
-
-  public static class ByteArrayHolder {
-    private byte[] array;
-
-    public ByteArrayHolder() {
-      array = new byte[512 * 1024];
-    }
-  }
-
 }

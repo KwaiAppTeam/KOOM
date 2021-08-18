@@ -1,8 +1,4 @@
-package com.kwai.koom.demo.leaked;
-
-import android.content.Context;
-
-/**
+/*
  * Copyright 2020 Kwai, Inc. All rights reserved.
  * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,11 +15,17 @@ import android.content.Context;
  *
  * @author Rui Li <lirui05@kuaishou.com>
  */
-public class StringLeakMaker extends LeakMaker<String> {
+
+package com.kwai.koom.demo.javaleak.test;
+
+import android.content.Context;
+import android.graphics.Bitmap;
+
+public class BitmapLeakMaker extends LeakMaker<Bitmap> {
 
   @Override
-  void startLeak(Context context) {
-    String largeStr = new String(new byte[512 * 1024]);
-    uselessObjectList.add(largeStr);
+  public void startLeak(Context context) {
+    Bitmap bitmap = Bitmap.createBitmap(1920, 1080, Bitmap.Config.ARGB_8888);
+    uselessObjectList.add(bitmap);
   }
 }

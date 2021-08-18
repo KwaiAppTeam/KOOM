@@ -16,7 +16,7 @@
  * @author Rui Li <lirui05@kuaishou.com>
  */
 
-package com.kwai.koom.demo.leaked;
+package com.kwai.koom.demo.javaleak.test;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -40,7 +40,6 @@ public abstract class LeakMaker<T> {
       leakMaker.startLeak(context);
     }
 
-    //mock线程泄露
     for (int i = 0; i < 700; i++) {
       new Thread(() -> {
         try {

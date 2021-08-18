@@ -63,16 +63,17 @@ class HeapAnalysisService : IntentService("HeapAnalysisService") {
   companion object {
     private const val TAG = "HeapAnalysisService"
 
-    private const val OOM_ANALYSIS_TAG = "OOM_ANALYSIS"
-    private const val OOM_ANALYSIS_EXCEPTION_TAG = "OOM_ANALYSIS_EXCEPTION"
+    private const val OOM_ANALYSIS_TAG = "OOMMonitor"
+    private const val OOM_ANALYSIS_EXCEPTION_TAG = "OOMMonitor_Exception"
 
-    //Activity->ContextThemeWrapper->ContextWrapper->Context->Object 4个继承关系
+    //Activity->ContextThemeWrapper->ContextWrapper->Context->Object
     private const val ACTIVITY_CLASS_NAME = "android.app.Activity"
 
-    //Bitmap->Object 1个继承关系
+    //Bitmap->Object
+    //Exception: Some OPPO devices
     const val BITMAP_CLASS_NAME = "android.graphics.Bitmap"
 
-    //Fragment->Object 1个继承关系
+    //Fragment->Object
     private const val NATIVE_FRAGMENT_CLASS_NAME = "android.app.Fragment"
 
     // native android Fragment, deprecated as of API 28.
@@ -82,10 +83,10 @@ class HeapAnalysisService : IntentService("HeapAnalysisService") {
     private const val ANDROIDX_FRAGMENT_CLASS_NAME = "androidx.fragment.app.Fragment"
 
     // androidx version of the Fragment implementation
-    //Window->Object 1个继承关系
+    //Window->Object
     private const val WINDOW_CLASS_NAME = "android.view.Window"
 
-    //NativeAllocationRegistry 1个继承关系
+    //NativeAllocationRegistry
     private const val NATIVE_ALLOCATION_CLASS_NAME = "libcore.util.NativeAllocationRegistry"
     private const val NATIVE_ALLOCATION_CLEANER_THUNK_CLASS_NAME = "libcore.util.NativeAllocationRegistry\$CleanerThunk"
 
@@ -95,10 +96,10 @@ class HeapAnalysisService : IntentService("HeapAnalysisService") {
     private const val FRAGMENT_MANAGER_FIELD_NAME = "mFragmentManager"
     private const val FRAGMENT_MCALLED_FIELD_NAME = "mCalled"
 
-    private const val DEFAULT_BIG_PRIMITIVE_ARRAY = 256 * 1024 //基本数组大小阈值
-    private const val DEFAULT_BIG_BITMAP = 768 * 1366 + 1 //大bitmap阈值
-    private const val DEFAULT_BIG_OBJECT_ARRAY = 256 * 1024 //对象数组大小阈值
-    private const val SAME_CLASS_LEAK_OBJECT_PATH_THRESHOLD = 45 //同名类实例寻找gc path，实例个数阈值
+    private const val DEFAULT_BIG_PRIMITIVE_ARRAY = 256 * 1024
+    private const val DEFAULT_BIG_BITMAP = 768 * 1366 + 1
+    private const val DEFAULT_BIG_OBJECT_ARRAY = 256 * 1024
+    private const val SAME_CLASS_LEAK_OBJECT_PATH_THRESHOLD = 45
 
     annotation class Info {
       companion object {
@@ -109,8 +110,6 @@ class HeapAnalysisService : IntentService("HeapAnalysisService") {
 
         internal const val JAVA_MAX_MEM = "JAVA_MAX_MEM"
         internal const val JAVA_USED_MEM = "JAVA_USED_MEM"
-        internal const val JAVA_TOT_MEM = "JAVA_TOT_MEM"
-        internal const val JAVA_FREE_MEM = "JAVA_FREE_MEM"
         internal const val DEVICE_MAX_MEM = "DEVICE_MAX_MEM"
         internal const val DEVICE_AVA_MEM = "DEVICE_AVA_MEM"
         internal const val VSS = "VSS"
@@ -128,7 +127,6 @@ class HeapAnalysisService : IntentService("HeapAnalysisService") {
       }
     }
 
-    //从正常运行进程唤起，子进程分析
     fun startAnalysisService(context: Context, hprofFile: String?, jsonFile: String?,
         extraData: AnalysisExtraData, resultCallBack: AnalysisReceiver.ResultCallBack?) {
       MonitorLog.i(TAG, "startAnalysisService")
@@ -181,8 +179,6 @@ class HeapAnalysisService : IntentService("HeapAnalysisService") {
 
   private val mLeakModel = HeapReport()
   private val mLeakingObjectIds = mutableSetOf<Long>()
-
-  //记录object泄露原因
   private val mLeakReasonTable = mutableMapOf<Long, String>()
 
   override fun onHandleIntent(intent: Intent?) {
@@ -193,50 +189,38 @@ class HeapAnalysisService : IntentService("HeapAnalysisService") {
 
     OOMFileManager.init(rootPath)
 
-    //构建index
-    try {
+    kotlin.runCatching {
       buildIndex(hprofFile)
-    } catch (e: Exception) {
-      e.printStackTrace()
-      MonitorLog.e(OOM_ANALYSIS_EXCEPTION_TAG, "build index exception " + e.message, true)
-      //不再分析
+    }.onFailure {
+      it.printStackTrace()
+      MonitorLog.e(OOM_ANALYSIS_EXCEPTION_TAG, "build index exception " + it.message, true)
       resultReceiver?.send(AnalysisReceiver.RESULT_CODE_FAIL, null)
       return
     }
 
-    //填充metadata，初始化json
     buildJson(intent)
 
-    //查找过滤出监控的类、泄露的对象
-    try {
+    kotlin.runCatching {
       filterLeakingObjects()
-    } catch (e: Exception) {
-      e.printStackTrace()
-      MonitorLog.i(OOM_ANALYSIS_EXCEPTION_TAG, "find leak objects exception " + e.message, true)
-      //不再分析
+    }.onFailure {
+      MonitorLog.i(OOM_ANALYSIS_EXCEPTION_TAG, "find leak objects exception " + it.message, true)
       resultReceiver?.send(AnalysisReceiver.RESULT_CODE_FAIL, null)
       return
     }
 
-    //查找leaking objects paths to gc
-    try {
+    kotlin.runCatching {
       findPathsToGcRoot()
-    } catch (e: Exception) {
-      e.printStackTrace()
-      MonitorLog.i(OOM_ANALYSIS_EXCEPTION_TAG, "find gc path exception " + e.message, true)
-      //不再分析
+    }.onFailure {
+      it.printStackTrace()
+      MonitorLog.i(OOM_ANALYSIS_EXCEPTION_TAG, "find gc path exception " + it.message, true)
       resultReceiver?.send(AnalysisReceiver.RESULT_CODE_FAIL, null)
       return
     }
 
-    //保存json至本地
     fillJsonFile(jsonFile)
 
     resultReceiver?.send(AnalysisReceiver.RESULT_CODE_OK, null)
 
-    Thread.sleep(500)
-
-    //退出回收内存
     System.exit(0);
   }
 
@@ -291,8 +275,8 @@ class HeapAnalysisService : IntentService("HeapAnalysisService") {
       currentPage = intent?.getStringExtra(Info.CURRENT_PAGE)
       nowTime = intent?.getStringExtra(Info.TIME)
 
-      //deviceMemTotal = intent?.getStringExtra(DeviceMetaData.DEVICE_MAX_MEM);
-      //deviceMemAvailable = intent?.getStringExtra(DeviceMetaData.DEVICE_AVA_MEM)
+      deviceMemTotal = intent?.getStringExtra(Info.DEVICE_MAX_MEM);
+      deviceMemAvaliable = intent?.getStringExtra(Info.DEVICE_AVA_MEM)
 
       dumpReason = intent?.getStringExtra(Info.REASON)
 

@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+  xmlns:tools="http://schemas.android.com/tools"
+  android:layout_width="match_parent"
+  android:layout_height="match_parent"
+  tools:context="com.kwai.koom.demo.MainActivity">
+
+  <Button
+    android:id="@+id/btn_make_java_leak"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:text="@string/test_java_leak"
+    android:layout_centerInParent="true" />
+
+  <TextView
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:text="@string/java_leak_hint"
+    android:layout_centerInParent="true"
+    android:layout_below="@id/btn_make_java_leak"
+    android:layout_marginTop="20dp"
+    android:layout_marginLeft="20dp"
+    android:layout_marginRight="20dp"
+    android:textSize="25sp"
+    />
+
+</RelativeLayout>

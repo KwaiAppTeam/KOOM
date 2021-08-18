@@ -42,9 +42,8 @@ internal object OOMFileManager {
   @JvmStatic
   val hprofAnalysisDir by lazy { File(rootDir, "memory/hprof-aly").apply { mkdirs() } }
 
-  //oom crash时dump镜像
   @JvmStatic
-  val oomDumDir by lazy { File(rootDir, "memory/hprof2").apply { mkdirs() } }
+  val manualDumpDir by lazy { File(rootDir, "memory/hprof-man").apply { mkdirs() } }
 
   @JvmStatic
   val threadDumpDir by lazy { File(hprofAnalysisDir, "thread").apply { mkdirs() } }
@@ -85,8 +84,8 @@ internal object OOMFileManager {
   @JvmStatic
   fun createHprofOOMDumpFile(date: Date): File {
     val time = SimpleDateFormat(TIME_FORMAT, Locale.CHINESE).format(date)
-    return File(oomDumDir, "$mPrefix$time.hprof").also {
-      oomDumDir.mkdirs()
+    return File(manualDumpDir, "$mPrefix$time.hprof").also {
+      manualDumpDir.mkdirs()
     }
   }
 
