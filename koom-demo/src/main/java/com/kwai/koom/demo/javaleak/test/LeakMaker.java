@@ -16,7 +16,7 @@
  * @author Rui Li <lirui05@kuaishou.com>
  */
 
-package com.kwai.koom.demo.leaked;
+package com.kwai.koom.demo.javaleak.test;
 
 import java.util.ArrayList;
 import java.util.List;

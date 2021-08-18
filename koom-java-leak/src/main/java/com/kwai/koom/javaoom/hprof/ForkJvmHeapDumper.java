@@ -56,8 +56,6 @@ public class ForkJvmHeapDumper extends HeapDumper {
       return dumpHprofDataNative(path);
     }
 
-    //todo 增加磁盘校验
-
     boolean dumpRes = false;
     try {
       int pid = trySuspendVMThenFork();

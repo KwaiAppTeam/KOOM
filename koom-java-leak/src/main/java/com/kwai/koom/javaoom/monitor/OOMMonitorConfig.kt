@@ -32,21 +32,23 @@ class OOMMonitorConfig(
     val threadThreshold: Int,
     val deviceMemoryThreshold: Float,
     val maxOverThresholdCount: Int,
-    val loopInterval: Long,
-    val enableHprofDumpAnalysis: Boolean,
     val forceDumpJavaHeapMaxThreshold: Float,
     val forceDumpJavaHeapDeltaThreshold: Int,
+
+    val loopInterval: Long,
+
+    val enableHprofDumpAnalysis: Boolean,
+
     val hprofUploader: OOMHprofUploader?
 ) : MonitorConfig<OOMMonitor>() {
 
   class Builder : MonitorConfig.Builder<OOMMonitorConfig> {
     companion object {
       private val DEFAULT_HEAP_THRESHOLD by lazy {
-        // heap阈值
         val maxMem = SizeUnit.BYTE.toMB(Runtime.getRuntime().maxMemory())
         when {
-          maxMem >= 512 - 10 /* 误差 */ -> 0.8f
-          maxMem >= 256 - 10 /* 误差 */ -> 0.85f
+          maxMem >= 512 - 10 -> 0.8f
+          maxMem >= 256 - 10 -> 0.85f
           else -> 0.9f
         }
       }
@@ -64,25 +66,16 @@ class OOMMonitorConfig(
     private var mAnalysisPeriodPerVersion = 15 * 24 * 60 * 60 * 1000
 
     private var mHeapThreshold: Float? = null
-    private var mVssSizeThreshold = 3_650_000 //单位kb，只适用于32位，64位虚拟机内存无限制
+    private var mVssSizeThreshold = 3_650_000 //Only for 32 bit cpu devices.
     private var mFdThreshold = 1000
     private var mThreadThreshold: Int? = null
-    private var mDeviceMemoryThreshold: Float = 0.05f //整机内存剩余百分比
-    private var mForceDumpJavaHeapMaxThreshold = 0.90f //单次轮询，java堆高水位直接dump
-    private var mForceDumpJavaHeapDeltaThreshold = 350_000 //单位kb，单次轮询，java heap增加350m时触发dump
+    private var mDeviceMemoryThreshold: Float = 0.05f
+    private var mForceDumpJavaHeapMaxThreshold = 0.90f
+    private var mForceDumpJavaHeapDeltaThreshold = 350_000 //java heap rise 350m in a very short time.
     private var mMaxOverThresholdCount = 3
     private var mLoopInterval = 15_000L
 
-    private var mJeChunkHooksVssThreshold = 3_050_000 //单位kb
-    private var mJePurgeVssThreshold: Int = 3_250_000 //单位kb
-    private var mJePurgeInterval: Int = 12 //例如：一个interval 10s，12个就是120s
-    private var mJePurgeMaxTimes: Int = 3
-    private var mJeVssRetainedThreshold: Int = 200_000 //单位kb
-    private var mJeRssRetainedThreshold: Int = 400_000 //单位kb
-
-    private var mEnableHprofDumpAnalysis = true //内存镜像dump分析
-    private var mEnableLowMemoryAutoClean = true //容灾，低内存状态自动清理
-    private var mEnableJeMallocHack = false //默认关闭
+    private var mEnableHprofDumpAnalysis = true //enable hprof analysis
 
     private var mHprofUploader: OOMHprofUploader? = null
 
@@ -108,30 +101,6 @@ class OOMMonitorConfig(
       mVssSizeThreshold = vssSizeThreshold
     }
 
-    fun setJeChunkHooksVssThreshold(jeChunkHooksVssThreshold: Int) = apply {
-      mJeChunkHooksVssThreshold = jeChunkHooksVssThreshold
-    }
-
-    fun setJePurgeVssThreshold(jePurgeVssThreshold: Int) = apply {
-      mJePurgeVssThreshold = jePurgeVssThreshold
-    }
-
-    fun setJePurgeInterval(jePurgeInterval: Int) = apply {
-      mJePurgeInterval = jePurgeInterval
-    }
-
-    fun setJePurgeMaxTimes(jePurgeMaxTimes: Int) = apply {
-      mJePurgeMaxTimes = jePurgeMaxTimes
-    }
-
-    fun setJeVssRetainedThreshold(jeVssRetainedThreshold: Int) = apply {
-      mJeVssRetainedThreshold = jeVssRetainedThreshold
-    }
-
-    fun setJeRssRetainedThreshold(jeRssRetainedThreshold: Int) = apply {
-      mJeRssRetainedThreshold = jeRssRetainedThreshold
-    }
-
     fun setFdThreshold(fdThreshold: Int) = apply {
       mFdThreshold = fdThreshold
     }
@@ -150,14 +119,6 @@ class OOMMonitorConfig(
 
     fun setEnableHprofDumpAnalysis(enableHprofDumpAnalysis: Boolean) = apply {
       mEnableHprofDumpAnalysis = enableHprofDumpAnalysis
-    }
-
-    fun setEnableLowMemoryAutoClean(enableLowMemoryAutoClean: Boolean) = apply {
-      mEnableLowMemoryAutoClean = enableLowMemoryAutoClean
-    }
-
-    fun setEnableJeMallocHack(enableJeMallocHack: Boolean) = apply {
-      mEnableJeMallocHack = enableJeMallocHack;
     }
 
     fun setDeviceMemoryThreshold(deviceMemoryThreshold: Float) = apply {

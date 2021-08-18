@@ -62,8 +62,6 @@ internal object SystemInfo {
     javaHeap = JavaHeap()
     procStatus = ProcStatus()
     memInfo = MemInfo()
-    //dmaZoneInfo = ZoneInfo()
-    //normalZoneInfo = ZoneInfo()
 
     javaHeap.max = Runtime.getRuntime().maxMemory()
     javaHeap.total = Runtime.getRuntime().totalMemory()
@@ -71,7 +69,6 @@ internal object SystemInfo {
     javaHeap.used = javaHeap.total - javaHeap.free
     javaHeap.rate = 1.0f * javaHeap.used / javaHeap.max
 
-    //其实，return@forEachLineQuietlyQuietly并不能真正的跳出循环，有一定性能损失，这里为了可读性牺牲了这点性能
     File("/proc/self/status").forEachLineQuietly { line ->
       if (procStatus.vssInKb != 0 && procStatus.rssInKb != 0
           && procStatus.thread != 0) return@forEachLineQuietly
@@ -122,41 +119,6 @@ internal object SystemInfo {
     MonitorLog.i(TAG,"[proc] VmSize:${procStatus.vssInKb}kB VmRss:${procStatus.rssInKb}kB " + "Threads:${procStatus.thread}")
     MonitorLog.i(TAG,"[meminfo] MemTotal:${memInfo.totalInKb}kB MemFree:${memInfo.freeInKb}kB " + "MemAvailable:${memInfo.availableInKb}kB")
     MonitorLog.i(TAG,"avaliable ratio:${(memInfo.rate * 100).toInt()}% CmaTotal:${memInfo.cmaTotal}kB ION_heap:${memInfo.IONHeap}kB")
-
-    //zoneinfo普通user模式没权限读，先搁置
-    /*
-    var zoneInfo: ZoneInfo? = null
-    var zoneDone: Boolean = false
-
-    File("/proc/zoneinfo").forEachLineQuietly { line ->
-        if (zoneDone) return@forEachLineQuietly
-
-        when {
-            line zone Triple("Node", "zone", "DMA") -> {
-                zoneInfo = dmaZoneInfo;
-            }
-
-            line zone Triple("Node", "zone", "Normal") -> {
-                zoneInfo = normalZoneInfo;
-            }
-
-            line pages " free " -> {
-
-            }
-
-            line pages " min " -> {
-
-            }
-
-            line pages " low " -> {
-
-            }
-
-            line pages " high " -> {
-                if (zoneInfo == normalZoneInfo) zoneDone = true
-            }
-        }
-    }*/
   }
 
   data class ProcStatus(var thread: Int = 0, var vssInKb: Int = 0, var rssInKb: Int = 0)
@@ -164,22 +126,11 @@ internal object SystemInfo {
   data class MemInfo(var totalInKb: Int = 0, var freeInKb: Int = 0, var availableInKb: Int = 0,
       var IONHeap: Int = 0, var cmaTotal: Int = 0, var rate: Float = 0f)
 
-  // data class ZoneInfo(var pagesFree: Int = 0, var pagesMin: Int = 0, var pagesLow: Int = 0,
-  //  var pagesHigh: Int = 0)
-
   data class JavaHeap(var max: Long = 0, var total: Long = 0, var free: Long = 0,
       var used: Long = 0, var rate: Float = 0f)
 
   private fun Regex.matchValue(s: String) = matchEntire(s.trim())
       ?.groupValues?.getOrNull(1)?.toInt() ?: 0
-
-  /*private infix fun String.zone(p: Triple<String, String, String>): Boolean {
-    return this.contains(p.first) && this.contains(p.second) && this.contains(p.third);
-  }
-
-  private infix fun String.pages(s: String): Boolean {
-    return this.contains(s);
-  }*/
 
   private fun File.forEachLineQuietly(charset: Charset = Charsets.UTF_8, action: (line: String) -> Unit) {
     kotlin.runCatching {

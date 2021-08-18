@@ -20,9 +20,14 @@ package com.kwai.koom.javaoom.monitor
 
 import android.os.Build
 import android.os.SystemClock
+
+import java.io.File
+import java.util.*
+
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.LifecycleOwner
+
 import com.kwai.koom.base.CommonConfig
 import com.kwai.koom.base.Logger
 import com.kwai.koom.base.MonitorBuildConfig
@@ -47,8 +52,6 @@ import com.kwai.koom.javaoom.monitor.tracker.HeapOOMTracker
 import com.kwai.koom.javaoom.monitor.tracker.PhysicalMemoryOOMTracker
 import com.kwai.koom.javaoom.monitor.tracker.ThreadOOMTracker
 import com.kwai.koom.javaoom.monitor.tracker.model.SystemInfo
-import java.io.File
-import java.util.*
 
 object OOMMonitor : LoopMonitor<OOMMonitorConfig>(), LifecycleEventObserver {
   private const val TAG = "OOMMonitor"
@@ -69,10 +72,10 @@ object OOMMonitor : LoopMonitor<OOMMonitorConfig>(), LifecycleEventObserver {
   private var mIsLoopPendingStart = false
 
   @Volatile
-  private var mHasDumped = false // 进程运行期间，只触发dump分析一次
+  private var mHasDumped = false // Only trigger one time in process running lifecycle.
 
   @Volatile
-  private var mHasAnalysedLatestHprof = false // 进程运行期间，只触发待分析的hprof一次
+  private var mHasAnalysedLatestHprof = false // Only trigger one time in process running lifecycle.
 
   override fun init(commonConfig: CommonConfig, monitorConfig: OOMMonitorConfig) {
     super.init(commonConfig, monitorConfig)
@@ -171,7 +174,6 @@ object OOMMonitor : LoopMonitor<OOMMonitorConfig>(), LifecycleEventObserver {
     }
 
     if (mTrackReasons.isNotEmpty() && monitorConfig.enableHprofDumpAnalysis) {
-      //todo 触发了dump分析，但是已经超过了分析时间窗口，先暂停轮询
       if (isExceedAnalysisPeriod() || isExceedAnalysisTimes()) {
         MonitorLog.e(TAG, "Triggered, but exceed analysis times or period!")
       } else {
@@ -201,7 +203,6 @@ object OOMMonitor : LoopMonitor<OOMMonitorConfig>(), LifecycleEventObserver {
       MonitorLog.i(TAG, "analysisLatestHprofFile")
       mHasAnalysedLatestHprof = true
 
-      //todo 目前镜像分析只上传了成功分析的
       for (hprofFile in hprofAnalysisDir.listFiles().orEmpty()) {
         if (!hprofFile.exists()) continue
 
@@ -270,7 +271,6 @@ object OOMMonitor : LoopMonitor<OOMMonitorConfig>(), LifecycleEventObserver {
 
     OOMPreferenceManager.increaseAnalysisTimes()
 
-    // 构造额外需要参数，oom原因、当前页面、使用时长
     val extraData = AnalysisExtraData().apply {
       this.reason = reason
       this.currentPage = getApplication().currentActivity?.localClassName.orEmpty()
@@ -303,7 +303,6 @@ object OOMMonitor : LoopMonitor<OOMMonitorConfig>(), LifecycleEventObserver {
   private fun dumpAndAnalysis() {
     MonitorLog.i(TAG, "dumpAndAnalysis");
     runCatching {
-      //剩余空间检查
       if (!OOMFileManager.isSpaceEnough()) {
         MonitorLog.e(TAG, "available space not enough", true)
         return@runCatching
@@ -329,9 +328,7 @@ object OOMMonitor : LoopMonitor<OOMMonitorConfig>(), LifecycleEventObserver {
       }
 
       MonitorLog.i(TAG, "end hprof dump", true)
-      //停留1s，确保文件已写入
-      Thread.sleep(1000)
-      //hprof已写入，开始内存镜像分析
+      Thread.sleep(1000) // make sure file synced to disk.
       MonitorLog.i(TAG, "start hprof analysis")
 
       startAnalysisService(hprofFile, jsonFile, mTrackReasons.joinToString())
