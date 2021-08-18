@@ -63,8 +63,8 @@ class HeapAnalysisService : IntentService("HeapAnalysisService") {
   companion object {
     private const val TAG = "HeapAnalysisService"
 
-    private const val OOM_ANALYSIS_TAG = "OOM_ANALYSIS"
-    private const val OOM_ANALYSIS_EXCEPTION_TAG = "OOM_ANALYSIS_EXCEPTION"
+    private const val OOM_ANALYSIS_TAG = "OOMMonitor"
+    private const val OOM_ANALYSIS_EXCEPTION_TAG = "OOMMonitor_Exception"
 
     //Activity->ContextThemeWrapper->ContextWrapper->Context->Object
     private const val ACTIVITY_CLASS_NAME = "android.app.Activity"

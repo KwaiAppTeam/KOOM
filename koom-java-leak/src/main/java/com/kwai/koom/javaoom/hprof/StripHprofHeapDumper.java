@@ -30,7 +30,7 @@ import com.kwai.koom.base.MonitorLog;
 
 public class StripHprofHeapDumper extends HeapDumper {
 
-  private static final String TAG = "StripHprofHeapDumper";
+  private static final String TAG = "OOMMonitor_StripHprofHeapDumper";
 
   public StripHprofHeapDumper() {
     super();

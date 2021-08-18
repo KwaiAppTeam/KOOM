@@ -1,11 +1,15 @@
 package com.kwai.koom.demo.javaleak
 
 import android.app.Application
+import com.kwai.koom.base.MonitorLog
 
 import com.kwai.koom.base.MonitorManager
 import com.kwai.koom.demo.common.InitTask
+import com.kwai.koom.javaoom.monitor.OOMHprofUploader
 import com.kwai.koom.javaoom.monitor.OOMMonitor
 import com.kwai.koom.javaoom.monitor.OOMMonitorConfig
+import com.kwai.koom.javaoom.monitor.OOMReportUploader
+import java.io.File
 
 object OOMMonitorInitTask : InitTask {
 
@@ -20,6 +24,17 @@ object OOMMonitorInitTask : InitTask {
         .setAnalysisPeriodPerVersion(15 * 24 * 60 * 60 * 1000) // 每个版本最长分析多久
         .setLoopInterval(1_000) // 轮询的间隔
         .setEnableHprofDumpAnalysis(true)
+        .setHprofUploader(object: OOMHprofUploader {
+          override fun upload(file: File, type: OOMHprofUploader.HprofType) {
+            MonitorLog.e("OOMMonitor", "todo, upload hprof ${file.name} if necessary")
+          }
+        })
+        .setReportUploader(object: OOMReportUploader {
+          override fun upload(file: File, content: String) {
+            MonitorLog.i("OOMMonitor", content)
+            MonitorLog.e("OOMMonitor", "todo, upload report ${file.name} if necessary")
+          }
+        })
         .build()
 
     MonitorManager.addMonitorConfig(config)

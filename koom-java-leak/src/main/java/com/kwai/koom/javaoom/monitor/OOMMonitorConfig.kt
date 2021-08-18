@@ -39,7 +39,8 @@ class OOMMonitorConfig(
 
     val enableHprofDumpAnalysis: Boolean,
 
-    val hprofUploader: OOMHprofUploader?
+    val hprofUploader: OOMHprofUploader?,
+    val reportUploader: OOMReportUploader?
 ) : MonitorConfig<OOMMonitor>() {
 
   class Builder : MonitorConfig.Builder<OOMMonitorConfig> {
@@ -78,6 +79,7 @@ class OOMMonitorConfig(
     private var mEnableHprofDumpAnalysis = true //enable hprof analysis
 
     private var mHprofUploader: OOMHprofUploader? = null
+    private var mReportUploader: OOMReportUploader? = null
 
     fun setAnalysisMaxTimesPerVersion(analysisMaxTimesPerVersion: Int) = apply {
       mAnalysisMaxTimesPerVersion = analysisMaxTimesPerVersion
@@ -137,6 +139,10 @@ class OOMMonitorConfig(
       mHprofUploader = hprofUploader
     }
 
+    fun setReportUploader(reportUploader: OOMReportUploader) = apply {
+      mReportUploader = reportUploader
+    }
+
     override fun build() = OOMMonitorConfig(
         analysisMaxTimesPerVersion = mAnalysisMaxTimesPerVersion,
         analysisPeriodPerVersion = mAnalysisPeriodPerVersion,
@@ -152,7 +158,8 @@ class OOMMonitorConfig(
         forceDumpJavaHeapMaxThreshold = mForceDumpJavaHeapMaxThreshold,
         forceDumpJavaHeapDeltaThreshold = mForceDumpJavaHeapDeltaThreshold,
 
-        hprofUploader = mHprofUploader
+        hprofUploader = mHprofUploader,
+        reportUploader = mReportUploader
     )
   }
 }

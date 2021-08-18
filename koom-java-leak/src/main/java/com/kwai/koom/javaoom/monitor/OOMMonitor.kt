@@ -40,6 +40,7 @@ import com.kwai.koom.base.isForeground
 import com.kwai.koom.base.isMainProcess
 import com.kwai.koom.base.loop.LoopMonitor
 import com.kwai.koom.base.registerProcessLifecycleObserver
+
 import com.kwai.koom.javaoom.hprof.ForkJvmHeapDumper
 import com.kwai.koom.javaoom.monitor.OOMFileManager.hprofAnalysisDir
 import com.kwai.koom.javaoom.monitor.OOMFileManager.manualDumpDir
@@ -204,7 +205,7 @@ object OOMMonitor : LoopMonitor<OOMMonitorConfig>(), LifecycleEventObserver {
       if (!file.exists()) continue
 
       if (!file.name.startsWith(MonitorBuildConfig.VERSION_NAME)) {
-        MonitorLog.i(TAG, "delete other version files")
+        MonitorLog.i(TAG, "delete other version files ${file.name}")
         file.delete()
         continue
       }
@@ -274,8 +275,11 @@ object OOMMonitor : LoopMonitor<OOMMonitorConfig>(), LifecycleEventObserver {
           override fun onSuccess() {
             MonitorLog.i(TAG, "heap analysis success, do upload", true)
 
-            MonitorLogger.addExceptionEvent(jsonFile.readText(), Logger.ExceptionType.OOM_STACKS)
+            val content = jsonFile.readText()
 
+            MonitorLogger.addExceptionEvent(content, Logger.ExceptionType.OOM_STACKS)
+
+            monitorConfig.reportUploader?.upload(jsonFile, content)
             monitorConfig.hprofUploader?.upload(hprofFile, OOMHprofUploader.HprofType.ORIGIN)
           }
         })
@@ -324,6 +328,7 @@ object OOMMonitor : LoopMonitor<OOMMonitorConfig>(), LifecycleEventObserver {
     when (event) {
       Lifecycle.Event.ON_START -> {
         if (!mHasDumped && mIsLoopPendingStart) {
+          MonitorLog.i(TAG, "foreground")
           startLoop()
         }
 
@@ -332,7 +337,7 @@ object OOMMonitor : LoopMonitor<OOMMonitorConfig>(), LifecycleEventObserver {
       }
       Lifecycle.Event.ON_STOP -> {
         mIsLoopPendingStart = mIsLoopStarted
-
+        MonitorLog.i(TAG, "background")
         stopLoop()
       }
       else -> Unit

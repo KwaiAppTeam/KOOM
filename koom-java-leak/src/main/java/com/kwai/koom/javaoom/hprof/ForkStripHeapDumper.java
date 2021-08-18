@@ -21,7 +21,7 @@ package com.kwai.koom.javaoom.hprof;
 import com.kwai.koom.base.MonitorLog;
 
 public class ForkStripHeapDumper extends HeapDumper {
-  private static final String TAG = "ForkStripHeapDumper";
+  private static final String TAG = "OOMMonitor_ForkStripHeapDumper";
 
   public ForkStripHeapDumper() {
     super();

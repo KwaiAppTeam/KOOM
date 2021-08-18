@@ -29,7 +29,7 @@ import com.kwai.koom.base.MonitorLog;
 
 public class ForkJvmHeapDumper extends HeapDumper {
 
-  private static final String TAG = "ForkJvmHeapDumper";
+  private static final String TAG = "OOMMonitor_ForkJvmHeapDumper";
 
   public ForkJvmHeapDumper() {
     super();
@@ -40,6 +40,7 @@ public class ForkJvmHeapDumper extends HeapDumper {
 
   @Override
   public boolean dump(String path) {
+    MonitorLog.i(TAG, "start dump ${path}");
     if (!soLoaded) {
       MonitorLog.e(TAG, "dump failed caused by so not loaded!");
       return false;
