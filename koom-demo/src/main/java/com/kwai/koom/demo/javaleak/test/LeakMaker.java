@@ -40,7 +40,6 @@ public abstract class LeakMaker<T> {
       leakMaker.startLeak(context);
     }
 
-    //mock线程泄露
     for (int i = 0; i < 700; i++) {
       new Thread(() -> {
         try {

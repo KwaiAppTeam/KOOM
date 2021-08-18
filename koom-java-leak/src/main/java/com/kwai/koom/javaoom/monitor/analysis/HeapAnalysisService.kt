@@ -110,8 +110,6 @@ class HeapAnalysisService : IntentService("HeapAnalysisService") {
 
         internal const val JAVA_MAX_MEM = "JAVA_MAX_MEM"
         internal const val JAVA_USED_MEM = "JAVA_USED_MEM"
-        internal const val JAVA_TOT_MEM = "JAVA_TOT_MEM"
-        internal const val JAVA_FREE_MEM = "JAVA_FREE_MEM"
         internal const val DEVICE_MAX_MEM = "DEVICE_MAX_MEM"
         internal const val DEVICE_AVA_MEM = "DEVICE_AVA_MEM"
         internal const val VSS = "VSS"
@@ -129,7 +127,6 @@ class HeapAnalysisService : IntentService("HeapAnalysisService") {
       }
     }
 
-    //从正常运行进程唤起，子进程分析
     fun startAnalysisService(context: Context, hprofFile: String?, jsonFile: String?,
         extraData: AnalysisExtraData, resultCallBack: AnalysisReceiver.ResultCallBack?) {
       MonitorLog.i(TAG, "startAnalysisService")
@@ -192,31 +189,30 @@ class HeapAnalysisService : IntentService("HeapAnalysisService") {
 
     OOMFileManager.init(rootPath)
 
-    try {
+    kotlin.runCatching {
       buildIndex(hprofFile)
-    } catch (e: Exception) {
-      e.printStackTrace()
-      MonitorLog.e(OOM_ANALYSIS_EXCEPTION_TAG, "build index exception " + e.message, true)
+    }.onFailure {
+      it.printStackTrace()
+      MonitorLog.e(OOM_ANALYSIS_EXCEPTION_TAG, "build index exception " + it.message, true)
       resultReceiver?.send(AnalysisReceiver.RESULT_CODE_FAIL, null)
       return
     }
 
     buildJson(intent)
 
-    try {
+    kotlin.runCatching {
       filterLeakingObjects()
-    } catch (e: Exception) {
-      e.printStackTrace()
-      MonitorLog.i(OOM_ANALYSIS_EXCEPTION_TAG, "find leak objects exception " + e.message, true)
+    }.onFailure {
+      MonitorLog.i(OOM_ANALYSIS_EXCEPTION_TAG, "find leak objects exception " + it.message, true)
       resultReceiver?.send(AnalysisReceiver.RESULT_CODE_FAIL, null)
       return
     }
 
-    try {
+    kotlin.runCatching {
       findPathsToGcRoot()
-    } catch (e: Exception) {
-      e.printStackTrace()
-      MonitorLog.i(OOM_ANALYSIS_EXCEPTION_TAG, "find gc path exception " + e.message, true)
+    }.onFailure {
+      it.printStackTrace()
+      MonitorLog.i(OOM_ANALYSIS_EXCEPTION_TAG, "find gc path exception " + it.message, true)
       resultReceiver?.send(AnalysisReceiver.RESULT_CODE_FAIL, null)
       return
     }
@@ -279,8 +275,8 @@ class HeapAnalysisService : IntentService("HeapAnalysisService") {
       currentPage = intent?.getStringExtra(Info.CURRENT_PAGE)
       nowTime = intent?.getStringExtra(Info.TIME)
 
-      //deviceMemTotal = intent?.getStringExtra(DeviceMetaData.DEVICE_MAX_MEM);
-      //deviceMemAvailable = intent?.getStringExtra(DeviceMetaData.DEVICE_AVA_MEM)
+      deviceMemTotal = intent?.getStringExtra(Info.DEVICE_MAX_MEM);
+      deviceMemAvaliable = intent?.getStringExtra(Info.DEVICE_AVA_MEM)
 
       dumpReason = intent?.getStringExtra(Info.REASON)
 

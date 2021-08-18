@@ -42,7 +42,7 @@ import com.kwai.koom.base.loop.LoopMonitor
 import com.kwai.koom.base.registerProcessLifecycleObserver
 import com.kwai.koom.javaoom.hprof.ForkJvmHeapDumper
 import com.kwai.koom.javaoom.monitor.OOMFileManager.hprofAnalysisDir
-import com.kwai.koom.javaoom.monitor.OOMFileManager.oomDumDir
+import com.kwai.koom.javaoom.monitor.OOMFileManager.manualDumpDir
 import com.kwai.koom.javaoom.monitor.analysis.AnalysisExtraData
 import com.kwai.koom.javaoom.monitor.analysis.AnalysisReceiver
 import com.kwai.koom.javaoom.monitor.analysis.HeapAnalysisService
@@ -75,7 +75,7 @@ object OOMMonitor : LoopMonitor<OOMMonitorConfig>(), LifecycleEventObserver {
   private var mHasDumped = false // Only trigger one time in process running lifecycle.
 
   @Volatile
-  private var mHasAnalysedLatestHprof = false // Only trigger one time in process running lifecycle.
+  private var mHasProcessOldHprof = false // Only trigger one time in process running lifecycle.
 
   override fun init(commonConfig: CommonConfig, monitorConfig: OOMMonitorConfig) {
     super.init(commonConfig, monitorConfig)
@@ -107,7 +107,7 @@ object OOMMonitor : LoopMonitor<OOMMonitorConfig>(), LifecycleEventObserver {
     mIsLoopStarted = true
 
     super.startLoop(clearQueue, postAtFront, delayMillis)
-    getLoopHandler().postDelayed({ async { analysisLatestHprofFile() } }, delayMillis)
+    getLoopHandler().postDelayed({ async { processOldHprofFile() } }, delayMillis)
   }
 
   override fun stopLoop() {
@@ -189,66 +189,47 @@ object OOMMonitor : LoopMonitor<OOMMonitorConfig>(), LifecycleEventObserver {
     return LoopState.Continue
   }
 
-  /**
-   * 如果存在，压缩上传或重新触发本地内存镜像分析的相关文件
-   * 具体：
-   * 假设有文件只有hprof，无json文件，则触发且只触发一次重新分析
-   * 假设文件有hprof和完整的json，则表明上次没有成功上传，重新上传
-   */
-  private fun analysisLatestHprofFile() {
-    try {
-      if (mHasAnalysedLatestHprof) {
-        return
+  private fun processOldHprofFile() {
+    MonitorLog.i(TAG, "processHprofFile")
+    if (mHasProcessOldHprof) {
+      return
+    }
+    mHasProcessOldHprof = true;
+    reAnalysisHprof()
+    manualDumpHprof()
+  }
+
+  private fun reAnalysisHprof() {
+    for (file in hprofAnalysisDir.listFiles().orEmpty()) {
+      if (!file.exists()) continue
+
+      if (!file.name.startsWith(MonitorBuildConfig.VERSION_NAME)) {
+        MonitorLog.i(TAG, "delete other version files")
+        file.delete()
+        continue
       }
-      MonitorLog.i(TAG, "analysisLatestHprofFile")
-      mHasAnalysedLatestHprof = true
 
-      for (hprofFile in hprofAnalysisDir.listFiles().orEmpty()) {
-        if (!hprofFile.exists()) continue
-
-        if (!hprofFile.name.startsWith(MonitorBuildConfig.VERSION_NAME)) {
-          MonitorLog.i(TAG, "delete other version files")
-          hprofFile.delete()
-          continue
-        }
-
-        if (hprofFile.canonicalPath.endsWith(".hprof")) {
-          val jsonFile = File(hprofFile.canonicalPath.replace(".hprof", ".json"))
-
-          if (!jsonFile.exists()) {
-            MonitorLog.i(TAG, "retry analysis, json not exist, then start service")
-
-            // 创建json file，表示只触发1次，后续分析失败也不再继续分析
-            jsonFile.createNewFile()
-
-            startAnalysisService(hprofFile, jsonFile, "reanalysis")
-          } else if (jsonFile.length() == 0L) {
-            MonitorLog.i(TAG, "retry analysis, json file exists but length 0, this means " +
-                "koom didn't success in last analysis, so delete the files", true)
-
-            // 表示是重新触发过1次，依然失败的案例，直接将其删除避免后续重复分析
-            jsonFile.delete()
-            hprofFile.delete()
-          } else {
-            MonitorLog.i(TAG, "retry analysis, json file length normal, this means it is" +
-                " success in last analysis, delete hprof and json files")
-
-            //有待观察是否需要上传
-            jsonFile.delete()
-            hprofFile.delete()
-          }
+      if (file.canonicalPath.endsWith(".hprof")) {
+        val jsonFile = File(file.canonicalPath.replace(".hprof", ".json"))
+        if (!jsonFile.exists()) {
+          MonitorLog.i(TAG, "create json file and then start service")
+          jsonFile.createNewFile()
+          startAnalysisService(file, jsonFile, "reanalysis")
+        } else {
+            MonitorLog.i(TAG,
+            if (jsonFile.length() == 0L) "last analysis isn't succeed, delete file"
+            else "delete old files", true)
+          jsonFile.delete()
+          file.delete()
         }
       }
+    }
+  }
 
-      for (hprofFile in oomDumDir.listFiles().orEmpty()) {
-        MonitorLog.i(TAG, "OOM Dump upload:${hprofFile.absolutePath}")
-        // TODO HPROF来源
-        monitorConfig.hprofUploader?.upload(hprofFile, OOMHprofUploader.HprofType.STRIPPED)
-      }
-
-    } catch (e: Exception) {
-      e.printStackTrace()
-      MonitorLog.e(TAG, "retryAnalysisFailed: " + e.message, true)
+  private fun manualDumpHprof() {
+    for (hprofFile in manualDumpDir.listFiles().orEmpty()) {
+      MonitorLog.i(TAG, "manualDumpHprof upload:${hprofFile.absolutePath}")
+      monitorConfig.hprofUploader?.upload(hprofFile, OOMHprofUploader.HprofType.STRIPPED)
     }
   }
 

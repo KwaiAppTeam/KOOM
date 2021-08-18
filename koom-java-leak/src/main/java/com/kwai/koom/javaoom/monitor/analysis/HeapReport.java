@@ -52,6 +52,8 @@ public class HeapReport {
     public String currentPage;
     public String usageSeconds;
     public String nowTime;
+    public String deviceMemTotal;
+    public String deviceMemAvaliable;
 
     public String dumpReason;//heap dump trigger reason,
     public String analysisReason;//analysis trigger reason
