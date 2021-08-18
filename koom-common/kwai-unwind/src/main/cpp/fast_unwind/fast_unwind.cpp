@@ -29,9 +29,10 @@ static FAST_UNWIND_TLS_INITIAL_EXEC uintptr_t stack_top = 0;
 static FAST_UNWIND_TLS_INITIAL_EXEC pthread_once_t once_control_tls = PTHREAD_ONCE_INIT;
 
 void fast_unwind_init() {
-  if (getpid() == gettid() && stack_top == 0) {
-    LOG_ALWAYS_FATAL("main thread pthread_attr_t must be init in advance!");
-  }
+// TODO 先处理崩溃问题，之后这里会统一在外部初始化
+//  if (getpid() == gettid() && stack_top == 0) {
+//    LOG_ALWAYS_FATAL("main thread pthread_attr_t must be init in advance!");
+//  }
   pthread_attr_t attr;
   pthread_getattr_np(pthread_self(), &attr);
   stack_top = (uintptr_t)(attr.stack_size + static_cast<char *>(attr.stack_base));
