@@ -15,14 +15,14 @@ object OOMMonitorInitTask : InitTask {
 
   override fun init(application: Application) {
     val config = OOMMonitorConfig.Builder()
-        .setThreadThreshold(50) // 线程数量的阈值
-        .setFdThreshold(750) // 文件描述符数量的阈值
-        .setHeapThreshold(0.9f) // 堆内存的比例值上限
-        .setVssSizeThreshold(1_000_000) // vss的阈值大小，1G for test
-        .setMaxOverThresholdCount(1) // 线程、文件描述符、堆内存、vss 连续多次超过此值则会触发dump，
-        .setAnalysisMaxTimesPerVersion(5) // 每个版本最多分析的次数
-        .setAnalysisPeriodPerVersion(15 * 24 * 60 * 60 * 1000) // 每个版本最长分析多久
-        .setLoopInterval(1_000) // 轮询的间隔
+        .setThreadThreshold(50) //50 only for test! Please use default value!
+        .setFdThreshold(300) // 300 only for test! Please use default value!
+        .setHeapThreshold(0.9f) // 0.9f for test! Please use default value!
+        .setVssSizeThreshold(1_000_000) // 1_000_000 for test! Please use default value!
+        .setMaxOverThresholdCount(1) // 1 for test! Please use default value!
+        .setAnalysisMaxTimesPerVersion(3) // Consider use default value！
+        .setAnalysisPeriodPerVersion(15 * 24 * 60 * 60 * 1000) // Consider use default value！
+        .setLoopInterval(2_000) // 2_000 for test! Please use default value!
         .setEnableHprofDumpAnalysis(true)
         .setHprofUploader(object: OOMHprofUploader {
           override fun upload(file: File, type: OOMHprofUploader.HprofType) {

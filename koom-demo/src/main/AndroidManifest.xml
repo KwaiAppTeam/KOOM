@@ -10,9 +10,7 @@
     android:roundIcon="@mipmap/ic_launcher_round"
     android:supportsRtl="true"
     android:theme="@style/Theme.App">
-    <activity
-      android:name=".nativeleak.NativeLeakTestActivity"
-      android:exported="true" />
+
     <activity android:name=".MainActivity">
       <intent-filter>
         <action android:name="android.intent.action.MAIN" />
@@ -21,6 +19,12 @@
       </intent-filter>
     </activity>
     <activity android:name=".javaleak.test.ActivityLeakMaker$LeakedActivity" />
+
+    <activity
+      android:name=".nativeleak.NativeLeakTestActivity"
+      android:exported="true" />
+
+    <activity android:name=".javaleak.JavaLeakTestActivity"/>
   </application>
   <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
 

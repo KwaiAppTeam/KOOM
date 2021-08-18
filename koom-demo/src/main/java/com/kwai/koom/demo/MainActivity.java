@@ -25,28 +25,21 @@ import android.widget.TextView;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.kwai.koom.base.Monitor_SoKt;
+import com.kwai.koom.demo.javaleak.JavaLeakTestActivity;
 import com.kwai.koom.demo.javaleak.test.LeakMaker;
 import com.kwai.koom.demo.nativeleak.NativeLeakTestActivity;
 import com.kwai.koom.demo.threadleak.ThreadLeakTest;
 
 public class MainActivity extends AppCompatActivity {
 
-  private Button reportButton;
-  private TextView reportText;
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
     setContentView(R.layout.activity_main);
 
-    reportButton = findViewById(R.id.btn_report_leak);
-    reportText = findViewById(R.id.tv_report_status);
-
-    findViewById(R.id.btn_report_leak).setOnClickListener(v -> {
-      reportButton.setVisibility(View.GONE);
-      reportText.setVisibility(View.VISIBLE);
-
-      LeakMaker.makeLeak(MainActivity.this);
+    findViewById(R.id.btn_java_leak).setOnClickListener(v -> {
+      JavaLeakTestActivity.start(MainActivity.this);
     });
 
     findViewById(R.id.btn_test_native_leak).setOnClickListener(v -> {
