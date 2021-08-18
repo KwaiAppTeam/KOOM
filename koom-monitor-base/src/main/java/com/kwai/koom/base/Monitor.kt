@@ -57,8 +57,6 @@ abstract class Monitor<C> {
     isInitialized = true
   }
 
-  open fun onApplicationPreCreate() = Unit
-
   open fun getLogParams(): Map<String, Any> {
     return mapOf("${javaClass.simpleName.decapitalize()}ingEnabled" to isInitialized)
   }

@@ -83,11 +83,7 @@ object MonitorManager {
   }
 
   @JvmStatic
-  fun onApplicationPreCreate() {
-    for (entry in MONITOR_MAP) {
-      entry.value.onApplicationPreCreate()
-    }
-
+  fun onApplicationCreate() {
     registerApplicationExtension()
 
     registerMonitorEventObserver()
