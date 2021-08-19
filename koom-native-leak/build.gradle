@@ -42,9 +42,10 @@ dependencies {
     implementation deps.androidx.appcompat
     implementation deps.androidx.constraintlayout
     implementation deps.material
-    implementation project(path: ':koom-monitor-base')
     implementation deps.kotlin.stdlib
     testImplementation deps.junit
     androidTestImplementation deps.androidx.test.ext
     androidTestImplementation deps.androidx.test.espresso
+    implementation project(path: ':koom-monitor-base')
+    implementation project(path: ':koom-common:kwai-android-base')
 }

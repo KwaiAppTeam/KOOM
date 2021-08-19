@@ -60,6 +60,7 @@ static int dl_iterate_callback(dl_phdr_info *info, size_t size, void *data) {
   ALOGV("dl_iterate_callback %s %p", info->dlpi_name, info->dlpi_addr);
   auto target = reinterpret_cast<DlFcn::dl_iterate_data *>(data);
   if (info->dlpi_addr != 0 && strstr(info->dlpi_name, target->info_.dlpi_name)) {
+    target->info_.dlpi_name = info->dlpi_name;
     target->info_.dlpi_addr = info->dlpi_addr;
     target->info_.dlpi_phdr = info->dlpi_phdr;
     target->info_.dlpi_phnum = info->dlpi_phnum;
@@ -109,7 +110,7 @@ KWAI_EXPORT void *DlFcn::dlopen(const char *lib_name, int flags) {
 KWAI_EXPORT void *DlFcn::dlsym(void *handle, const char *name) {
   KCHECKP(handle)
   auto is_android_N = []() -> bool {
-    return android_api_ == __ANDROID_API_N__ && android_api_ == __ANDROID_API_N_MR1__;
+    return android_api_ == __ANDROID_API_N__ || android_api_ == __ANDROID_API_N_MR1__;
   };
 
   if (!is_android_N()) {
