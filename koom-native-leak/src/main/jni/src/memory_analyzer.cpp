@@ -32,8 +32,12 @@ namespace kwai {
 namespace leak_monitor {
 static const char *kLibMemUnreachableName = "libmemunreachable.so";
 // Just need the symbol in arm64-v8a so
-static const char *kGetUnreachableMemoryStringSymbol =
+// API level > Android O
+static const char *kGetUnreachableMemoryStringSymbolAboveO =
     "_ZN7android26GetUnreachableMemoryStringEbm";
+// API level <= Android O
+static const char *kGetUnreachableMemoryStringSymbolBelowO =
+    "_Z26GetUnreachableMemoryStringbm";
 
 MemoryAnalyzer::MemoryAnalyzer()
     : get_unreachable_fn_(nullptr), handle_(nullptr) {
@@ -43,8 +47,14 @@ MemoryAnalyzer::MemoryAnalyzer()
     return;
   }
 
-  get_unreachable_fn_ = reinterpret_cast<GetUnreachableFn>(
-      kwai::linker::DlFcn::dlsym(handle, kGetUnreachableMemoryStringSymbol));
+  if (android_get_device_api_level() > __ANDROID_API_O__) {
+    get_unreachable_fn_ = reinterpret_cast<GetUnreachableFn>(
+        kwai::linker::DlFcn::dlsym(handle, kGetUnreachableMemoryStringSymbolAboveO));
+  } else {
+    get_unreachable_fn_ = reinterpret_cast<GetUnreachableFn>(
+        kwai::linker::DlFcn::dlsym(handle, kGetUnreachableMemoryStringSymbolBelowO));
+  }
+
 }
 
 MemoryAnalyzer::~MemoryAnalyzer() {

@@ -17,8 +17,8 @@
  *
  */
 
-#ifndef KOOM_NATIVE_OOM_SRC_MAIN_JNI_INCLUDE_UTILS_SCOPED_LOCAL_REF_H_
-#define KOOM_NATIVE_OOM_SRC_MAIN_JNI_INCLUDE_UTILS_SCOPED_LOCAL_REF_H_
+#pragma once
+
 #include <jni.h>
 
 template <typename T>
@@ -66,5 +66,3 @@ class ScopedLocalRef {
   JNIEnv *env_;
   T local_ref_;
 };
-
-#endif  // KOOM_NATIVE_OOM_SRC_MAIN_JNI_INCLUDE_UTILS_SCOPED_LOCAL_REF_H_

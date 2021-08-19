@@ -122,6 +122,7 @@ bool LeakMonitor::Install(std::vector<std::string> *selected_list,
 
   memory_analyzer_ = std::make_unique<MemoryAnalyzer>();
   if (!memory_analyzer_->IsValid()) {
+    ALOGE("memory_analyzer_ NOT Valid");
     return false;
   }
 

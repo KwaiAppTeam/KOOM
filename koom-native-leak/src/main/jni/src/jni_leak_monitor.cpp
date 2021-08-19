@@ -19,11 +19,11 @@
 
 #define LOG_TAG "jni_leak_monitor"
 #include <jni.h>
+#include <jni_util/scoped_local_ref.h>
 #include <libgen.h>
 #include <log/kcheck.h>
 #include <log/log.h>
 #include <stdlib.h>
-#include <utils/scoped_local_ref.h>
 
 #include <vector>
 
@@ -33,21 +33,22 @@
 
 namespace kwai {
 namespace leak_monitor {
-#define FIND_CLASS(var, class_name)   \
-  do {                                \
-    var = env->FindClass(class_name); \
-    KCHECK(var);                      \
+#define FIND_CLASS(var, class_name)                      \
+  do {                                                   \
+    var = env->FindClass(class_name);                    \
+    LOG_FATAL_IF(!var, "FindClass %s fail", class_name); \
   } while (0)
 
 #define GET_METHOD_ID(var, clazz, name, descriptor)  \
   do {                                               \
     var = env->GetMethodID(clazz, name, descriptor); \
-    KCHECK(var);                                     \
+    LOG_FATAL_IF(!var, "GetMethodID %s fail", name); \
   } while (0)
 
 struct ClassInfo {
   jclass global_ref;
   jmethodID construct_method;
+  ClassInfo() : global_ref(nullptr), construct_method(nullptr) {}
 };
 
 static ClassInfo g_leak_record;
@@ -63,13 +64,30 @@ static const uint32_t kNumDropFrame = 2;
 static MemoryMap g_memory_map;
 static bool g_enable_local_symbolic = false;
 
+static void Clean(JNIEnv *env) {
+  if (g_leak_record.global_ref) {
+    env->DeleteGlobalRef(g_leak_record.global_ref);
+    memset(&g_leak_record, 0, sizeof(g_leak_record));
+  }
+  if (g_frame_info.global_ref) {
+    env->DeleteGlobalRef(g_frame_info.global_ref);
+    memset(&g_frame_info, 0, sizeof(g_frame_info));
+  }
+}
+
+template <typename T>
+static inline bool CheckedClean(JNIEnv *env, T value) {
+  if (value) {
+    return true;
+  }
+  Clean(env);
+  return false;
+}
+
 static void UninstallMonitor(JNIEnv *env, jclass) {
   LeakMonitor::GetInstance().Uninstall();
   g_memory_map.~MemoryMap();
-  env->DeleteGlobalRef(g_frame_info.global_ref);
-  memset(&g_frame_info, 0, sizeof(g_frame_info));
-  env->DeleteGlobalRef(g_leak_record.global_ref);
-  memset(&g_leak_record, 0, sizeof(g_leak_record));
+  Clean(env);
 }
 
 static bool InstallMonitor(JNIEnv *env, jclass clz, jobjectArray selected_array,
@@ -79,6 +97,9 @@ static bool InstallMonitor(JNIEnv *env, jclass clz, jobjectArray selected_array,
   FIND_CLASS(leak_record, kLeakRecordFullyName);
   g_leak_record.global_ref =
       reinterpret_cast<jclass>(env->NewGlobalRef(leak_record));
+  if (!CheckedClean(env, g_leak_record.global_ref)) {
+    return false;
+  }
   GET_METHOD_ID(g_leak_record.construct_method, leak_record, "<init>",
                 "(JILjava/lang/String;[Lcom/kwai/koom/nativeoom/leakmonitor/"
                 "FrameInfo;)V");
@@ -87,6 +108,9 @@ static bool InstallMonitor(JNIEnv *env, jclass clz, jobjectArray selected_array,
   FIND_CLASS(frame_info, kFrameInfoFullyName);
   g_frame_info.global_ref =
       reinterpret_cast<jclass>(env->NewGlobalRef(frame_info));
+  if (!CheckedClean(env, g_frame_info.global_ref)) {
+    return false;
+  }
   GET_METHOD_ID(g_frame_info.construct_method, frame_info, "<init>",
                 "(JLjava/lang/String;)V");
 
@@ -114,7 +138,8 @@ static bool InstallMonitor(JNIEnv *env, jclass clz, jobjectArray selected_array,
 
   std::vector<std::string> selected_so = array_to_vector(env, selected_array);
   std::vector<std::string> ignore_so = array_to_vector(env, ignore_array);
-  return LeakMonitor::GetInstance().Install(&selected_so, &ignore_so);
+  return CheckedClean(
+      env, LeakMonitor::GetInstance().Install(&selected_so, &ignore_so));
 }
 
 static void SetMonitorThreshold(JNIEnv *, jclass, jint size) {
