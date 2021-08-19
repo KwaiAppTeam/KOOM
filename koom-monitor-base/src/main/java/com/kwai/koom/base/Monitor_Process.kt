@@ -58,7 +58,7 @@ fun getCurrentAbi(): Abi {
     ?.run { callMethod<Boolean>("is64Bit") }
     ?.also {
       mCurrentAbi = if (it) Abi.ARM64_V8A else Abi.ARMEABI_V7A
-      if (mCurrentAbi != Abi.UNKNOWN) return mCurrentAbi
+      return mCurrentAbi
     }
 
   // Check address size
@@ -67,7 +67,7 @@ fun getCurrentAbi(): Abi {
     ?.run { callMethod<Int>("addressSize") }
     ?.also {
       mCurrentAbi = if (it == 8) Abi.ARM64_V8A else Abi.ARMEABI_V7A
-      if (mCurrentAbi != Abi.UNKNOWN) return mCurrentAbi
+      return mCurrentAbi
     }
 
   // Check so path
