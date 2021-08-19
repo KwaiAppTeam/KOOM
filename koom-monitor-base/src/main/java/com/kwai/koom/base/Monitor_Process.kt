@@ -56,15 +56,19 @@ fun getCurrentAbi(): Abi {
   "dalvik.system.VMRuntime".toClass()
     ?.callStaticMethod<Any>("getRuntime")
     ?.run { callMethod<Boolean>("is64Bit") }
-    ?.also { mCurrentAbi = if (it) Abi.ARM64_V8A else Abi.ARMEABI_V7A }
-  if (mCurrentAbi != Abi.UNKNOWN) return mCurrentAbi
+    ?.also {
+      mCurrentAbi = if (it) Abi.ARM64_V8A else Abi.ARMEABI_V7A
+      if (mCurrentAbi != Abi.UNKNOWN) return mCurrentAbi
+    }
 
   // Check address size
   "sun.misc.Unsafe".toClass()
     ?.callStaticMethod<Any>("getUnsafe")
     ?.run { callMethod<Int>("addressSize") }
-    ?.also { mCurrentAbi = if (it == 8) Abi.ARM64_V8A else Abi.ARMEABI_V7A }
-  if (mCurrentAbi != Abi.UNKNOWN) return mCurrentAbi
+    ?.also {
+      mCurrentAbi = if (it == 8) Abi.ARM64_V8A else Abi.ARMEABI_V7A
+      if (mCurrentAbi != Abi.UNKNOWN) return mCurrentAbi
+    }
 
   // Check so path
   try {

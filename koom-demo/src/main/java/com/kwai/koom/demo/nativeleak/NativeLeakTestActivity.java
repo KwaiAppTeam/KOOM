@@ -6,9 +6,11 @@ import androidx.appcompat.app.AppCompatActivity;
 import android.app.Application;
 import android.content.Context;
 import android.content.Intent;
+import android.os.Build;
 import android.os.Bundle;
 import android.widget.Toast;
 
+import com.kwai.koom.base.MonitorBuildConfig;
 import com.kwai.koom.base.MonitorLog;
 import com.kwai.koom.base.MonitorManager;
 import com.kwai.koom.base.Monitor_ProcessKt;
@@ -36,6 +38,15 @@ public class NativeLeakTestActivity extends AppCompatActivity {
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
     setContentView(R.layout.activity_native_leak_test);
+    MonitorBuildConfig.getROM();
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N
+        || !Monitor_ProcessKt.isMainProcess()
+        || !Monitor_ProcessKt.isArm64()) {
+      MonitorLog.e(LOG_TAG, "Only Main Process and Arm64 can run LeakMonitor");
+      Toast.makeText(this, "LeakMonitor NOT work!! Check OS Version/CPU ABI",
+          Toast.LENGTH_SHORT).show();
+      return;
+    }
     initLeakMonitor();
     findViewById(R.id.btn_start_monitor).setOnClickListener(
         view -> LeakMonitor.INSTANCE.start()
@@ -55,23 +66,20 @@ public class NativeLeakTestActivity extends AppCompatActivity {
   }
 
   private void initLeakMonitor() {
-    if (!Monitor_ProcessKt.isMainProcess() || !Monitor_ProcessKt.isArm64()) {
-      MonitorLog.e(LOG_TAG, "Only Main Process and Arm64 can run LeakMonitor");
-      return;
-    }
-
     if (LeakMonitor.INSTANCE.isInitialized()) {
       return;
     }
 
     LeakMonitorConfig config = new LeakMonitorConfig.Builder()
-        .setLoopInterval(50000) // 设置轮训的间隔
-        .setLeakItemThreshold(200) // 收集泄漏的native对象的上限
-        .setMonitorThreshold(16) // 设置监听的最小内存值
-        .setNativeHeapAllocatedThreshold(0) // 设置native heap分配的内存达到多少阈值开始监控
-        .setSelectedSoList(new String[0]) // 不设置是监控所有， 设置是监听特定的so,  比如监控libcore.so 填写 libcore 不带.so
-        .setIgnoredSoList(new String[0]) // 设置需要忽略监控的so
-        .setLeakListener(leaks -> {
+        .setLoopInterval(50000) // Set polling interval, time unit: millisecond
+        .setMonitorThreshold(16) // Set the threshold of the monitored memory block, unit: byte
+        .setNativeHeapAllocatedThreshold(0) // Set the threshold of how much memory allocated by
+        // the native heap reaches to start monitoring, unit: byte
+        .setSelectedSoList(new String[0]) // Set the monitor specific libraries, such as monitoring libcore.so, just write 'libcore'
+        .setIgnoredSoList(new String[0]) // Set the libraries that you need to ignore monitoring
+        .setEnableLocalSymbolic(false) // Set enable local symbolic, this is helpful in debug
+        // mode. Not enable in release mode
+        .setLeakListener(leaks -> { // Set Leak Listener for receive Leak info
           if (leaks.isEmpty()) {
             return;
           }

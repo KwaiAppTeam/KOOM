@@ -25,8 +25,6 @@ import com.kwai.koom.base.MonitorLog
 class LeakMonitorConfig(
     val selectedSoList: Array<String>,
     val ignoredSoList: Array<String>,
-
-    val leakItemsThreshold: Int,
     val nativeHeapAllocatedThreshold: Int,
     val monitorThreshold: Int,
     val loopInterval: Long,
@@ -44,11 +42,6 @@ class LeakMonitorConfig(
      * List of so to be NOT monitored
      */
     private var mIgnoredSoList = emptyArray<String>()
-
-    /**
-     * Leak reporting threshold, if leak items exceed thredhold NOT reporting
-     */
-    private var mLeakItemsThreshold = 200
 
     /**
      * Exceed malloc threshold memory allocation will be monitored
@@ -88,10 +81,6 @@ class LeakMonitorConfig(
       mIgnoredSoList = ignoredSoList
     }
 
-    fun setLeakItemThreshold(leakItemsThreshold: Int) = apply {
-      mLeakItemsThreshold = leakItemsThreshold
-    }
-
     fun setNativeHeapAllocatedThreshold(nativeHeapAllocatedThreshold: Int) = apply {
       mNativeHeapAllocatedThreshold = nativeHeapAllocatedThreshold
     }
@@ -115,7 +104,6 @@ class LeakMonitorConfig(
     override fun build() = LeakMonitorConfig(
         selectedSoList = mSelectedSoList,
         ignoredSoList = mIgnoredSoList,
-        leakItemsThreshold = mLeakItemsThreshold,
         nativeHeapAllocatedThreshold = mNativeHeapAllocatedThreshold,
         monitorThreshold = mMonitorThreshold,
         loopInterval = mLoopInterval,
