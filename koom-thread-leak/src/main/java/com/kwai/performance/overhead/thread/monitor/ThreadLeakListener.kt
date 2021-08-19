@@ -18,7 +18,7 @@
  */
 package com.kwai.performance.overhead.thread.monitor
 
-interface ThreadMonitorLeakListener {
-  fun onReport(type: String, msg: String)
-  fun onError()
+interface ThreadLeakListener {
+  fun onReport(leaks: MutableList<ThreadLeakRecord>)
+  fun onError(msg: String)
 }

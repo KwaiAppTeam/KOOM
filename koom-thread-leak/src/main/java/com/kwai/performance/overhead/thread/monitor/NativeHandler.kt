@@ -17,19 +17,36 @@
  *
  */
 
-#ifndef APM_RESDETECTOR_CONSTANT_H
-#define APM_RESDETECTOR_CONSTANT_H
+package com.kwai.performance.overhead.thread.monitor
 
-#include <string>
-#include <vector>
+import androidx.annotation.Keep
 
-namespace koom {
+@Keep
+object NativeHandler {
+  @JvmStatic
+  external fun start()
 
-namespace Constant {
-#define ALWAYS_INLINE __attribute__((always_inline))
+  @JvmStatic
+  external fun stop()
 
-const static int kMaxCallStackDepth = 18;
-const static int kDlopenSourceInit = 0;
+  @JvmStatic
+  external fun refresh()
+
+  @JvmStatic
+  external fun setThreadLeakDelay(delay: Long)
+
+  @JvmStatic
+  external fun disableJavaStack()
+
+  @JvmStatic
+  external fun disableNativeStack()
+
+  @JvmStatic
+  external fun enableNativeLog()
+
+  @JvmStatic
+  fun nativeReport(resultJson: String) {
+    ThreadMonitor.nativeReport(resultJson)
+  }
+
 }
-}
-#endif //APM_RESDETECTOR_CONSTANT_H

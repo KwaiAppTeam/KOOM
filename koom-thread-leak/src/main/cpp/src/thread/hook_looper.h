@@ -1,6 +1,21 @@
-//
-// Created by shenvsv on 1/14/21.
-//
+/*
+ * Copyright (c) 2021. Kwai, Inc. All rights reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *         http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * Created by shenvsv on 2021.
+ *
+ */
 
 #ifndef APM_KOOM_THREAD_SRC_MAIN_CPP_SRC_THREAD_HOOK_LOOPER_H_
 #define APM_KOOM_THREAD_SRC_MAIN_CPP_SRC_THREAD_HOOK_LOOPER_H_
@@ -9,74 +24,7 @@
 #include <map>
 #include "common/looper.h"
 #include "thread_holder.h"
-enum HookAction {
-  ACTION_ADD_THREAD,
-  ACTION_START_THREAD,
-  ACTION_JOIN_THREAD,
-  ACTION_EXIT_THREAD,
-  ACTION_DETACH_THREAD,
-  ACTION_INIT,
-  ACTION_REFRESH,
-  ACTION_SET_NAME,
-};
-struct SimpleHookInfo {
-  long long time;
-  SimpleHookInfo(long long time) {
-    this->time = time;
-  }
-};
-struct HookCollectStartInfo {
-  std::string mode;
-  HookCollectStartInfo(const char *mode) {
-    this->mode = std::string(mode);
-  }
-};
-struct HookInfo {
-  pthread_t threadId;
-  long long time;
-  HookInfo(pthread_t threadId, long long time) {
-    this->threadId = threadId;
-    this->time = time;
-  }
-};
-struct HookExitInfo {
-  pthread_t threadId;
-  long long time;
-  int tid;
-  std::string threadName;
-  HookExitInfo(pthread_t threadId, int tid, char *threadName, long long time) {
-    this->threadId = threadId;
-    this->tid = tid;
-    this->threadName.assign(threadName);
-    this->time = time;
-  }
-};
-class HookAddInfo {
- public:
-  int tid;
-  long long time;
-  pthread_t pthread;
-  bool isThreadDetached;
-  int64_t allocateTime;
-  std::string java_call_stack;
-  uintptr_t pc[koom::Constant::max_call_stack_depth]{};
-
-  HookAddInfo(int tid,
-              long long time,
-              pthread_t pthread,
-              bool isThreadDetached,
-              int64_t allocateTime,
-              std::string &java_call_stack,
-              uintptr_t (&pc)[koom::Constant::max_call_stack_depth]) {
-    this->tid = tid;
-    this->time = time;
-    this->pthread = pthread;
-    this->isThreadDetached = isThreadDetached;
-    this->allocateTime = allocateTime;
-    this->java_call_stack.assign(java_call_stack);
-    memcpy(this->pc, pc, sizeof(this->pc));
-  };
-};
+namespace koom {
 class HookLooper : public looper {
  public:
   koom::ThreadHolder *holder;
@@ -85,4 +33,5 @@ class HookLooper : public looper {
   void handle(int what, void *data);
   void post(int what, void *data);
 };
+}
 #endif //APM_KOOM_THREAD_SRC_MAIN_CPP_SRC_THREAD_HOOK_LOOPER_H_

@@ -1,6 +1,21 @@
-//
-// Created by lirui on 2020/11/3.
-//
+/*
+ * Copyright (c) 2021. Kwai, Inc. All rights reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *         http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * Created by shenvsv on 2021.
+ *
+ */
 
 #ifndef APM_UTIL_H
 #define APM_UTIL_H
@@ -18,8 +33,6 @@
 namespace koom {
 
 class Util {
-//private:
-  //  static int android_api;
 
  public:
   static int android_api;
@@ -58,101 +71,6 @@ class Util {
 
     return output;
   }
-
-  static std::map<int, std::string> getProcessThreadList() { // tid,name
-    std::map<int, std::string> result;
-    char *path = "/proc/self/task";
-    try {
-      struct dirent *entry;
-      DIR *dir = opendir(path);
-      while ((entry = readdir(dir)) != nullptr) {
-        auto tid = std::string(entry->d_name);
-        if (tid.rfind(".", 0) == 0) {
-          // 过滤掉.开头的文件
-          continue;
-        }
-        auto comm = std::string(path) + std::string("/") + tid +
-            std::string("/comm");
-        std::ifstream t(comm.c_str());
-        std::string str((std::istreambuf_iterator<char>(t)), std::istreambuf_iterator<char>());
-        auto p = str.find_last_of("\n");
-        auto key = std::stoi(tid);
-        if (p == str.npos) {
-          result[key] = str;
-        } else {
-          result[key] = str.substr(0, p);
-        }
-      }
-      closedir(dir);
-    } catch (int e) {}
-    return result;
-  };
-  static std::set<std::string> GetProcessSoList() {
-    std::set<std::string> soSet;
-    FILE *fp;
-    char buffer[512];
-
-    if (nullptr == (fp = fopen("/proc/self/maps", "r"))) {
-      return soSet;
-    }
-
-    while (fgets(buffer, sizeof(buffer), fp)) {
-      const char *sep = "\t \r\n";
-      char *line = nullptr;
-      char *addr = strtok_r(buffer, sep, &line);
-      if (!addr) {
-        continue;
-      }
-
-      char *flags = strtok_r(nullptr, sep, &line);
-      if (!flags || flags[0] != 'r' || flags[3] == 's') {
-
-        //log_info("######## FIRST CRASHING IF ********************");
-        //
-        /*
-            1. mem section cound NOT be read, without 'r' flag.
-            2. read from base addr of /dev/mail module would crash.
-               i dont know how to handle it, just skip it.
-
-               1f5573000-1f58f7000 rw-s 1f5573000 00:0c 6287 /dev/mali0
-
-        */
-        continue;
-      }
-      strtok_r(nullptr, sep, &line);  // offsets
-      //char* dev =
-      strtok_r(nullptr, sep, &line);  // dev number.
-
-      // int major = 0, minor = 0;
-      // if (!phrase_dev_num(dev, &major, &minor) || major == 0) {
-
-      //log_info("######## SECOND CRASHING IF ********************");
-      /*
-          if dev major number equal to 0, mean the module must NOT be
-          a shared or executable object loaded from disk.
-          e.g:
-          lookup symbol from [vdso] would crash.
-          7f7b48a000-7f7b48c000 r-xp 00000000 00:00 0  [vdso]
-      */
-      //    continue;
-      //}
-
-
-      strtok_r(nullptr, sep, &line);  // node
-
-      char *filename = strtok_r(nullptr, sep, &line); //module name
-      if (!filename) {
-        continue;
-      }
-      int name_len = strlen(filename);
-      if (name_len >= 10 && strcmp(filename + name_len - 3, ".so") == 0) {
-        soSet.insert(std::string(filename));
-      }
-    }
-    fclose(fp);
-    return soSet;
-  }
 };
 }
-
 #endif //APM_UTIL_H
