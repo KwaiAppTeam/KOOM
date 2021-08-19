@@ -38,7 +38,6 @@ class CommonConfig private constructor(
     // MonitorBuildConfig 通用属性
     internal val debugMode: Boolean,
     internal val versionNameInvoker: () -> String,
-    internal val romInvoker: () -> String,
 
     internal val logger: Logger,
     internal val log: Log,
@@ -56,7 +55,6 @@ class CommonConfig private constructor(
     private var mDebugMode = true
     private lateinit var mVersionNameInvoker: () -> String
     private lateinit var mDeviceIdInvoker: (() -> String)
-    private lateinit var mRomInvoker: (() -> String)
 
     private var mRootFileInvoker: ((String) -> File)? = null
     private var mSharedPreferencesInvoker: ((String) -> SharedPreferences)? = null
@@ -80,10 +78,6 @@ class CommonConfig private constructor(
 
     fun setVersionNameInvoker(versionNameInvoker: () -> String) = apply {
       mVersionNameInvoker = versionNameInvoker
-    }
-
-    fun setRomInvoker(romInvoker: () -> String) = apply {
-      mRomInvoker = romInvoker
     }
 
     fun setRootFileInvoker(rootFileInvoker: (String) -> File) = apply {
@@ -125,7 +119,6 @@ class CommonConfig private constructor(
 
         debugMode = mDebugMode,
         versionNameInvoker = mVersionNameInvoker,
-        romInvoker = mRomInvoker,
 
         rootFileInvoker = mRootFileInvoker ?: {
           val rootDir = runCatching { mApplication.getExternalFilesDir("") }.getOrNull()

@@ -18,6 +18,8 @@
  */
 package com.kwai.koom.base
 
+import android.os.Build
+
 object MonitorBuildConfig {
   @JvmStatic
   val DEBUG by lazy { MonitorManager.commonConfig.debugMode }
@@ -26,5 +28,6 @@ object MonitorBuildConfig {
   val VERSION_NAME by lazy { MonitorManager.commonConfig.versionNameInvoker() }
 
   @JvmStatic
-  val ROM by lazy { MonitorManager.commonConfig.romInvoker() }
+  val ROM by lazy { Build.MANUFACTURER.toUpperCase()
+    .let { if (it == "HUAWEI") "EMUI" else "OTHER"} }
 }
