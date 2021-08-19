@@ -70,7 +70,7 @@ int Callback(struct dl_phdr_info *info, size_t size, void *data) {
   auto origin = pair->first;
   auto add = pair->second;
   auto name = info->dlpi_name;
-  if (hookDlopen(name) && origin->insert(name).second) {
+  if (name != nullptr && hookDlopen(name) && origin->insert(name).second) {
     add->insert(name);
   }
   return 0;
