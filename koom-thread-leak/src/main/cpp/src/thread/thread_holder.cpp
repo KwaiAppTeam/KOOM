@@ -8,23 +8,27 @@ namespace koom {
 
 const char *holder_tag = "koom-holder";
 
-void ThreadHolder::AddThread(int tid, pthread_t threadId, bool isThreadDetached,
-                             int64_t allocateTime, long long startTime, const std::string
-                             &callstack,
-                             uintptr_t (&pc)[koom::Constant::max_call_stack_depth]) {
+void ThreadHolder::AddThread(int tid, pthread_t threadId, bool isThreadDetached, int64_t start_time,
+                             ThreadCreateArg *create_arg) {
   bool valid = threadMap.count(threadId) > 0;
   if (valid) return;
 
   koom::Log::info(holder_tag, "AddThread tid:%d pthread_t:%p",
                   tid, threadId);
-
-  std::string stack;
-  stack.assign("##\n");
+  auto &item = threadMap[threadId];
+  item.Clear();
+  item.thread_internal_id = threadId;
+  item.thread_detached = isThreadDetached;
+  item.startTime = start_time;
+  item.startTime = create_arg->stack_time;
+  item.id = tid;
+  std::string &stack = item.create_call_stack;
+  stack.assign("");
   try {
-    //拼接native调用栈
+    // native stack
     int ignoreLines = 0;
-    for (int index = 0; index < koom::Constant::max_call_stack_depth; ++index) {
-      uintptr_t p = pc[index];
+    for (int index = 0; index < koom::Constant::kMaxCallStackDepth; ++index) {
+      uintptr_t p = create_arg->pc[index];
       if (p == 0) continue;
       //koom::Log::info(holder_tag, "unwind native callstack #%d pc%p", index, p);
       std::string line = koom::CallStack::SymbolizePc(p, index - ignoreLines);
@@ -34,8 +38,8 @@ void ThreadHolder::AddThread(int tid, pthread_t threadId, bool isThreadDetached,
         stack.append(line);
       }
     }
-    //拼接java调用栈
-    std::vector<std::string> splits = koom::Util::Split(callstack, '\n');
+    // java stack
+    std::vector<std::string> splits = koom::Util::Split(create_arg->java_stack.str(), '\n');
     for (const auto &split : splits) {
       if (split.empty()) continue;
       std::string line;
@@ -50,13 +54,7 @@ void ThreadHolder::AddThread(int tid, pthread_t threadId, bool isThreadDetached,
   } catch (const std::bad_alloc &) {
     stack.assign("error:bad_alloc");
   }
-
-  auto &item = threadMap[threadId];
-  item.thread_internal_id = threadId;
-  item.thread_detached = isThreadDetached;
-  item.startTime = startTime;
-  item.Update(allocateTime, stack, tid, pc);
-
+  delete create_arg;
   koom::Log::info(holder_tag, "AddThread finish");
 }
 
@@ -72,7 +70,7 @@ void ThreadHolder::JoinThread(pthread_t threadId) {
   }
 }
 
-void ThreadHolder::ExitThread(pthread_t threadId, std::string& threadName, long long int time) {
+void ThreadHolder::ExitThread(pthread_t threadId, std::string &threadName, long long int time) {
   bool valid = threadMap.count(threadId) > 0;
   if (!valid) return;
   auto &item = threadMap[threadId];
@@ -116,8 +114,8 @@ void ThreadHolder::WriteThreadJson(rapidjson::Writer<rapidjson::StringBuffer> &w
   writer.Key("interal_id");
   writer.Uint(thread_item.thread_internal_id);
 
-  writer.Key("allocateTime");
-  writer.Int64(thread_item.allocate_time);
+  writer.Key("createTime");
+  writer.Int64(thread_item.create_time);
 
   writer.Key("startTime");
   writer.Int64(thread_item.startTime);
@@ -129,8 +127,8 @@ void ThreadHolder::WriteThreadJson(rapidjson::Writer<rapidjson::StringBuffer> &w
   writer.String(thread_item.name.c_str());
 
   // 这里先注释掉，确认一下是不是这里的转换有问题，是的话，再处理
-  writer.Key("allocateCallStack");
-  auto stack = thread_item.java_call_stack.c_str();
+  writer.Key("createCallStack");
+  auto stack = thread_item.create_call_stack.c_str();
   writer.String(stack);
 
   writer.EndObject();
@@ -149,9 +147,14 @@ void ThreadHolder::ReportThreadLeak(long long time) {
 
   writer.Key("threads");
   writer.StartArray();
+
   for (auto &item : leakThreadMap) {
     if (item.second.exitTime + delay < time && !item.second.thread_reported) {
-      koom::Log::info(holder_tag, "ReportThreadLeak %ld, %ld, %ld", item.second.exitTime, time, delay);
+      koom::Log::info(holder_tag,
+                      "ReportThreadLeak %ld, %ld, %ld",
+                      item.second.exitTime,
+                      time,
+                      delay);
       needReport++;
       item.second.thread_reported = true;
       WriteThreadJson(writer, item.second);
@@ -161,7 +164,14 @@ void ThreadHolder::ReportThreadLeak(long long time) {
   writer.EndObject();
   koom::Log::info(holder_tag, "ReportThreadLeak %d", needReport);
   if (needReport) {
-    JavaCallback(Constant::CALL_BACK_TYPE_REPORT, type, jsonBuf.GetString());
+    JavaCallback(jsonBuf.GetString());
+  }
+  // clean up
+  auto it = leakThreadMap.begin();
+  for (; it != leakThreadMap.end(); it++) {
+    if (it->second.thread_reported) {
+      leakThreadMap.erase(it++);
+    }
   }
 }
 }

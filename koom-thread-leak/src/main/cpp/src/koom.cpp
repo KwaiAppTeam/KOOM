@@ -1,33 +1,48 @@
-//
-// Created by lirui on 2020/11/3.
-//
+/*
+ * Copyright (c) 2021. Kwai, Inc. All rights reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *         http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * Created by shenvsv on 2021.
+ *
+ */
 
 #include <jni.h>
 #include "koom.h"
 #include "common/util.h"
 #include "common/callstack.h"
 #include "thread/thread_hook.h"
+#include "thread/hook_looper.h"
 
 namespace koom {
 
 int Util::android_api;
-bool Log::logEnable = false;
+bool Log::log_enable = false;
 
 JavaVM *java_vm_;
-jclass nativeHandlerClass;
-jmethodID javaCallbackMethod;
-HookLooper *sHookLooper;
+jclass native_handler_class;
+jmethodID java_callback_method;
 std::atomic<bool> isRunning;
-
+HookLooper *sHookLooper;
 long threadLeakDelay;
 
 void Init(JavaVM *vm, _JNIEnv *env) {
   java_vm_ = vm;
   auto clazz = env->FindClass("com/kwai/performance/overhead/thread/monitor/NativeHandler");
-  nativeHandlerClass = static_cast<jclass>(env->NewGlobalRef(clazz));
-  javaCallbackMethod = env->GetStaticMethodID(nativeHandlerClass,
-                                              "nativeCallback",
-                                              "(ILjava/lang/String;Ljava/lang/String;)V");
+  native_handler_class = static_cast<jclass>(env->NewGlobalRef(clazz));
+  java_callback_method = env->GetStaticMethodID(native_handler_class,
+                                                "nativeReport",
+                                                "(Ljava/lang/String;)V");
   Util::Init();
   Log::info("koom", "Init, android api:%d", Util::AndroidApi());
   CallStack::Init();
@@ -67,14 +82,12 @@ JNIEnv *GetEnv(bool doAttach) {
   return env;
 }
 
-void JavaCallback(int type, const char *key, const char *value, bool doAttach) {
+void JavaCallback(const char *value, bool doAttach) {
   JNIEnv *env = GetEnv(doAttach);
-  if (env != nullptr && key != nullptr && value != nullptr) {
+  if (env != nullptr && value != nullptr) {
     Log::error("koom", "JavaCallback %d", strlen(value));
-    jstring string_key = env->NewStringUTF(key);
     jstring string_value = env->NewStringUTF(value);
-    env->CallStaticVoidMethod(nativeHandlerClass, javaCallbackMethod, type, string_key,
-                              string_value);
+    env->CallStaticVoidMethod(native_handler_class, java_callback_method, string_value);
     Log::info("koom", "JavaCallback finished");
   } else {
     Log::info("koom", "JavaCallback fail no JNIEnv");

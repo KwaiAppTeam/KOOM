@@ -45,8 +45,6 @@ add_library( # Sets the name of the library.
         # Provides a relative path to your source file(s).
         ${CMAKE_SOURCE_DIR}/src/koom.cpp
         ${CMAKE_SOURCE_DIR}/src/jni_bridge.cpp
-        ${CMAKE_SOURCE_DIR}/src/common/item.cpp
-        ${CMAKE_SOURCE_DIR}/src/common/constant.cpp
         ${CMAKE_SOURCE_DIR}/src/common/callstack.cpp
         ${CMAKE_SOURCE_DIR}/src/common/looper.cpp
         ${CMAKE_SOURCE_DIR}/src/thread/thread_item.cpp

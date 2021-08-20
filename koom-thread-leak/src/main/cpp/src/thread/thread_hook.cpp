@@ -1,3 +1,22 @@
+/*
+ * Copyright (c) 2021. Kwai, Inc. All rights reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *         http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * Created by shenvsv on 2021.
+ *
+ */
+
 #include "thread_hook.h"
 #include <dlopencb.h>
 #include <linux/prctl.h>
@@ -10,30 +29,16 @@ namespace koom {
 
 const char *thread_tag = "thread-hook";
 
-const char *ignore_libs[] = {};
+const char *ignore_libs[] = {"koom-thread",
+    "liblog.so", "perfd", "memtrack"};
 
-char *ignore_libs_extra[] = {};
-
-bool IsBuiltInLibsIgnore(const std::string &lib) {
+static bool IsLibIgnored(const std::string &lib) {
   for (const auto &ignoreLib : ignore_libs) {
     if (lib.find(ignoreLib) != -1) {
       return true;
     }
   }
   return false;
-}
-
-bool IsExtraLibsIgnore(const std::string &lib) {
-  for (const auto &ignoreLib : ignore_libs_extra) {
-    if (lib.find(ignoreLib) != -1) {
-      return true;
-    }
-  }
-  return false;
-}
-
-static bool IsLibIgnored(const std::string &lib) {
-  return IsBuiltInLibsIgnore(lib) || IsExtraLibsIgnore(lib);
 }
 
 int Callback(struct dl_phdr_info *info, size_t size, void *data) {
@@ -47,7 +52,7 @@ void ThreadHooker::InitHook() {
   std::set<std::string> libs;
   DlopenCb::SetDebug(true);
   DlopenCb::GetInstance().GetLoadedLibs(libs);
-  HookLibs(libs, Constant::dlopen_source_init);
+  HookLibs(libs, Constant::kDlopenSourceInit);
   DlopenCb::GetInstance().AddCallback(DlopenCallback);
 }
 
@@ -91,29 +96,24 @@ bool ThreadHooker::RegisterSo(const std::string &lib, int source) {
 int ThreadHooker::HookThreadCreate(pthread_t *tidp,
                                    const pthread_attr_t *attr,
                                    void *(*start_rtn)(
-                                          void *),
+                                       void *),
                                    void *arg) {
   if (hookEnabled() && start_rtn != nullptr) {
     auto time = Util::CurrentTimeNs();
     koom::Log::info(thread_tag,
                     "HookThreadCreate");
-    auto *hookArg = new StartRtnArg(arg, Util::CurrentTimeNs(), start_rtn);
+    auto *hook_arg = new StartRtnArg(arg, Util::CurrentTimeNs(), start_rtn);
+    auto *thread_create_arg = hook_arg->thread_create_arg;
     void *thread = koom::CallStack::GetCurrentThread();
     if (thread != nullptr) {
-      std::ostringstream stack_stream;
-      koom::CallStack::JavaStackTrace(thread, stack_stream);
-      hookArg->callstack = stack_stream.str();
+      koom::CallStack::JavaStackTrace(thread, hook_arg->thread_create_arg->java_stack);
     }
-    size_t num_frames = 0;
-    if (thread == nullptr || hookArg->callstack.empty() || hookArg->callstack.find("no") !=
-        std::string::npos) {
-      num_frames = koom::CallStack::FastUnwind(hookArg->pc, koom::Constant::max_call_stack_depth);
-    }
-    hookArg->stack_time = Util::CurrentTimeNs() - time;
+    koom::CallStack::FastUnwind(thread_create_arg->pc, koom::Constant::kMaxCallStackDepth);
+    thread_create_arg->stack_time = Util::CurrentTimeNs() - time;
     return pthread_create(tidp,
                           attr,
                           reinterpret_cast<void *(*)(void *)>(HookThreadStart),
-                          reinterpret_cast<void *>(hookArg));
+                          reinterpret_cast<void *>(hook_arg));
   }
   return pthread_create(tidp, attr, start_rtn, arg);
 }
@@ -128,12 +128,11 @@ ALWAYS_INLINE void ThreadHooker::HookThreadStart(void *arg) {
     pthread_attr_getdetachstate(&attr, &state);
   }
   int tid = (int) syscall(SYS_gettid);
-  koom::Log::info(thread_tag, "HookThreadStart %p, %d, %d", self, tid, hookArg->stack_time);
+
+  koom::Log::info(thread_tag, "HookThreadStart %p, %d, %d", self, tid,
+                  hookArg->thread_create_arg->stack_time);
   auto info = new HookAddInfo(tid, Util::CurrentTimeNs(), self,
-                              state == PTHREAD_CREATE_DETACHED,
-                              hookArg->time,
-                              hookArg->callstack,
-                              hookArg->pc);
+                              state == PTHREAD_CREATE_DETACHED, hookArg->thread_create_arg);
 
   sHookLooper->post(ACTION_ADD_THREAD, info);
   void *(*start_rtn)(void *) = hookArg->start_rtn;
@@ -184,6 +183,7 @@ void ThreadHooker::Start() {
 }
 
 void ThreadHooker::Stop() {
+  isRunning = false;
 }
 
 bool ThreadHooker::hookEnabled() {
