@@ -35,7 +35,7 @@ extern HookLooper *sHookLooper;
 
 extern std::atomic<bool> isRunning;
 
-extern long threadLeakDelay;
+extern int64_t threadLeakDelay;
 
 extern void Init(JavaVM *vm, JNIEnv *p_env);
 

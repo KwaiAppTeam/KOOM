@@ -50,7 +50,6 @@ int Callback(struct dl_phdr_info *info, size_t size, void *data) {
 void ThreadHooker::InitHook() {
   koom::Log::info(thread_tag, "HookSo init hook");
   std::set<std::string> libs;
-  DlopenCb::SetDebug(true);
   DlopenCb::GetInstance().GetLoadedLibs(libs);
   HookLibs(libs, Constant::kDlopenSourceInit);
   DlopenCb::GetInstance().AddCallback(DlopenCallback);
@@ -182,9 +181,7 @@ void ThreadHooker::Start() {
   ThreadHooker::InitHook();
 }
 
-void ThreadHooker::Stop() {
-  isRunning = false;
-}
+void ThreadHooker::Stop() {}
 
 bool ThreadHooker::hookEnabled() {
   return isRunning;

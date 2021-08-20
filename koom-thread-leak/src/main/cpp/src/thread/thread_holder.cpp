@@ -20,7 +20,7 @@ void ThreadHolder::AddThread(int tid, pthread_t threadId, bool isThreadDetached,
   item.thread_internal_id = threadId;
   item.thread_detached = isThreadDetached;
   item.startTime = start_time;
-  item.startTime = create_arg->stack_time;
+  item.create_time = create_arg->time;
   item.id = tid;
   std::string &stack = item.create_call_stack;
   stack.assign("");
@@ -165,12 +165,14 @@ void ThreadHolder::ReportThreadLeak(long long time) {
   koom::Log::info(holder_tag, "ReportThreadLeak %d", needReport);
   if (needReport) {
     JavaCallback(jsonBuf.GetString());
-  }
-  // clean up
-  auto it = leakThreadMap.begin();
-  for (; it != leakThreadMap.end(); it++) {
-    if (it->second.thread_reported) {
-      leakThreadMap.erase(it++);
+    // clean up
+    auto it = leakThreadMap.begin();
+    for (; it != leakThreadMap.end();) {
+      if (it->second.thread_reported) {
+        leakThreadMap.erase(it++);
+      } else {
+        it++;
+      }
     }
   }
 }

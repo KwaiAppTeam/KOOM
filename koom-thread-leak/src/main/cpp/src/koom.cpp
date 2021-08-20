@@ -46,7 +46,6 @@ void Init(JavaVM *vm, _JNIEnv *env) {
   Util::Init();
   Log::info("koom", "Init, android api:%d", Util::AndroidApi());
   CallStack::Init();
-  sHookLooper = new HookLooper();
 }
 
 void Start() {
@@ -54,7 +53,8 @@ void Start() {
     return;
   }
   // 初始化数据
-  sHookLooper->post(ACTION_INIT, nullptr);
+  delete sHookLooper;
+  sHookLooper = new HookLooper();
   koom::ThreadHooker::Start();
   isRunning = true;
 }

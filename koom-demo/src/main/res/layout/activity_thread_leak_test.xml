@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+  xmlns:tools="http://schemas.android.com/tools"
+  android:layout_width="match_parent"
+  android:layout_height="match_parent"
+  android:gravity="center_horizontal"
+  android:orientation="vertical"
+  tools:context="com.kwai.koom.demo.MainActivity">
+
+  <TextView
+    android:id="@+id/tv_error_msg"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_marginTop="40dp" />
+
+  <TextView
+    android:id="@+id/tv_leak_msg"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_marginTop="20dp" />
+
+  <Button
+    android:id="@+id/btn_leak_delay_1"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_marginTop="100dp"
+    android:text="Trigger Thread Leaks delay 1s" />
+
+  <Button
+    android:id="@+id/btn_leak_delay_10"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_marginTop="10dp"
+    android:text="Trigger Thread Leaks delay 10s" />
+
+</LinearLayout>
