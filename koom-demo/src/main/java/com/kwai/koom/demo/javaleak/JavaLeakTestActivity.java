@@ -7,8 +7,10 @@ import android.view.View;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.kwai.koom.demo.MainActivity;
 import com.kwai.koom.demo.R;
 import com.kwai.koom.demo.javaleak.test.LeakMaker;
+import com.kwai.koom.javaoom.monitor.OOMMonitor;
 
 public class JavaLeakTestActivity extends AppCompatActivity {
 
@@ -23,6 +25,10 @@ public class JavaLeakTestActivity extends AppCompatActivity {
 
     findViewById(R.id.btn_make_java_leak).setOnClickListener((view) -> {
       findViewById(R.id.btn_make_java_leak).setVisibility(View.INVISIBLE);
+
+      OOMMonitorInitTask.INSTANCE.init(JavaLeakTestActivity.this.getApplication());
+      OOMMonitor.INSTANCE.startLoop(true, false,5_000L);
+
       LeakMaker.makeLeak(this);
     });
   }

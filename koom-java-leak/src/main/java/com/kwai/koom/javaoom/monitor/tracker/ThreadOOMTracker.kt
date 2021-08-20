@@ -27,7 +27,7 @@ import java.io.File
 
 class ThreadOOMTracker : OOMTracker() {
   companion object {
-    private const val TAG = "ThreadOOMTracker"
+    private const val TAG = "OOMMonitor_ThreadOOMTracker"
 
     private const val THREAD_COUNT_THRESHOLD_GAP = 50 //Thread连续值递增浮动范围50
   }

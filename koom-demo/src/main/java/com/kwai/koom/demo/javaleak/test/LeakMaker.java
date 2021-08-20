@@ -43,7 +43,7 @@ public abstract class LeakMaker<T> {
     for (int i = 0; i < 700; i++) {
       new Thread(() -> {
         try {
-          Thread.sleep(2000);
+          Thread.sleep(200000);
         } catch (InterruptedException e) {
           e.printStackTrace();
         }

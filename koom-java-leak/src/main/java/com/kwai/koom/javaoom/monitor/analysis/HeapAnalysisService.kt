@@ -61,7 +61,7 @@ import kshark.SharkLog
 
 class HeapAnalysisService : IntentService("HeapAnalysisService") {
   companion object {
-    private const val TAG = "HeapAnalysisService"
+    private const val TAG = "OOMMonitor_HeapAnalysisService"
 
     private const val OOM_ANALYSIS_TAG = "OOMMonitor"
     private const val OOM_ANALYSIS_EXCEPTION_TAG = "OOMMonitor_Exception"

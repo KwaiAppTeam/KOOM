@@ -28,7 +28,7 @@ import java.io.InputStreamReader
 import java.nio.charset.Charset
 
 internal object SystemInfo {
-  private const val TAG = "SystemInfo"
+  private const val TAG = "OOMMonitor_SystemInfo"
 
   private val VSS_REGEX = "VmSize:\\s*(\\d+)\\s*kB".toRegex()
   private val RSS_REGEX = "VmRSS:\\s*(\\d+)\\s*kB".toRegex()
@@ -53,8 +53,6 @@ internal object SystemInfo {
   //var normalZoneInfo: ZoneInfo = ZoneInfo()
 
   fun refresh() {
-    MonitorLog.i(TAG, "refresh system memory info")
-
     lastJavaHeap = javaHeap
     lastMemInfo = memInfo
     lastProcStatus = procStatus
