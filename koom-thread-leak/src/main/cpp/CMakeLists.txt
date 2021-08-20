@@ -13,7 +13,7 @@ project(${TARGET})
 cmake_minimum_required(VERSION 3.4.1)
 
 include_directories(
-        ${CMAKE_CURRENT_SOURCE_DIR}/include/
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/include/
         ${KWAI_ANDROID_BASE_DIR}/src/main/cpp/include/
         ${KWAI_ANDROID_BASE_DIR}/src/main/cpp/liblog/include/
         ${THIRD_PARTY_DIR}/xhook/src/main/cpp/xhook/src/

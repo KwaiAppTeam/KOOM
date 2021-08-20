@@ -17,7 +17,7 @@
  *
  */
 
-#include "thread_item.h"
+#include <thread/thread_item.h>
 
 namespace koom {
 
@@ -48,4 +48,4 @@ void ThreadItem::Clear() {
     this->name.clear();
     this->collect_mode.clear();
 }
-}
+}  // namespace koom

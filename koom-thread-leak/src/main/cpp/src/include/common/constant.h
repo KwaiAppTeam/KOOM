@@ -17,8 +17,8 @@
  *
  */
 
-#ifndef APM_RESDETECTOR_CONSTANT_H
-#define APM_RESDETECTOR_CONSTANT_H
+#ifndef KOOM_THREAD_LEAK_SRC_MAIN_CPP_SRC_INCLUDE_COMMON_CONSTANT_H_
+#define KOOM_THREAD_LEAK_SRC_MAIN_CPP_SRC_INCLUDE_COMMON_CONSTANT_H_
 
 #include <string>
 #include <vector>
@@ -28,8 +28,8 @@ namespace koom {
 namespace Constant {
 #define ALWAYS_INLINE __attribute__((always_inline))
 
-const static int kMaxCallStackDepth = 18;
-const static int kDlopenSourceInit = 0;
-}
-}
-#endif //APM_RESDETECTOR_CONSTANT_H
+static const int kMaxCallStackDepth = 18;
+static const int kDlopenSourceInit = 0;
+}  // namespace Constant
+}  // namespace koom
+#endif  // KOOM_THREAD_LEAK_SRC_MAIN_CPP_SRC_INCLUDE_COMMON_CONSTANT_H_

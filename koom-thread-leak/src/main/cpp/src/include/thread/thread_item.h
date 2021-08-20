@@ -17,24 +17,27 @@
  *
  */
 
-#include <pthread.h>
-#include <semaphore.h>
-struct LooperMessage;
-class looper {
+#ifndef KOOM_THREAD_LEAK_SRC_MAIN_CPP_SRC_INCLUDE_THREAD_THREAD_ITEM_H_
+#define KOOM_THREAD_LEAK_SRC_MAIN_CPP_SRC_INCLUDE_THREAD_THREAD_ITEM_H_
+#include <string>
+namespace koom {
+
+class ThreadItem {
  public:
-  looper();
-  ~looper();
-  virtual void post(int what, void *data, bool flush = false);
-  void quit();
-  virtual void handle(int what, void *data);
- private:
-  void addMsg(LooperMessage *msg, bool flush);
-  static void *trampoline(void *p);
-  void loop();
-  LooperMessage *head = nullptr;
-  LooperMessage *tail = nullptr;
-  pthread_t worker;
-  sem_t headWriteProtect;
-  sem_t headDataAvailable;
-  bool running;
+  int         id{};
+  int64_t     create_time{};
+  std::string create_call_stack;
+  std::string collect_mode{};
+  bool thread_detached{};
+  int64_t startTime{};
+  int64_t exitTime{};
+  bool thread_reported{};
+  pthread_t thread_internal_id{};
+  std::string name{};
+
+  ThreadItem();
+  ThreadItem(const ThreadItem &threadItem);
+  void Clear();
 };
+}  // namespace koom
+#endif  // KOOM_THREAD_LEAK_SRC_MAIN_CPP_SRC_INCLUDE_THREAD_THREAD_ITEM_H_
