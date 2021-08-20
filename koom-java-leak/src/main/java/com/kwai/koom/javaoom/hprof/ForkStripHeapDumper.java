@@ -29,7 +29,7 @@ public class ForkStripHeapDumper extends HeapDumper {
 
   @Override
   public boolean dump(String path) {
-    MonitorLog.e(TAG, "dump");
+    MonitorLog.e(TAG, "dump " + path);
     boolean dumpRes;
     try {
       StripHprofHeapDumper stripHprofHeapDumper = new StripHprofHeapDumper();

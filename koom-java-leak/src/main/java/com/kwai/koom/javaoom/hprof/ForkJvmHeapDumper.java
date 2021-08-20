@@ -40,6 +40,7 @@ public class ForkJvmHeapDumper extends HeapDumper {
 
   @Override
   public boolean dump(String path) {
+    MonitorLog.i(TAG, "dump " + path);
     if (!soLoaded) {
       MonitorLog.e(TAG, "dump failed caused by so not loaded!");
       return false;
