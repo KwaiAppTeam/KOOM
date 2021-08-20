@@ -9,7 +9,6 @@ import com.kwai.koom.demo.threadleak.ThreadMonitorInitTask
 object MonitorInitTask : InitTask {
   override fun init(application: Application) {
     CommonInitTask.init(application)
-    OOMMonitorInitTask.init(application)
     ThreadMonitorInitTask.init(application)
   }
 }

@@ -26,7 +26,7 @@ import java.io.File
 
 class FdOOMTracker : OOMTracker() {
   companion object {
-    private const val TAG = "FdOOMTracker"
+    private const val TAG = "OOMMonitor_FdOOMTracker"
 
     private const val FD_COUNT_THRESHOLD_GAP = 50 //FD连续值递增浮动范围50
   }

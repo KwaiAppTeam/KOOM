@@ -24,7 +24,7 @@ import com.kwai.koom.javaoom.monitor.utils.SizeUnit
 
 class HeapOOMTracker : OOMTracker() {
   companion object {
-    private const val TAG = "HeapOOMTracker"
+    private const val TAG = "OOMMonitor_HeapOOMTracker"
 
     private const val HEAP_RATIO_THRESHOLD_GAP = 0.05f
   }

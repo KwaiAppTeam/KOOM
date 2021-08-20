@@ -22,7 +22,7 @@ object OOMMonitorInitTask : InitTask {
         .setMaxOverThresholdCount(1) // 1 for test! Please use default value!
         .setAnalysisMaxTimesPerVersion(3) // Consider use default value！
         .setAnalysisPeriodPerVersion(15 * 24 * 60 * 60 * 1000) // Consider use default value！
-        .setLoopInterval(2_000) // 2_000 for test! Please use default value!
+        .setLoopInterval(5_000) // 5_000 for test! Please use default value!
         .setEnableHprofDumpAnalysis(true)
         .setHprofUploader(object: OOMHprofUploader {
           override fun upload(file: File, type: OOMHprofUploader.HprofType) {
@@ -38,6 +38,5 @@ object OOMMonitorInitTask : InitTask {
         .build()
 
     MonitorManager.addMonitorConfig(config)
-    OOMMonitor.startLoop(delayMillis = 5_000L)
   }
 }

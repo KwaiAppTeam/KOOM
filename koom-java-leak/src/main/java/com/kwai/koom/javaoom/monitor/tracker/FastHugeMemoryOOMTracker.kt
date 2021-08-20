@@ -25,7 +25,7 @@ import com.kwai.koom.javaoom.monitor.utils.SizeUnit
 class FastHugeMemoryOOMTracker : OOMTracker() {
 
   companion object {
-    private const val TAG = "FastHugeMemoryTracker"
+    private const val TAG = "OOMMonitor_FastHugeMemoryTracker"
     private const val REASON_HIGH_WATERMARK = "high_watermark"
     private const val REASON_HUGE_DELTA = "delta"
   }
