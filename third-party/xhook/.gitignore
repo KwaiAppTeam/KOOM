@@ -1,4 +1,4 @@
-/build
-/.cxx
-/.externalNativeBuild
+build
+.cxx
+.externalNativeBuild
 .DS_Store

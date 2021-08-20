@@ -5,17 +5,19 @@ buildscript {
         'minSdkVersion'    : 18,
         'targetSdkVersion' : 26,
         'kotlin'           : '1.3.50',
+        'ndk'           : '22.1.7171670',
     ]
 
     ext.deps = [
         gson               : 'com.google.code.gson:gson:2.8.2',
-        androidGradlePlugin: "com.android.tools.build:gradle:3.5.2",
+        androidGradlePlugin: "com.android.tools.build:gradle:4.2.2",
         androidx           : [
             annotation      : 'androidx.annotation:annotation:1.0.2',
             appcompat       : 'androidx.appcompat:appcompat:1.1.0',
             core            : 'androidx.core:core:1.0.1',
             fragment        : 'androidx.fragment:fragment:1.0.0',
             constraintlayout: 'androidx.constraintlayout:constraintlayout:1.1.3',
+            lifecycle: 'androidx.lifecycle:lifecycle-extensions:2.2.0',
             test            : [
                 core    : 'androidx.test:core:1.0.0',
                 espresso: 'androidx.test.espresso:espresso-core:3.2.0',
@@ -36,12 +38,19 @@ buildscript {
     ]
 
     repositories {
-        maven { url 'https://plugins.gradle.org/m2/' }
-        jcenter()
-        google()
-        maven { url 'http://maven.aliyun.com/nexus/content/groups/public/' }
-        maven { url 'https://maven.google.com' }
+        maven {
+            url 'https://plugins.gradle.org/m2/'
+        }
+        maven {
+            url 'https://maven.google.com'
+        }
+        maven {
+            allowInsecureProtocol = true
+            url 'http://maven.aliyun.com/nexus/content/groups/public/'
+        }
         mavenCentral()
+        google()
+        jcenter()
     }
     dependencies {
         classpath 'com.novoda:bintray-release:0.9'
@@ -53,11 +62,14 @@ buildscript {
 
 allprojects {
     repositories {
-        maven { url 'http://maven.aliyun.com/nexus/content/groups/public/' }
-        jcenter()
+        maven {
+            allowInsecureProtocol = true
+            url 'http://maven.aliyun.com/nexus/content/groups/public/'
+        }
         google()
         mavenCentral()
         maven{ url 'https://s01.oss.sonatype.org/service/local/repositories/releases/content/'}
+        jcenter()
     }
 }
 
