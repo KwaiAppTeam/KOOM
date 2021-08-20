@@ -17,8 +17,10 @@
  *
  */
 
-#ifndef KOOM_KOOM_THREAD_LEAK_SRC_MAIN_CPP_SRC_THREAD_LOOP_ITEM_H_
-#define KOOM_KOOM_THREAD_LEAK_SRC_MAIN_CPP_SRC_THREAD_LOOP_ITEM_H_
+#ifndef KOOM_THREAD_LEAK_SRC_MAIN_CPP_SRC_INCLUDE_THREAD_LOOP_ITEM_H_
+#define KOOM_THREAD_LEAK_SRC_MAIN_CPP_SRC_INCLUDE_THREAD_LOOP_ITEM_H_
+
+#include <string>
 namespace koom {
 enum HookAction {
   ACTION_ADD_THREAD,
@@ -38,31 +40,27 @@ class ThreadCreateArg {
   std::ostringstream java_stack;
   uintptr_t pc[koom::Constant::kMaxCallStackDepth]{};
   ThreadCreateArg() {}
-  ~ThreadCreateArg() {
-    memset(pc, 0, sizeof(pc));
-  }
+  ~ThreadCreateArg() { memset(pc, 0, sizeof(pc)); }
 };
 
 struct SimpleHookInfo {
-  long long time;
-  SimpleHookInfo(long long time) {
-    this->time = time;
-  }
+  int64_t time;
+  explicit SimpleHookInfo(int64_t time) { this->time = time; }
 };
 struct HookInfo {
   pthread_t thread_id;
-  long long time;
-  HookInfo(pthread_t threadId, long long time) {
+  int64_t time;
+  HookInfo(pthread_t threadId, int64_t time) {
     this->thread_id = threadId;
     this->time = time;
   }
 };
 struct HookExitInfo {
   pthread_t thread_id;
-  long long time;
+  int64_t time;
   int tid;
   std::string threadName;
-  HookExitInfo(pthread_t threadId, int tid, char *threadName, long long time) {
+  HookExitInfo(pthread_t threadId, int tid, char *threadName, int64_t time) {
     this->thread_id = threadId;
     this->tid = tid;
     this->threadName.assign(threadName);
@@ -78,18 +76,14 @@ struct HookAddInfo {
   bool is_thread_detached;
   ThreadCreateArg *create_arg;
 
-  HookAddInfo(int tid,
-              long long time,
-              pthread_t pthread,
-              bool isThreadDetached,
-              ThreadCreateArg *thread_create_arg
-  ) {
+  HookAddInfo(int tid, int64_t time, pthread_t pthread, bool isThreadDetached,
+              ThreadCreateArg *thread_create_arg) {
     this->tid = tid;
     this->time = time;
     this->pthread = pthread;
     this->is_thread_detached = isThreadDetached;
     this->create_arg = thread_create_arg;
-  };
+  }
 };
-}
-#endif //KOOM_KOOM_THREAD_LEAK_SRC_MAIN_CPP_SRC_THREAD_LOOP_ITEM_H_
+}  // namespace koom
+#endif  // KOOM_THREAD_LEAK_SRC_MAIN_CPP_SRC_INCLUDE_THREAD_LOOP_ITEM_H_

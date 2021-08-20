@@ -1,6 +1,6 @@
-#include "thread_holder.h"
-#include "thread_hook.h"
-#include "koom.h"
+#include <thread/thread_holder.h>
+#include <thread/thread_hook.h>
+#include <koom.h>
 #include <filesystem>
 #include <regex>
 
@@ -70,7 +70,7 @@ void ThreadHolder::JoinThread(pthread_t threadId) {
   }
 }
 
-void ThreadHolder::ExitThread(pthread_t threadId, std::string &threadName, long long int time) {
+void ThreadHolder::ExitThread(pthread_t threadId, std::string &threadName, int64_t time) {
   bool valid = threadMap.count(threadId) > 0;
   if (!valid) return;
   auto &item = threadMap[threadId];
@@ -134,7 +134,7 @@ void ThreadHolder::WriteThreadJson(rapidjson::Writer<rapidjson::StringBuffer> &w
   writer.EndObject();
 }
 
-void ThreadHolder::ReportThreadLeak(long long time) {
+void ThreadHolder::ReportThreadLeak(int64_t time) {
   int needReport{};
   const char *type = "detach_leak";
   auto delay = threadLeakDelay * 1000000LL; // ms -> ns

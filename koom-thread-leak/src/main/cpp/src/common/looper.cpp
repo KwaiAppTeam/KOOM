@@ -17,22 +17,23 @@
  *
  */
 
-#include "looper.h"
-#include "log.h"
-#include <cassert>
+#include <android/log.h>
+#include <common/log.h>
+#include <common/looper.h>
+#include <fcntl.h>
 #include <jni.h>
 #include <pthread.h>
-#include <cstdio>
-#include <cstring>
-#include <unistd.h>
-#include <sys/types.h>
+#include <semaphore.h>
+#include <sys/prctl.h>
 #include <sys/stat.h>
-#include <fcntl.h>
+#include <sys/types.h>
+#include <unistd.h>
+
+#include <cassert>
 #include <cerrno>
 #include <climits>
-#include <semaphore.h>
-#include <android/log.h>
-#include <sys/prctl.h>
+#include <cstdio>
+#include <cstring>
 
 #define TAG "koom-looper"
 #define LOGV(...) koom::Log::info(TAG, __VA_ARGS__);
@@ -44,8 +45,8 @@ struct LooperMessage {
   bool quit;
 };
 void *looper::trampoline(void *p) {
-  prctl(PR_SET_NAME,"koom-looper");
-  ((looper *) p)->loop();
+  prctl(PR_SET_NAME, "koom-looper");
+  reinterpret_cast<looper *>(p)->loop();
   return nullptr;
 }
 looper::looper() {
@@ -58,7 +59,9 @@ looper::looper() {
 }
 looper::~looper() {
   if (running) {
-    LOGV("Looper deleted while still running. Some messages will not be processed");
+    LOGV(
+        "Looper deleted while still running. Some messages will not be "
+        "processed");
     quit();
   }
 }
@@ -68,12 +71,12 @@ void looper::post(int what, void *data, bool flush) {
   msg->obj = data;
   msg->next = nullptr;
   msg->quit = false;
-//  LOGV("post msg %d build msg finish", msg->what);
+  //  LOGV("post msg %d build msg finish", msg->what);
   addMsg(msg, flush);
 }
 void looper::addMsg(LooperMessage *msg, bool flush) {
   sem_wait(&headWriteProtect);
-//  LOGV("post msg %d start", msg->what);
+  //  LOGV("post msg %d start", msg->what);
   LooperMessage *h = head;
   if (flush) {
     while (h) {
@@ -90,7 +93,7 @@ void looper::addMsg(LooperMessage *msg, bool flush) {
     head = msg;
     tail = msg;
   }
-//  LOGV("post msg %d end", msg->what);
+  //  LOGV("post msg %d end", msg->what);
   sem_post(&headWriteProtect);
   sem_post(&headDataAvailable);
 }

@@ -17,8 +17,8 @@
  *
  */
 
-#ifndef APM_LOG_H
-#define APM_LOG_H
+#ifndef KOOM_THREAD_LEAK_SRC_MAIN_CPP_SRC_INCLUDE_COMMON_LOG_H_
+#define KOOM_THREAD_LEAK_SRC_MAIN_CPP_SRC_INCLUDE_COMMON_LOG_H_
 
 #include <stdio.h>
 #include <android/log.h>
@@ -62,6 +62,6 @@ class Log {
 
   static const int kMaxLogLine = 512;
 };
-}
+}  // namespace koom
 
-#endif //APM_LOG_H
+#endif  // KOOM_THREAD_LEAK_SRC_MAIN_CPP_SRC_INCLUDE_COMMON_LOG_H_

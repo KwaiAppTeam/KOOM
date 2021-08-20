@@ -17,11 +17,11 @@
  *
  */
 
-#ifndef APM_KOOM_H
-#define APM_KOOM_H
+#ifndef KOOM_THREAD_LEAK_SRC_MAIN_CPP_SRC_INCLUDE_KOOM_H_
+#define KOOM_THREAD_LEAK_SRC_MAIN_CPP_SRC_INCLUDE_KOOM_H_
 
 #include <jni.h>
-#include "thread/hook_looper.h"
+#include "include/thread/hook_looper.h"
 
 namespace koom {
 
@@ -52,6 +52,6 @@ extern void Refresh();
 JNIEnv *GetEnv(bool doAttach = true);
 
 void JavaCallback(const char *value, bool doAttach = true);
-}
+}  // namespace koom
 
-#endif //APM_KOOM_H
+#endif  // KOOM_THREAD_LEAK_SRC_MAIN_CPP_SRC_INCLUDE_KOOM_H_

@@ -17,36 +17,39 @@
  *
  */
 
-#ifndef APM_RESOURCEDATA_H
-#define APM_RESOURCEDATA_H
+#ifndef KOOM_THREAD_LEAK_SRC_MAIN_CPP_SRC_INCLUDE_THREAD_THREAD_HOLDER_H_
+#define KOOM_THREAD_LEAK_SRC_MAIN_CPP_SRC_INCLUDE_THREAD_THREAD_HOLDER_H_
 
-#include "common/log.h"
-#include "common/util.h"
-#include "common/callstack.h"
-#include "thread_item.h"
+#include <common/callstack.h>
+#include <common/log.h>
+#include <common/util.h>
+#include <rapidjson/writer.h>
+#include <thread/loop_item.h>
+#include <thread/thread_item.h>
+
 #include <map>
-#include "rapidjson/writer.h"
-#include "loop_item.h"
+#include <string>
 
 namespace koom {
 
 class ThreadHolder {
  public:
-  void AddThread(int tid, pthread_t pthread, bool isThreadDetached, int64_t start_time,
-                 ThreadCreateArg* create_arg);
+  void AddThread(int tid, pthread_t pthread, bool isThreadDetached,
+                 int64_t start_time, ThreadCreateArg* create_arg);
   void JoinThread(pthread_t threadId);
-  void ExitThread(pthread_t threadId, std::string& threadName, long long int i);
+  void ExitThread(pthread_t threadId, std::string& threadName, int64_t time);
   void DetachThread(pthread_t threadId);
-  void ReportThreadLeak(long long time);
+  void ReportThreadLeak(int64_t time);
 
  private:
   std::map<pthread_t, ThreadItem> leakThreadMap;
   std::map<pthread_t, ThreadItem> threadMap;
-  void WriteThreadJson(rapidjson::Writer<rapidjson::StringBuffer> &writer, ThreadItem &thread_item);
+  void WriteThreadJson(rapidjson::Writer<rapidjson::StringBuffer>& writer,
+                       ThreadItem& thread_item);
   void Clear() {
     leakThreadMap.clear();
     threadMap.clear();
   }
 };
-}
-#endif //APM_RESOURCEDATA_H
+}  // namespace koom
+#endif  // KOOM_THREAD_LEAK_SRC_MAIN_CPP_SRC_INCLUDE_THREAD_THREAD_HOLDER_H_
