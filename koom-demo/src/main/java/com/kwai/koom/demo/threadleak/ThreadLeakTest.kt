@@ -6,5 +6,5 @@ object ThreadLeakTest {
    * which is packaged with this application.
    */
   @JvmStatic
-  external fun triggerLeak()
+  external fun triggerLeak(delay:Long)
 }

@@ -23,6 +23,9 @@
     <activity
       android:name=".nativeleak.NativeLeakTestActivity" />
 
+    <activity
+      android:name=".threadleak.ThreadLeakTestActivity" />
+
     <activity android:name=".javaleak.JavaLeakTestActivity"/>
   </application>
   <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />

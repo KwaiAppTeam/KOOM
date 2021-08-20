@@ -29,6 +29,7 @@ import com.kwai.koom.demo.javaleak.JavaLeakTestActivity;
 import com.kwai.koom.demo.javaleak.test.LeakMaker;
 import com.kwai.koom.demo.nativeleak.NativeLeakTestActivity;
 import com.kwai.koom.demo.threadleak.ThreadLeakTest;
+import com.kwai.koom.demo.threadleak.ThreadLeakTestActivity;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -47,9 +48,7 @@ public class MainActivity extends AppCompatActivity {
     });
 
     findViewById(R.id.btn_test_thread_leak).setOnClickListener(v -> {
-      if (Monitor_SoKt.loadSoQuietly("native-leak-test")) {
-        ThreadLeakTest.triggerLeak();
-      }
+      ThreadLeakTestActivity.Companion.start(MainActivity.this);
     });
   }
 }

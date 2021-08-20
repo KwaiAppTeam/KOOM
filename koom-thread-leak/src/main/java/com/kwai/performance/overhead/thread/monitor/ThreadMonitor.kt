@@ -32,7 +32,6 @@ object ThreadMonitor : LoopMonitor<ThreadMonitorConfig>() {
   @Volatile
   private var mIsRunning = false
 
-  private val mResultListener by lazy { monitorConfig.listener }
   private val mGon by lazy { Gson() }
 
   fun startTrack() {
@@ -69,17 +68,17 @@ object ThreadMonitor : LoopMonitor<ThreadMonitorConfig>() {
   private fun handleNativeInit(): Boolean {
     if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.O || Build.VERSION.SDK_INT > Build
             .VERSION_CODES.R) {
-      mResultListener?.onError("not support P below or R above now!")
+      monitorConfig.listener?.onError("not support P below or R above now!")
       return false
     }
     if (!isArm64()) {
-      mResultListener?.onError("support arm64 only!")
+      monitorConfig.listener?.onError("support arm64 only!")
       return false
     }
     if (loadSoQuietly("koom-thread")) {
       MonitorLog.i(TAG, "loadLibrary success")
     } else {
-      mResultListener?.onError("loadLibrary fail")
+      monitorConfig.listener?.onError("loadLibrary fail")
       return false
     }
     if (monitorConfig.disableNativeStack) {
@@ -99,7 +98,11 @@ object ThreadMonitor : LoopMonitor<ThreadMonitorConfig>() {
 
   fun nativeReport(resultJson: String) {
     mGon.fromJson(resultJson, ThreadLeakContainer::class.java).let {
-      mResultListener?.onReport(it.threads)
+      monitorConfig.listener?.onReport(it.threads)
     }
+  }
+
+  fun setListener(listener: ThreadLeakListener) {
+    monitorConfig.listener = listener
   }
 }
