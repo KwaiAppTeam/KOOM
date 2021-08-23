@@ -63,7 +63,7 @@ afterEvaluate {
                 }
                 pom {
                     name = "${project.getName()}"
-                    description = POM_DESCRIPTION
+                    description = rootProject.name
                     // If your project has a dedicated site, use its URL here
                     url = POM_URL
                     licenses {
@@ -95,7 +95,7 @@ afterEvaluate {
                         project.configurations.implementation.allDependencies.each {
                             if(it.group != null){
                                 def dependencyNode = dependenciesNode.appendNode('dependency')
-                                if((it.group).contains('KOOM')) {
+                                if((it.group).contains(rootProject.name)) {
                                     dependencyNode.appendNode('groupId', GROUP)
                                     dependencyNode.appendNode('artifactId', it.name)
                                     dependencyNode.appendNode('version', VERSION_NAME)
@@ -115,7 +115,7 @@ afterEvaluate {
             maven {
                 // This is an arbitrary name, you may also use "mavencentral" or
                 // any other name that's descriptive for you
-                name = "Koom"
+                name = rootProject.name
                 def releasesRepoUrl = "https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/"
                 def snapshotsRepoUrl = "https://s01.oss.sonatype.org/content/repositories/snapshots/"
                 // You only need this if you want to publish snapshots, otherwise just set the URL

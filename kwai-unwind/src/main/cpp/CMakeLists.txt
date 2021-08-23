@@ -21,7 +21,7 @@ include_directories(
         ${LINK_DIR}/src/main/cpp/lzma
 )
 
-link_directories(${LINK_DIR}/libs/${ANDROID_ABI}/)
+link_directories(${LINK_DIR}/src/main/libs/${ANDROID_ABI}/)
 
 # Define the base library, its includes and the needed defines.
 set(BASE_SOURCES libunwindstack/ArmExidx.cpp libunwindstack/DexFiles.cpp libunwindstack/DwarfCfa.cpp libunwindstack/DwarfEhFrameWithHdr.cpp libunwindstack/DwarfMemory.cpp
