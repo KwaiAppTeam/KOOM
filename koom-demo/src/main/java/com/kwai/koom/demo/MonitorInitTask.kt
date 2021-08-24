@@ -8,6 +8,5 @@ import com.kwai.koom.demo.javaleak.OOMMonitorInitTask
 object MonitorInitTask : InitTask {
   override fun init(application: Application) {
     CommonInitTask.init(application)
-    OOMMonitorInitTask.init(application)
   }
 }
