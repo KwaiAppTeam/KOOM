@@ -32,3 +32,5 @@ dependencies {
     androidTestImplementation deps.androidx.test.ext
     androidTestImplementation deps.androidx.test.espresso
 }
+
+apply from: rootProject.file('gradle/mavenCentral-publish.gradle')

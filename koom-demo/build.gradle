@@ -42,16 +42,19 @@ android {
 }
 
 dependencies {
-    //implementation project(':java-oom')
-    implementation 'com.kuaishou.koom:java-oom:1.0.0'
     implementation deps.androidx.appcompat
     implementation deps.androidx.constraintlayout
     implementation deps.material
     implementation deps.kotlin.stdlib
-    implementation project(path: ':koom-native-leak')
+//    implementation "com.kuaishou.koom:koom-native-leak:1.0.1"
+//    implementation "com.kuaishou.koom:koom-monitor-base:1.0.1"
+//    implementation "com.kuaishou.koom:koom-java-leak:1.0.1"
+//    implementation "com.kuaishou.koom:koom-thread-leak:1.0.1"
     implementation project(path: ':koom-monitor-base')
+    implementation project(path: ':koom-native-leak')
     implementation project(path: ':koom-java-leak')
     implementation project(path: ':koom-thread-leak')
+
     testImplementation deps.junit
     androidTestImplementation deps.androidx.test.ext
     androidTestImplementation deps.androidx.test.espresso

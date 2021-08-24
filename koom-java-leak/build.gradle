@@ -59,3 +59,5 @@ dependencies {
     implementation project(path: ':koom-common:kwai-android-base')
     api project(':koom-common:third-party:shark')
 }
+
+apply from: rootProject.file('gradle/mavenCentral-publish.gradle')

@@ -49,3 +49,5 @@ dependencies {
     implementation project(path: ':koom-monitor-base')
     implementation project(path: ':koom-common:kwai-android-base')
 }
+
+apply from: rootProject.file('gradle/mavenCentral-publish.gradle')
