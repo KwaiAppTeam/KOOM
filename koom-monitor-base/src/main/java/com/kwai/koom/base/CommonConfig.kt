@@ -27,26 +27,26 @@ import java.io.File
 import java.util.concurrent.ExecutorService
 
 class CommonConfig private constructor(
-    // MonitorManager 通用属性
+    // MonitorManager common properties
     val application: Application,
 
-    // 子Monitor模块定制类xxxFileManager、xxPreferencesManager
+    // Custom FileManager or sharedPreferences
     val rootFileInvoker: (String) -> File,
     val sharedPreferencesInvoker: (String) -> SharedPreferences,
     val sharedPreferencesKeysInvoker: (SharedPreferences) -> Set<String>,
 
-    // MonitorBuildConfig 通用属性
+    // MonitorBuildConfig common properties
     internal val debugMode: Boolean,
     internal val versionNameInvoker: () -> String,
 
     internal val logger: Logger,
     internal val log: Log,
 
-    // 工具类
+    // toolbox
     internal val loadSoInvoker: (String) -> Unit,
     internal val executorServiceInvoker: (() -> ExecutorService)?,
 
-    // LoopMonitor 使用
+    // For LooperMonitor
     internal val loopHandlerInvoker: () -> Handler
 ) {
   class Builder {

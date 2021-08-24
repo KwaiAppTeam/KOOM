@@ -89,7 +89,7 @@ fun getCpuMaxFreq(): Double {
 }
 
 /**
- * 获取进程的Vss，Rss等状态
+ * Get Pss/Vss/etc.
  */
 fun getProcessStatus(): ProcessStatus {
   val processStatus = ProcessStatus()
