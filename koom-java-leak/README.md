@@ -1,26 +1,23 @@
-# OOMMonitor 介绍
+# OOMMonitor Introduction
 
-用于监控应用的 Java 内存泄漏问题，它的核心原理
+OOMMonitor is designed for solving Android Application's Java memory leak problems，and it's core concepts are:
 
-- 周期性查询Java堆内存、线程数、文件描述符数等资源占用情况，当连续多次超过设定阈值或突发性连续快速突破高阈值时，触发镜像采集
+- By polling Java heap size, running threads and fd size periodic, Hprof dump is triggered when the threshold is exceeded multiple consecutive times.
 
-- 镜像采集采用`虚拟机supend->fork虚拟机进程->虚拟机resume->dump内存镜像`的策略，将传统Dump冻结进程20s的时间缩减至20ms以内
+- Hprof dump use `Suspend ART VM->fork VM process->Resume ART VM->Dump Hprof` strategy, making the simple dump's 20 seconds process frozen reduced to within 20ms.
 
-- 基于shark执行镜像解析，并针对shark做了一系列调整用于提升性能，在手机设备测即可执行离线内存泄露判定与引用链查找，生成分析报告
+- Using shark to parse hprof file, but some optimization changes are added in shark. Leaking judge and leaking reference chain computing are executed on the device, and give a heap report finally.
 
+# OOMMonitor Compatibility
 
+- Android L and above（API level >= 21）
 
-# OOMMonitor 适用范围
-
-- Android L 及以上（API level >= 21）
-
-- 支持 armeabi-v7a arm64-v8a x86 x86-64
+- Support armeabi-v7a arm64-v8a x86 x86-64
 
 
+# OOMMonitor Quick up
 
-# LeakMonitor 接入
-
-## 依赖配置
+## dependencies
 
 ```groovy
 ......
@@ -32,15 +29,13 @@ dependencies {
 }
 ```
 
-## 使用
+## Steps
 
-- 初始化 MonitorManager
+- MonitorManager Initialization
 
-由于 OOMMonitor 依赖 MonitorManager，确保 MonitorManager 已经初始化，如Application、版本号等已正确传参
+Make sure MonitorManager is initialized for OOMMonitor depends on it, such as Application, App version code is correctly initialized.
 
-- 初始化 OOMMonitor
-
-支持自定义诸多参数并获取分析报告，具体参考代码：
+- OOMMonitor Initialization
 
 ```kotlin
 val config = OOMMonitorConfig.Builder()
@@ -69,77 +64,70 @@ val config = OOMMonitorConfig.Builder()
 MonitorManager.addMonitorConfig(config)
 ```
 
-- 启动 OOMMonitor，开始周期性的检测泄漏
+- Start OOMMonitor
 
 ```kotlin
 OOMMonitor.startLoop(5_000L)
 ```
 
--  停止 OOMMonitor，通常不用主动停止
+-  Stop OOMMonitor
 
 ```kotlin
 OOMMonitor.stopLoop()
 ```
 
-- 日志检验集成效果
-  - 开启轮询日志，`OOMMonitor: startLoop()`
-  - 超过阈值日志，`OOMMonitor_ThreadOOMTracker: [meet condition] overThresholdCount:1, threadCount: 717`
-  - 触发Dump分析日志，`OOMMonitor: dumpAndAnalysis`
-  - Dump完成日志：`OOMMonitor: end hprof dump`
-  - 开始分析日志：`OOMMonitor: start hprof analysis`
-  - 分析完成日志：`OOMMonitor: heap analysis success, do upload`
+- Check Running Log
+    - start loop，`OOMMonitor: startLoop()`
+    - exceed the threshold，`OOMMonitor_ThreadOOMTracker: [meet condition] overThresholdCount:1, threadCount: 717`
+    - dump triggered，`OOMMonitor: dumpAndAnalysis`
+    - dump ended：`OOMMonitor: end hprof dump`
+    - start hprof analyze：`OOMMonitor: start hprof analysis`
+    - hprof analysis ended ：`OOMMonitor: heap analysis success, do upload`
 
-# FAQ
+# OOMMonitor FAQ
 
-- OOMMonitor 的性能开销如何？
-  - Dump镜像不再阻塞主进程的运行状态，此开销可以忽略
-  - 子进程Dump镜像及分析的耗时，根据镜像大小最大可达3分钟以上，占用一个线程，内存开销通常在200M以内
-  - 综上，建议使用者建立远程开关机制，采样开启
+- How about OOMMonitor performance overhead？
+    - First, dump hprof will no longer froze the process 
+    - But, dump and analysis in the sub process may compute above 3 minutes which up to heap file size, and this will use one cpu thread and 200m memory maximum
+    - So，a remote switch and a sample rate is suggested
 
-- 泄露是如何判定的？
-  - 对于Activity和Fragment当对象已经销毁却仍有从GC Root到此对象的引用路径时，认为此对象已经泄露
-    - Activity的销毁判定规则为，
-    - Fragment的销毁判定规则为，
+- What object is considered leaked？
+    - For Activity and Fragment, when object is destroyed but a reference chain to gc root still exist, the object is leaked
+        - Activity destroy judgement rule，mFinished or mDestroyed is true
+        - Fragment destroy judgement rule，mFragmentManager is null and mCalled is true, mCalled is true means the fragment lifecycle callback is done 
 
-- 如何裁剪镜像？
+- How to strip hprof in the dump process to reduced the hprof file size mostly？
 
-  - 普通裁剪dump
+    - simple strip dump
 
-    - ```java
+        - ```java
       new StripHprofHeapDumper().dump(path)
       ```
 
-  - 需要子进程dump
+    - strip dump in the subprocess
 
-    - ```java
+        - ```java
       new ForkStripHeapDumper().dump(path)
       ```
 
-- 裁剪的镜像如何恢复，使得AS Profiler/MAT能够打开？
+- How to refill the stripped hprof， make it available to AS Profiler and MAT？
 
-  - 取出裁剪镜像
+    - fetch the hprof from the device
 
-    - ```shell
+        - ```shell
       adb shell "run-as com.kwai.koom.demo cat 'files/test.hprof'" > ~/temp/test.hprof
       ```
 
-  - 使用`tools/koom-fill-crop.jar`恢复裁剪镜像
+    - Use`tools/koom-fill-crop.jar` to refill the stripped hprof
 
-    - ```shell
+        - ```shell
       java -jar koom-fill-crop.jar test.hprof
       ```
 
-- 分析报告里的引用链如何理解？
+- How to read the report file？
 
-  - 首先，可以查看`HeapReport.java`里的注释
-  - reference：除数组外，均由类名 + 字段名组合而成，其中字段属于此类中含有的字段，引用链的引用关系为：引用链上一层的对象持有了此字段的实例或静态字段声明的引用
-  - referenceType：代表引用类型，可以分别为：
-    - INSTANCE_FIELD：代表引用的是普通字段的实例，表现形式通常为通过等号赋值new出来的对象
-    - ARRARY_ENTRY：代表引用方式为数组中某个index存储对象的实例
-    - STATIC_FIELD：代表引用的是类中声明的静态字段
-  - declaredClass：字段不一定是在类中直接声明的，字段也有可能是从父类中继承的，declaredClass代表了此字段具体是取自那个类。
+    - Please read the comments in the `HeapReport.java`
 
-- 分析报告里混淆的类如何解析、聚合？
+- How to de-obfuscate the report？
 
-  - 此部分代码没有开源，请和每个公司的APM后台相结合
-  - 反混淆可以使用progurad的ReTrace功能
+    - Use proguard ReTrace
