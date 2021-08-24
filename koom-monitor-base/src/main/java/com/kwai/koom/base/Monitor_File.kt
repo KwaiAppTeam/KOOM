@@ -25,12 +25,13 @@ import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 
 /**
- * 压缩时只保留最后一级文件名，不保留路径，不同路径下的重名文件会被覆盖
+ * When compressing, only the last-level file name is retained, and the path is not retained.
+ * Files with the same name under different paths will be overwritten
  */
 const val ZIP_LAST_PATH_NAME = -1
 
 /**
- * 压缩时保留原始目录结构
+ * Keep original directory structure when compressing
  */
 const val ZIP_FULL_PATH_NAME = 0
 
