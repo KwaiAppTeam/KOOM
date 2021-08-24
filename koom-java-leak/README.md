@@ -101,28 +101,28 @@ OOMMonitor.stopLoop()
     - simple strip dump
 
         - ```java
-      new StripHprofHeapDumper().dump(path)
-      ```
+        new StripHprofHeapDumper().dump(path)
+        ```
 
     - strip dump in the subprocess
 
         - ```java
-      new ForkStripHeapDumper().dump(path)
-      ```
+        new ForkStripHeapDumper().dump(path)
+        ```
 
 - How to refill the stripped hprof， make it available to AS Profiler and MAT？
 
     - fetch the hprof from the device
 
         - ```shell
-      adb shell "run-as com.kwai.koom.demo cat 'files/test.hprof'" > ~/temp/test.hprof
-      ```
+        adb shell "run-as com.kwai.koom.demo cat 'files/test.hprof'" > ~/temp/test.hprof
+        ```
 
     - Use`tools/koom-fill-crop.jar` to refill the stripped hprof
 
         - ```shell
-      java -jar koom-fill-crop.jar test.hprof
-      ```
+        java -jar koom-fill-crop.jar test.hprof
+        ```
 
 - How to read the report file？
 
