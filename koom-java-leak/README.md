@@ -100,13 +100,13 @@ OOMMonitor.stopLoop()
 
     - simple strip dump
 
-        - ```java
+        ```java
         new StripHprofHeapDumper().dump(path)
         ```
 
     - strip dump in the subprocess
 
-        - ```java
+        ```java
         new ForkStripHeapDumper().dump(path)
         ```
 
@@ -114,13 +114,13 @@ OOMMonitor.stopLoop()
 
     - fetch the hprof from the device
 
-        - ```shell
+        ```shell
         adb shell "run-as com.kwai.koom.demo cat 'files/test.hprof'" > ~/temp/test.hprof
         ```
 
     - Use`tools/koom-fill-crop.jar` to refill the stripped hprof
 
-        - ```shell
+        ```shell
         java -jar koom-fill-crop.jar test.hprof
         ```
 
