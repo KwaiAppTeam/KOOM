@@ -3,6 +3,7 @@ plugins {
     id 'com.android.library'
 }
 apply from: rootProject.file('gradle/common.gradle')
+apply from: rootProject.file('gradle/mavenCentral-publish.gradle')
 
 android {
     defaultConfig {
@@ -46,4 +47,3 @@ dependencies {
     implementation deps.kotlin.stdlib
 }
 
-apply from: rootProject.file('gradle/mavenCentral-publish.gradle')

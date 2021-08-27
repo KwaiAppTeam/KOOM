@@ -22,7 +22,7 @@ tasks.withType(Javadoc) {
 
 
 ext {
-    PUBLISH_ARTIFACT_ID = "${project.getName()}"           //项目名
+    PUBLISH_ARTIFACT_ID = "${project.getName()}"           //project name
 }
 
 ext["signing.keyId"] = ''
@@ -68,7 +68,6 @@ afterEvaluate {
                     url = POM_URL
                     licenses {
                         license {
-                            //协议类型，一般默认Apache License2.0的话不用改：
                             name = POM_LICENCE_NAME
                             url = POM_LICENCE_URL
                         }
@@ -85,7 +84,7 @@ afterEvaluate {
 
                         connection = POM_SCM_CONNECTION
                         developerConnection = POM_SCM_DEV_CONNECTION
-                        //分支地址：
+                        //branch address：
                         url = POM_SCM_URL
                     }
                     // A slightly hacky fix so that your POM will include any transitive dependencies
