@@ -1,3 +1,5 @@
+中文版本请参看[这里](README.zh-CN.md)
+
 # LeakMonitor Introduction
 Use Native memory leak problem for monitoring application, its core principle
 - hook malloc/free and other memory allocator methods, used to record Native memory allocation metadata "size, stack, address, etc."

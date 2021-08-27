@@ -1,3 +1,5 @@
+中文版本请参看[这里](README.zh-CN.md)
+
 # ThreadLeakMonitor Introduction
 
 Used to monitor the application thread leakage problem, its core principle

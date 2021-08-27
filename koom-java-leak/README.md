@@ -1,3 +1,5 @@
+中文版本请参看[这里](README.zh-CN.md)
+
 # OOMMonitor Introduction
 
 OOMMonitor is designed for solving Android Application's Java memory leak problems，and it's core concepts are:
