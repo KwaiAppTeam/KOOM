@@ -58,6 +58,7 @@ buildscript {
         classpath 'com.novoda:bintray-release:0.9'
         classpath deps.kotlin.gradlePlugin
         classpath deps.androidGradlePlugin
+        classpath "org.jetbrains.dokka:dokka-gradle-plugin:1.4.10.2"
     }
 }
 
@@ -70,6 +71,7 @@ allprojects {
         }
         google()
         jcenter()
+        maven{ url 'https://s01.oss.sonatype.org/service/local/repositories/releases/content/'}
     }
 }
 

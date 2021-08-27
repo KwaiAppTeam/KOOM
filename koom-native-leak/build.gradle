@@ -1,8 +1,8 @@
-
 plugins {
     id 'com.android.library'
 }
 apply from: rootProject.file('gradle/common.gradle')
+apply from: rootProject.file('gradle/mavenCentral-publish.gradle')
 
 android {
     defaultConfig {
@@ -49,3 +49,4 @@ dependencies {
     implementation project(path: ':koom-monitor-base')
     implementation project(path: ':koom-common:kwai-android-base')
 }
+

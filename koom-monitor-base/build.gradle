@@ -2,6 +2,7 @@ plugins {
     id 'com.android.library'
 }
 apply from: rootProject.file('gradle/common.gradle')
+apply from: rootProject.file('gradle/mavenCentral-publish.gradle')
 
 
 android {
@@ -32,3 +33,4 @@ dependencies {
     androidTestImplementation deps.androidx.test.ext
     androidTestImplementation deps.androidx.test.espresso
 }
+

@@ -3,6 +3,7 @@ plugins {
 }
 
 apply from: rootProject.file('gradle/common.gradle')
+apply from: rootProject.file('gradle/mavenCentral-publish.gradle')
 
 android {
 
@@ -59,3 +60,4 @@ dependencies {
     implementation project(path: ':koom-common:kwai-android-base')
     api project(':koom-common:third-party:shark')
 }
+

@@ -3,6 +3,7 @@ plugins {
     id 'kotlin-android'
 }
 apply from: rootProject.file('gradle/common.gradle')
+apply from: rootProject.file('gradle/mavenCentral-publish.gradle')
 
 android {
     defaultConfig {
@@ -44,3 +45,4 @@ dependencies {
     androidTestImplementation deps.androidx.test.ext
     androidTestImplementation deps.androidx.test.espresso
 }
+

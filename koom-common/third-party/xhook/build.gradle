@@ -2,6 +2,8 @@ plugins {
     id 'com.android.library'
 }
 apply from: rootProject.file('gradle/common.gradle')
+apply from: rootProject.file('gradle/jcenter-publish.gradle')
+apply from: rootProject.file('gradle/mavenCentral-publish.gradle')
 
 android {
     defaultConfig {
@@ -44,4 +46,3 @@ dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
 }
 
-apply from: rootProject.file('gradle/jcenter-publish.gradle')
