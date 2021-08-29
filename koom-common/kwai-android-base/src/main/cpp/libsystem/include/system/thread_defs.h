@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-
 #ifndef ANDROID_THREAD_DEFS_H
 #define ANDROID_THREAD_DEFS_H
 

@@ -1,18 +1,21 @@
-// Copyright 2020 Kwai, Inc. All rights reserved.
-
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//         http://www.apache.org/licenses/LICENSE-2.0
-
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-//         limitations under the License.
-
-// Author: Qiushi Xue <xueqiushi@kuaishou.com>
+/*
+ * Copyright (c) 2020. Kwai, Inc. All rights reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *         http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * Created by Qiushi Xue <xueqiushi@kuaishou.com> on 2020.
+ *
+ */
 
 #ifndef APM_ASYNC_SAFE_STL_H
 #define APM_ASYNC_SAFE_STL_H
@@ -48,7 +51,8 @@ using k_ostringstream_cap =
     std::basic_ostringstream<char, std::char_traits<char>, StackAllocator<char, size>>;
 
 /**
- * 注意当容器capacity超出StackAllocator的预设值时会回退为default std::allocator
+ * Note that when the container capacity exceeds the default value of StackAllocator, it will
+ * fall back to default std::allocator.
  */
 template <class _Kty, class _Pr = std::less<_Kty>, class _Alloc = StackAllocator<_Kty, 1024>>
 class k_set : public std::set<_Kty, _Pr, _Alloc> {};

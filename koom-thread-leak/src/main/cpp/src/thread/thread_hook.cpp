@@ -20,8 +20,8 @@
 #include "thread_hook.h"
 
 #include <dlopencb.h>
+#include <kwai_util/kwai_macros.h>
 #include <link.h>
-#include <linux/prctl.h>
 #include <sys/prctl.h>
 #include <syscall.h>
 #include <xhook.h>
@@ -128,7 +128,6 @@ ALWAYS_INLINE void ThreadHooker::HookThreadStart(void *arg) {
     pthread_attr_getdetachstate(&attr, &state);
   }
   int tid = (int)syscall(SYS_gettid);
-
   koom::Log::info(thread_tag, "HookThreadStart %p, %d, %d", self, tid,
                   hookArg->thread_create_arg->stack_time);
   auto info = new HookAddInfo(tid, Util::CurrentTimeNs(), self,

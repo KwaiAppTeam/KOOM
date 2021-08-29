@@ -46,10 +46,6 @@ buildscript {
         maven {
             url 'https://maven.google.com'
         }
-        maven {
-            allowInsecureProtocol = true
-            url 'http://maven.aliyun.com/nexus/content/groups/public/'
-        }
         mavenCentral()
         google()
         jcenter()
@@ -65,10 +61,6 @@ buildscript {
 allprojects {
     repositories {
         maven { url 'https://jitpack.io' }
-        maven {
-            allowInsecureProtocol = true
-            url 'http://maven.aliyun.com/nexus/content/groups/public/'
-        }
         google()
         jcenter()
         maven{ url 'https://s01.oss.sonatype.org/service/local/repositories/releases/content/'}

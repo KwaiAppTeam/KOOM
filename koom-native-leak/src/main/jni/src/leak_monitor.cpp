@@ -23,6 +23,7 @@
 #include <asm/mman.h>
 #include <assert.h>
 #include <dlfcn.h>
+#include <kwai_util/kwai_macros.h>
 #include <log/kcheck.h>
 #include <log/log.h>
 #include <pthread.h>

@@ -23,8 +23,8 @@
 #include <libgen.h>
 #include <log/kcheck.h>
 #include <log/log.h>
-#include <stdlib.h>
 
+#include <cstdlib>
 #include <vector>
 
 #include "android/log.h"
@@ -126,10 +126,10 @@ static bool InstallMonitor(JNIEnv *env, jclass clz, jobjectArray selected_array,
     }
 
     for (jsize i = 0; i < length; i++) {
-      jstring str = reinterpret_cast<jstring>(
+      auto str = reinterpret_cast<jstring>(
           env->GetObjectArrayElement(jobject_array, i));
       const char *data = env->GetStringUTFChars(str, nullptr);
-      ret.push_back(data);
+      ret.emplace_back(data);
       env->ReleaseStringUTFChars(str, data);
     }
 
@@ -212,7 +212,7 @@ static void GetLeakAllocs(JNIEnv *env, jclass, jobject leak_record_map) {
               ? g_memory_map.FormatSymbol(
                     map_entry, leak_alloc->backtrace[i + kNumDropFrame])
               : basename(map_entry->name.c_str());
-      frames.push_back(std::make_pair(static_cast<jlong>(offset), symbol_info));
+      frames.emplace_back(static_cast<jlong>(offset), symbol_info);
     }
 
     if (!leak_alloc->num_backtraces || frames.empty()) {

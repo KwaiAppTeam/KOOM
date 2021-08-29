@@ -8,18 +8,19 @@ project(${TARGET})
 
 cmake_minimum_required(VERSION 3.4.1)
 
-#execute_process(COMMAND rm ${CMAKE_CURRENT_SOURCE_DIR}/src/main/libs/${ANDROID_ABI}/)
-#set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/src/main/libs/${ANDROID_ABI}/)
-
+set(THIRD_PARTY_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../../../koom-common/third-party)
+set(KWAI_ANDROID_BASE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../../../koom-common/kwai-android-base)
 
 include_directories(
-        ${CMAKE_CURRENT_SOURCE_DIR}/../../../../koom-common/third-party/xhook/src/main/cpp/xhook/src/
-        ${CMAKE_CURRENT_SOURCE_DIR}/../../../../koom-common/kwai-android-base/src/main/cpp/include/kwai_linker
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/
+        ${THIRD_PARTY_DIR}/xhook/src/main/cpp/xhook/src/
+        ${KWAI_ANDROID_BASE_DIR}/src/main/cpp/include/
+        ${KWAI_ANDROID_BASE_DIR}/src/main/cpp/liblog/include/
 )
 
 link_directories(
-        ${CMAKE_CURRENT_SOURCE_DIR}/../../../../koom-common/kwai-android-base/libs/${ANDROID_ABI}/
-        ${CMAKE_CURRENT_SOURCE_DIR}/../../../../koom-common/third-party/xhook/src/main/libs/${ANDROID_ABI}/
+        ${KWAI_ANDROID_BASE_DIR}/src/main/libs/${ANDROID_ABI}/
+        ${THIRD_PARTY_DIR}/xhook/src/main/libs/${ANDROID_ABI}/
 )
 
 # Creates and names a library, sets it as either STATIC
@@ -33,7 +34,7 @@ add_library( # Sets the name of the library.
         SHARED
 
         # Provides a relative path to your source file(s).
-        hprof_dump.cpp)
+        native_bridge.cpp hprof_strip.cpp hprof_dump.cpp)
 
 # Searches for a specified prebuilt library and stores the path as a
 # variable. Because CMake includes system libraries in the search path by

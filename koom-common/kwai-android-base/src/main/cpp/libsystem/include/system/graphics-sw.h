@@ -1,5 +1,3 @@
-// Author: Qiushi Xue <xueqiushi@kuaishou.com>
-
 #ifndef SYSTEM_CORE_GRAPHICS_SW_H_
 #define SYSTEM_CORE_GRAPHICS_SW_H_
 

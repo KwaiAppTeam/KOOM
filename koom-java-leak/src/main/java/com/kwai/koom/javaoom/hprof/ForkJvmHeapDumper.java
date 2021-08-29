@@ -20,10 +20,10 @@
 
 package com.kwai.koom.javaoom.hprof;
 
+import java.io.IOException;
+
 import android.os.Build;
 import android.os.Debug;
-
-import java.io.IOException;
 
 import com.kwai.koom.base.MonitorLog;
 
@@ -34,87 +34,65 @@ public class ForkJvmHeapDumper extends HeapDumper {
   public ForkJvmHeapDumper() {
     super();
     if (soLoaded) {
-      initForkDump();
+      init();
     }
   }
 
   @Override
   public boolean dump(String path) {
-    MonitorLog.i(TAG, "start dump ${path}");
+    MonitorLog.i(TAG, "dump " + path);
     if (!soLoaded) {
       MonitorLog.e(TAG, "dump failed caused by so not loaded!");
       return false;
     }
 
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP
-      || Build.VERSION.SDK_INT > Build.VERSION_CODES.R) {
-      MonitorLog.e(TAG, "dump failed caused by version net permitted!");
+        || Build.VERSION.SDK_INT > Build.VERSION_CODES.R) {
+      MonitorLog.e(TAG, "dump failed caused by version not supported!");
       return false;
-    }
-
-    // Compatible with Android 11
-    if (Build.VERSION.SDK_INT == Build.VERSION_CODES.R) {
-      return dumpHprofDataNative(path);
     }
 
     boolean dumpRes = false;
     try {
-      int pid = trySuspendVMThenFork();
+      MonitorLog.i(TAG, "before suspend and fork.");
+      int pid = suspendAndFork();
       if (pid == 0) {
+        // Child process
         Debug.dumpHprofData(path);
-        MonitorLog.i(TAG, "notifyDumped:" + dumpRes);
         exitProcess();
-      } else {
-        resumeVM();
-        dumpRes = waitDumping(pid);
-        MonitorLog.i(TAG, "hprof pid:" + pid + " dumped: " + path);
+      } else if (pid > 0) {
+        // Parent process
+        dumpRes = resumeAndWait(pid);
+        MonitorLog.i(TAG, "notify from pid " + pid);
       }
-
     } catch (IOException e) {
+      MonitorLog.e(TAG, "dump failed caused by " + e.toString());
       e.printStackTrace();
-      MonitorLog.e(TAG, "dump failed caused by IOException!");
     }
     return dumpRes;
   }
 
-  private boolean waitDumping(int pid) {
-    waitPid(pid);
-    return true;
-  }
-
   /**
    * Init before do dump.
-   *
-   * @return init result
    */
-  private native void initForkDump();
+  private native void init();
 
   /**
-   * First do suspend vm, then do fork.
+   * Suspend the whole ART, and then fork a process for dumping hprof.
    *
-   * @return result of fork
+   * @return return value of fork
    */
-  private native int trySuspendVMThenFork();
+  private native int suspendAndFork();
 
   /**
-   * Wait process exit.
+   * Resume the whole ART, and then wait child process to notify.
    *
-   * @param pid waited process.
+   * @param pid pid of child process.
    */
-  private native void waitPid(int pid);
+  private native boolean resumeAndWait(int pid);
 
   /**
    * Exit current process.
    */
   private native void exitProcess();
-
-  /**
-   * Resume the VM.
-   */
-  private native void resumeVM();
-
-  /**
-   * Dump hprof with hidden c++ API
-   */
-  public static native boolean dumpHprofDataNative(String fileName);
 }
