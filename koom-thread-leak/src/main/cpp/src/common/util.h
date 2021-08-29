@@ -20,39 +20,36 @@
 #ifndef APM_UTIL_H
 #define APM_UTIL_H
 
-#include <string>
-#include <set>
-#include "log.h"
-#include <vector>
-#include <map>
-#include <fstream>
-#include <streambuf>
 #include <dirent.h>
 #include <jni.h>
+
+#include <fstream>
+#include <map>
+#include <set>
+#include <streambuf>
+#include <string>
+#include <vector>
+
+#include "log.h"
 
 namespace koom {
 
 class Util {
-
  public:
   static int android_api;
 
-  static void Init() {
-    android_api = android_get_device_api_level();
-  }
+  static void Init() { android_api = android_get_device_api_level(); }
 
-  static int AndroidApi() {
-    return android_api;
-  }
+  static int AndroidApi() { return android_api; }
 
   static timespec CurrentClockTime() {
-    struct timespec now_time{};
+    struct timespec now_time {};
     clock_gettime(CLOCK_MONOTONIC, &now_time);
     return now_time;
   }
 
   static long long CurrentTimeNs() {
-    struct timespec now_time{};
+    struct timespec now_time {};
     clock_gettime(CLOCK_MONOTONIC, &now_time);
     return now_time.tv_sec * 1000000000LL + now_time.tv_nsec;
   }
@@ -67,10 +64,10 @@ class Util {
       prev_pos = ++pos;
     }
 
-    output.push_back(s.substr(prev_pos, pos - prev_pos)); // Last word
+    output.push_back(s.substr(prev_pos, pos - prev_pos));  // Last word
 
     return output;
   }
 };
-}
-#endif //APM_UTIL_H
+}  // namespace koom
+#endif  // APM_UTIL_H

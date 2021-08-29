@@ -17,12 +17,14 @@
  *
  */
 
-#include <jni.h>
 #include "koom.h"
-#include "common/util.h"
+
+#include <jni.h>
+
 #include "common/callstack.h"
-#include "thread/thread_hook.h"
+#include "common/util.h"
 #include "thread/hook_looper.h"
+#include "thread/thread_hook.h"
 
 namespace koom {
 
@@ -38,11 +40,11 @@ long threadLeakDelay;
 
 void Init(JavaVM *vm, _JNIEnv *env) {
   java_vm_ = vm;
-  auto clazz = env->FindClass("com/kwai/performance/overhead/thread/monitor/NativeHandler");
+  auto clazz = env->FindClass(
+      "com/kwai/performance/overhead/thread/monitor/NativeHandler");
   native_handler_class = static_cast<jclass>(env->NewGlobalRef(clazz));
-  java_callback_method = env->GetStaticMethodID(native_handler_class,
-                                                "nativeReport",
-                                                "(Ljava/lang/String;)V");
+  java_callback_method = env->GetStaticMethodID(
+      native_handler_class, "nativeReport", "(Ljava/lang/String;)V");
   Util::Init();
   Log::info("koom", "Init, android api:%d", Util::AndroidApi());
   CallStack::Init();
@@ -72,7 +74,7 @@ void Refresh() {
 
 JNIEnv *GetEnv(bool doAttach) {
   JNIEnv *env = nullptr;
-  int status = java_vm_->GetEnv((void **) &env, JNI_VERSION_1_6);
+  int status = java_vm_->GetEnv((void **)&env, JNI_VERSION_1_6);
   if ((status == JNI_EDETACHED || env == nullptr) && doAttach) {
     status = java_vm_->AttachCurrentThread(&env, nullptr);
     if (status < 0) {
@@ -87,11 +89,12 @@ void JavaCallback(const char *value, bool doAttach) {
   if (env != nullptr && value != nullptr) {
     Log::error("koom", "JavaCallback %d", strlen(value));
     jstring string_value = env->NewStringUTF(value);
-    env->CallStaticVoidMethod(native_handler_class, java_callback_method, string_value);
+    env->CallStaticVoidMethod(native_handler_class, java_callback_method,
+                              string_value);
     Log::info("koom", "JavaCallback finished");
   } else {
     Log::info("koom", "JavaCallback fail no JNIEnv");
   }
 }
 
-}
+}  // namespace koom

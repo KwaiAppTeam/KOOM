@@ -20,24 +20,24 @@
 #ifndef APM_CALLSTACK_H
 #define APM_CALLSTACK_H
 
+#include <fast_unwind/fast_unwind.h>
+#include <unistd.h>
+#include <unwindstack/Unwinder.h>
+
 #include <ostream>
 #include <sstream>
-#include "util.h"
+
 #include "constant.h"
-#include <unistd.h>
-#include <fast_unwind/fast_unwind.h>
-#include <unwindstack/Unwinder.h>
+#include "util.h"
 
 namespace koom {
 
-using dump_java_stack_above_o_ptr = void (*)(void *, std::ostream &os, bool, bool);
+using dump_java_stack_above_o_ptr = void (*)(void *, std::ostream &os, bool,
+                                             bool);
 using dump_java_stack_ptr = void (*)(void *, std::ostream &os);
 
 class CallStack {
-
-  enum Type {
-    java, native
-  };
+  enum Type { java, native };
 
  private:
   static dump_java_stack_above_o_ptr dump_java_stack_above_o;
@@ -67,6 +67,6 @@ class CallStack {
   static void *GetCurrentThread();
 };
 
-}
+}  // namespace koom
 
-#endif //APM_CALLSTACK_H
+#endif  // APM_CALLSTACK_H

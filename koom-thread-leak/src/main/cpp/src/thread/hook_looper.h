@@ -21,7 +21,9 @@
 #define APM_KOOM_THREAD_SRC_MAIN_CPP_SRC_THREAD_HOOK_LOOPER_H_
 
 #include <jni.h>
+
 #include <map>
+
 #include "common/looper.h"
 #include "thread_holder.h"
 namespace koom {
@@ -33,5 +35,5 @@ class HookLooper : public looper {
   void handle(int what, void *data);
   void post(int what, void *data);
 };
-}
-#endif //APM_KOOM_THREAD_SRC_MAIN_CPP_SRC_THREAD_HOOK_LOOPER_H_
+}  // namespace koom
+#endif  // APM_KOOM_THREAD_SRC_MAIN_CPP_SRC_THREAD_HOOK_LOOPER_H_

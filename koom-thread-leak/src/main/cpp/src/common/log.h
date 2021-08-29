@@ -20,16 +20,14 @@
 #ifndef APM_LOG_H
 #define APM_LOG_H
 
-#include <stdio.h>
 #include <android/log.h>
+#include <stdio.h>
 
 namespace koom {
 
 class Log {
  public:
-  enum Type {
-    Info, Error
-  };
+  enum Type { Info, Error };
 
   static void info(const char *tag, const char *format, ...) {
     if (!log_enable) return;
@@ -62,6 +60,6 @@ class Log {
 
   static const int kMaxLogLine = 512;
 };
-}
+}  // namespace koom
 
-#endif //APM_LOG_H
+#endif  // APM_LOG_H

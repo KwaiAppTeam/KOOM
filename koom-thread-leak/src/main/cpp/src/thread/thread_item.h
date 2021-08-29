@@ -24,8 +24,8 @@ namespace koom {
 
 class ThreadItem {
  public:
-  int         id{};
-  int64_t     create_time{};
+  int id{};
+  int64_t create_time{};
   std::string create_call_stack;
   std::string collect_mode{};
   bool thread_detached{};
@@ -40,5 +40,5 @@ class ThreadItem {
   void Clear();
 };
 
-#endif //APM_THREAD_H
+#endif  // APM_THREAD_H
 }

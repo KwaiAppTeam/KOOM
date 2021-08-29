@@ -48,13 +48,14 @@ MemoryAnalyzer::MemoryAnalyzer()
   }
 
   if (android_get_device_api_level() > __ANDROID_API_O__) {
-    get_unreachable_fn_ = reinterpret_cast<GetUnreachableFn>(
-        kwai::linker::DlFcn::dlsym(handle, kGetUnreachableMemoryStringSymbolAboveO));
+    get_unreachable_fn_ =
+        reinterpret_cast<GetUnreachableFn>(kwai::linker::DlFcn::dlsym(
+            handle, kGetUnreachableMemoryStringSymbolAboveO));
   } else {
-    get_unreachable_fn_ = reinterpret_cast<GetUnreachableFn>(
-        kwai::linker::DlFcn::dlsym(handle, kGetUnreachableMemoryStringSymbolBelowO));
+    get_unreachable_fn_ =
+        reinterpret_cast<GetUnreachableFn>(kwai::linker::DlFcn::dlsym(
+            handle, kGetUnreachableMemoryStringSymbolBelowO));
   }
-
 }
 
 MemoryAnalyzer::~MemoryAnalyzer() {

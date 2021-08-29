@@ -30,6 +30,6 @@ namespace Constant {
 
 const static int kMaxCallStackDepth = 18;
 const static int kDlopenSourceInit = 0;
-}
-}
-#endif //APM_RESDETECTOR_CONSTANT_H
+}  // namespace Constant
+}  // namespace koom
+#endif  // APM_RESDETECTOR_CONSTANT_H
