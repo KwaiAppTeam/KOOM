@@ -22,9 +22,10 @@
 #include <hprof_dump.h>
 #include <kwai_linker/kwai_dlfcn.h>
 #include <log/kcheck.h>
-#include <memory>
 #include <sys/prctl.h>
 #include <wait.h>
+
+#include <memory>
 
 #define LOG_TAG "HprofDump"
 
@@ -51,10 +52,12 @@ void HprofDump::Initialize() {
   KCHECKV(handle)
 
   if (android_api_ < __ANDROID_API_R__) {
-    suspend_vm_fnc_ = (void (*)())DlFcn::dlsym(handle, "_ZN3art3Dbg9SuspendVMEv");
+    suspend_vm_fnc_ =
+        (void (*)())DlFcn::dlsym(handle, "_ZN3art3Dbg9SuspendVMEv");
     KFINISHV_FNC(suspend_vm_fnc_, DlFcn::dlclose, handle)
 
-    resume_vm_fnc_ = (void (*)())kwai::linker::DlFcn::dlsym(handle, "_ZN3art3Dbg8ResumeVMEv");
+    resume_vm_fnc_ = (void (*)())kwai::linker::DlFcn::dlsym(
+        handle, "_ZN3art3Dbg8ResumeVMEv");
     KFINISHV_FNC(resume_vm_fnc_, DlFcn::dlclose, handle)
   }
   if (android_api_ == __ANDROID_API_R__) {
@@ -66,19 +69,23 @@ void HprofDump::Initialize() {
         handle, "_ZN3art16ScopedSuspendAllC1EPKcb");
     KFINISHV_FNC(ssa_constructor_fnc_, DlFcn::dlclose, handle)
 
-    ssa_destructor_fnc_ = (void (*)(void *))DlFcn::dlsym(handle, "_ZN3art16ScopedSuspendAllD1Ev");
+    ssa_destructor_fnc_ =
+        (void (*)(void *))DlFcn::dlsym(handle, "_ZN3art16ScopedSuspendAllD1Ev");
     KFINISHV_FNC(ssa_destructor_fnc_, DlFcn::dlclose, handle)
 
-    sgc_constructor_fnc_ = (void (*)(void *, void *, GcCause, CollectorType))DlFcn::dlsym(
-        handle,
-        "_ZN3art2gc23ScopedGCCriticalSectionC1EPNS_6ThreadENS0_7GcCauseENS0_13CollectorTypeE");
+    sgc_constructor_fnc_ =
+        (void (*)(void *, void *, GcCause, CollectorType))DlFcn::dlsym(
+            handle,
+            "_ZN3art2gc23ScopedGCCriticalSectionC1EPNS_6ThreadENS0_"
+            "7GcCauseENS0_13CollectorTypeE");
     KFINISHV_FNC(sgc_constructor_fnc_, DlFcn::dlclose, handle)
 
-    sgc_destructor_fnc_ =
-        (void (*)(void *))DlFcn::dlsym(handle, "_ZN3art2gc23ScopedGCCriticalSectionD1Ev");
+    sgc_destructor_fnc_ = (void (*)(void *))DlFcn::dlsym(
+        handle, "_ZN3art2gc23ScopedGCCriticalSectionD1Ev");
     KFINISHV_FNC(sgc_destructor_fnc_, DlFcn::dlclose, handle)
 
-    mutator_lock_ptr_ = (void **)DlFcn::dlsym(handle, "_ZN3art5Locks13mutator_lock_E");
+    mutator_lock_ptr_ =
+        (void **)DlFcn::dlsym(handle, "_ZN3art5Locks13mutator_lock_E");
     KFINISHV_FNC(mutator_lock_ptr_, DlFcn::dlclose, handle)
 
     exclusive_lock_fnc_ = (void (*)(void *, void *))DlFcn::dlsym(
@@ -101,7 +108,8 @@ pid_t HprofDump::SuspendAndFork() {
   }
   if (android_api_ == __ANDROID_API_R__) {
     void *self = __get_tls()[TLS_SLOT_ART_THREAD_SELF];
-    sgc_constructor_fnc_((void *)sgc_instance_.get(), self, kGcCauseHprof, kCollectorTypeHprof);
+    sgc_constructor_fnc_((void *)sgc_instance_.get(), self, kGcCauseHprof,
+                         kCollectorTypeHprof);
     ssa_constructor_fnc_((void *)ssa_instance_.get(), LOG_TAG, true);
     // avoid deadlock with child process
     exclusive_unlock_fnc_(*mutator_lock_ptr_, self);
@@ -132,8 +140,8 @@ bool HprofDump::ResumeAndWait(pid_t pid) {
   for (;;) {
     if (waitpid(pid, &status, 0) != -1 || errno != EINTR) {
       if (!WIFEXITED(status)) {
-        ALOGE("Child process %d exited with status %d, terminated by signal %d", pid,
-              WEXITSTATUS(status), WTERMSIG(status));
+        ALOGE("Child process %d exited with status %d, terminated by signal %d",
+              pid, WEXITSTATUS(status), WTERMSIG(status));
         return false;
       }
       return true;
@@ -142,5 +150,5 @@ bool HprofDump::ResumeAndWait(pid_t pid) {
   }
 }
 
-} // namespace leak_monitor
-} // namespace kwai
+}  // namespace leak_monitor
+}  // namespace kwai

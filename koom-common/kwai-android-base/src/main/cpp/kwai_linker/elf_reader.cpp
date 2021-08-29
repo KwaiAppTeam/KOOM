@@ -18,16 +18,18 @@
  */
 
 #include "kwai_linker/elf_reader.h"
+
 #include <7zCrc.h>
 #include <Xz.h>
 #include <XzCrc64.h>
 #include <fcntl.h>
 #include <log/log.h>
 #include <string.h>
-#include <string>
 #include <sys/mman.h>
 #include <sys/types.h>
 #include <unistd.h>
+
+#include <string>
 
 namespace kwai {
 namespace linker {
@@ -37,9 +39,17 @@ static const char *kGnuHash = ".gnu.hash";
 static const char *kGnuDebugdata = ".gnu_debugdata";
 
 ElfReader::ElfReader(std::shared_ptr<ElfWrapper> elf_wrapper)
-    : elf_wrapper_(), shdr_table_(nullptr), dynsym_(nullptr), dynstr_(nullptr), symtab_(nullptr),
-      symtab_ent_count_(0), strtab_(nullptr), gnu_debugdata_(nullptr), gnu_debugdata_size_(0),
-      has_elf_hash_(false), has_gnu_hash_(false) {
+    : elf_wrapper_(),
+      shdr_table_(nullptr),
+      dynsym_(nullptr),
+      dynstr_(nullptr),
+      symtab_(nullptr),
+      symtab_ent_count_(0),
+      strtab_(nullptr),
+      gnu_debugdata_(nullptr),
+      gnu_debugdata_size_(0),
+      has_elf_hash_(false),
+      has_gnu_hash_(false) {
   if (!elf_wrapper->IsValid()) {
     return;
   }
@@ -47,7 +57,8 @@ ElfReader::ElfReader(std::shared_ptr<ElfWrapper> elf_wrapper)
 }
 
 bool ElfReader::IsValidElf() {
-  return elf_wrapper_ != nullptr && !memcmp(elf_wrapper_->Start()->e_ident, ELFMAG, SELFMAG);
+  return elf_wrapper_ != nullptr &&
+         !memcmp(elf_wrapper_->Start()->e_ident, ELFMAG, SELFMAG);
 }
 
 bool ElfReader::Init() {
@@ -55,16 +66,16 @@ bool ElfReader::Init() {
     return false;
   }
 
-  shdr_table_ = CheckedOffset<ElfW(Shdr)>(elf_wrapper_->Start()->e_shoff,
-                                          (elf_wrapper_->Start()->e_shnum) *
-                                              (elf_wrapper_->Start()->e_shentsize));
+  shdr_table_ = CheckedOffset<ElfW(Shdr)>(
+      elf_wrapper_->Start()->e_shoff,
+      (elf_wrapper_->Start()->e_shnum) * (elf_wrapper_->Start()->e_shentsize));
   if (!shdr_table_) {
     return false;
   }
 
-  const char *shstr =
-      CheckedOffset<const char>(shdr_table_[elf_wrapper_->Start()->e_shstrndx].sh_offset,
-                                shdr_table_[elf_wrapper_->Start()->e_shstrndx].sh_size);
+  const char *shstr = CheckedOffset<const char>(
+      shdr_table_[elf_wrapper_->Start()->e_shstrndx].sh_offset,
+      shdr_table_[elf_wrapper_->Start()->e_shstrndx].sh_size);
   if (!shstr) {
     return false;
   }
@@ -74,52 +85,57 @@ bool ElfReader::Init() {
       continue;
     }
     switch (shdr_table_[index].sh_type) {
-    case SHT_DYNSYM:
-      dynsym_ = CheckedOffset<ElfW(Sym)>(shdr_table_[index].sh_offset, shdr_table_[index].sh_size);
-      break;
-    case SHT_STRTAB: {
-      const char *tmp_str =
-          CheckedOffset<const char>(shdr_table_[index].sh_offset, shdr_table_[index].sh_size);
-      if (!strcmp(shstr + shdr_table_[index].sh_name, kDynstrName)) {
-        dynstr_ = tmp_str;
-      } else if (!strcmp(shstr + shdr_table_[index].sh_name, kStrtabName)) {
-        strtab_ = tmp_str;
+      case SHT_DYNSYM:
+        dynsym_ = CheckedOffset<ElfW(Sym)>(shdr_table_[index].sh_offset,
+                                           shdr_table_[index].sh_size);
+        break;
+      case SHT_STRTAB: {
+        const char *tmp_str = CheckedOffset<const char>(
+            shdr_table_[index].sh_offset, shdr_table_[index].sh_size);
+        if (!strcmp(shstr + shdr_table_[index].sh_name, kDynstrName)) {
+          dynstr_ = tmp_str;
+        } else if (!strcmp(shstr + shdr_table_[index].sh_name, kStrtabName)) {
+          strtab_ = tmp_str;
+        }
+        break;
       }
-      break;
-    }
-    case SHT_SYMTAB:
-      symtab_ = CheckedOffset<ElfW(Sym)>(shdr_table_[index].sh_offset, shdr_table_[index].sh_size);
-      symtab_ent_count_ = shdr_table_[index].sh_size / shdr_table_[index].sh_entsize;
-      break;
-    case SHT_HASH:
-      BuildHash(
-          CheckedOffset<ElfW(Word)>(shdr_table_[index].sh_offset, shdr_table_[index].sh_size));
-      break;
-    case SHT_PROGBITS:
-      if (!strcmp(shstr + shdr_table_[index].sh_name, kGnuDebugdata)) {
-        gnu_debugdata_ =
-            CheckedOffset<const char>(shdr_table_[index].sh_offset, shdr_table_[index].sh_size);
-        gnu_debugdata_size_ = shdr_table_[index].sh_size;
-      }
-      break;
-    default:
-      if (!strcmp(shstr + shdr_table_[index].sh_name, kGnuHash)) {
-        BuildGnuHash(
-            CheckedOffset<ElfW(Word)>(shdr_table_[index].sh_offset, shdr_table_[index].sh_size));
-      }
-      break;
+      case SHT_SYMTAB:
+        symtab_ = CheckedOffset<ElfW(Sym)>(shdr_table_[index].sh_offset,
+                                           shdr_table_[index].sh_size);
+        symtab_ent_count_ =
+            shdr_table_[index].sh_size / shdr_table_[index].sh_entsize;
+        break;
+      case SHT_HASH:
+        BuildHash(CheckedOffset<ElfW(Word)>(shdr_table_[index].sh_offset,
+                                            shdr_table_[index].sh_size));
+        break;
+      case SHT_PROGBITS:
+        if (!strcmp(shstr + shdr_table_[index].sh_name, kGnuDebugdata)) {
+          gnu_debugdata_ = CheckedOffset<const char>(
+              shdr_table_[index].sh_offset, shdr_table_[index].sh_size);
+          gnu_debugdata_size_ = shdr_table_[index].sh_size;
+        }
+        break;
+      default:
+        if (!strcmp(shstr + shdr_table_[index].sh_name, kGnuHash)) {
+          BuildGnuHash(CheckedOffset<ElfW(Word)>(shdr_table_[index].sh_offset,
+                                                 shdr_table_[index].sh_size));
+        }
+        break;
     }
   }
   return true;
 }
 
-void *ElfReader::LookupSymbol(const char *symbol, ElfW(Addr) load_base, bool only_dynsym) {
+void *ElfReader::LookupSymbol(const char *symbol, ElfW(Addr) load_base,
+                              bool only_dynsym) {
   if (!symbol) {
     return nullptr;
   }
 
   // First lookup from dynsym using hash
-  ElfW(Addr) sym_vaddr = has_gnu_hash_ ? LookupByGnuHash(symbol) : LookupByElfHash(symbol);
+  ElfW(Addr) sym_vaddr =
+      has_gnu_hash_ ? LookupByGnuHash(symbol) : LookupByElfHash(symbol);
   if (sym_vaddr != 0) {
     return reinterpret_cast<void *>(load_base + sym_vaddr);
   }
@@ -152,15 +168,20 @@ void *ElfReader::LookupSymbol(const char *symbol, ElfW(Addr) load_base, bool onl
   return nullptr;
 }
 
-template <class T> T *ElfReader::CheckedOffset(off_t offset, size_t size) {
+template <class T>
+T *ElfReader::CheckedOffset(off_t offset, size_t size) {
   if (!IsValidRange(offset + size)) {
-    ALOGE("illegal offset %lld, ELF start is %p", offset, elf_wrapper_->Start());
+    ALOGE("illegal offset %lld, ELF start is %p", offset,
+          elf_wrapper_->Start());
     return nullptr;
   }
-  return reinterpret_cast<T *>(reinterpret_cast<ElfW(Addr)>(elf_wrapper_->Start()) + offset);
+  return reinterpret_cast<T *>(
+      reinterpret_cast<ElfW(Addr)>(elf_wrapper_->Start()) + offset);
 }
 
-bool ElfReader::IsValidRange(off_t offset) { return offset <= elf_wrapper_->Size(); }
+bool ElfReader::IsValidRange(off_t offset) {
+  return offset <= elf_wrapper_->Size();
+}
 
 void ElfReader::BuildHash(ElfW(Word) * hash_section) {
   if (!hash_section) {
@@ -182,10 +203,12 @@ void ElfReader::BuildGnuHash(ElfW(Word) * gnu_hash_section) {
   gnu_hash_.gnu_nbucket = gnu_hash_section[0];
   gnu_hash_.gnu_maskwords = gnu_hash_section[2];
   gnu_hash_.gnu_shift2 = gnu_hash_section[3];
-  gnu_hash_.gnu_bloom_filter = reinterpret_cast<ElfW(Addr) *>(gnu_hash_section + 4);
-  gnu_hash_.gnu_bucket =
-      reinterpret_cast<ElfW(Word) *>(gnu_hash_.gnu_bloom_filter + gnu_hash_.gnu_maskwords);
-  gnu_hash_.gnu_chain = gnu_hash_.gnu_bucket + gnu_hash_.gnu_nbucket - gnu_hash_section[1];
+  gnu_hash_.gnu_bloom_filter =
+      reinterpret_cast<ElfW(Addr) *>(gnu_hash_section + 4);
+  gnu_hash_.gnu_bucket = reinterpret_cast<ElfW(Word) *>(
+      gnu_hash_.gnu_bloom_filter + gnu_hash_.gnu_maskwords);
+  gnu_hash_.gnu_chain =
+      gnu_hash_.gnu_bucket + gnu_hash_.gnu_nbucket - gnu_hash_section[1];
   gnu_hash_.gnu_maskwords--;
   has_gnu_hash_ = true;
 }
@@ -197,7 +220,8 @@ ElfW(Addr) ElfReader::LookupByElfHash(const char *symbol) {
     return 0;
   }
   uint32_t hash = elf_hash_.Hash(reinterpret_cast<const uint8_t *>(symbol));
-  for (uint32_t n = elf_hash_.bucket[hash % elf_hash_.nbucket]; n != 0; n = elf_hash_.chain[n]) {
+  for (uint32_t n = elf_hash_.bucket[hash % elf_hash_.nbucket]; n != 0;
+       n = elf_hash_.chain[n]) {
     const ElfW(Sym) *sym = dynsym_ + n;
     if (strcmp(dynstr_ + sym->st_name, symbol) == 0) {
       // TODO add log
@@ -257,9 +281,10 @@ bool ElfReader::DecGnuDebugdata(std::string &decompressed_data) {
     dst.resize(dst.size() * 2);
     size_t src_remaining = gnu_debugdata_size_ - src_offset;
     size_t dst_remaining = dst.size() - dst_offset;
-    int res = XzUnpacker_Code(&state, reinterpret_cast<Byte *>(&dst[dst_offset]), &dst_remaining,
-                              reinterpret_cast<const Byte *>(gnu_debugdata_ + src_offset),
-                              &src_remaining, true, CODER_FINISH_ANY, &status);
+    int res = XzUnpacker_Code(
+        &state, reinterpret_cast<Byte *>(&dst[dst_offset]), &dst_remaining,
+        reinterpret_cast<const Byte *>(gnu_debugdata_ + src_offset),
+        &src_remaining, true, CODER_FINISH_ANY, &status);
     if (res != SZ_OK) {
       ALOGE("LZMA decompression failed with error %d", res);
       XzUnpacker_Free(&state);
@@ -277,5 +302,5 @@ bool ElfReader::DecGnuDebugdata(std::string &decompressed_data) {
   decompressed_data = std::move(dst);
   return true;
 }
-} // namespace linker
-} // namespace kwai
+}  // namespace linker
+}  // namespace kwai

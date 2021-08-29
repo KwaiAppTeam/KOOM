@@ -26,9 +26,10 @@
 #include <kwai_linker/kwai_dlfcn.h>
 #include <log/log.h>
 #include <pthread.h>
-#include <string>
 #include <unistd.h>
 #include <wait.h>
+
+#include <string>
 
 #define LOG_TAG "JNIBridge"
 
@@ -41,42 +42,49 @@ extern "C" {
  * JNI bridge for hprof crop
  */
 JNIEXPORT void JNICALL
-Java_com_kwai_koom_javaoom_hprof_StripHprofHeapDumper_initStripDump(JNIEnv *env, jobject jobject) {
+Java_com_kwai_koom_javaoom_hprof_StripHprofHeapDumper_initStripDump(
+    JNIEnv *env, jobject jobject) {
   HprofStrip::HookInit();
 }
 
-JNIEXPORT void JNICALL Java_com_kwai_koom_javaoom_hprof_StripHprofHeapDumper_hprofName(
-    JNIEnv *env, jobject jobject, jstring name) {
+JNIEXPORT void JNICALL
+Java_com_kwai_koom_javaoom_hprof_StripHprofHeapDumper_hprofName(JNIEnv *env,
+                                                                jobject jobject,
+                                                                jstring name) {
   const char *hprofName = env->GetStringUTFChars(name, nullptr);
   HprofStrip::GetInstance().SetHprofName(hprofName);
   env->ReleaseStringUTFChars(name, hprofName);
 }
 
 JNIEXPORT jboolean JNICALL
-Java_com_kwai_koom_javaoom_hprof_StripHprofHeapDumper_isStripSuccess(JNIEnv *env, jobject jobject) {
+Java_com_kwai_koom_javaoom_hprof_StripHprofHeapDumper_isStripSuccess(
+    JNIEnv *env, jobject jobject) {
   return (jboolean)HprofStrip::GetInstance().IsHookSuccess();
 }
 
 /**
  * JNI bridge for hprof dump
  */
-JNIEXPORT void JNICALL Java_com_kwai_koom_javaoom_hprof_ForkJvmHeapDumper_init(JNIEnv *env,
-                                                                               jobject jobject) {
+JNIEXPORT void JNICALL Java_com_kwai_koom_javaoom_hprof_ForkJvmHeapDumper_init(
+    JNIEnv *env, jobject jobject) {
   HprofDump::GetInstance().Initialize();
 }
 
 JNIEXPORT jint JNICALL
-Java_com_kwai_koom_javaoom_hprof_ForkJvmHeapDumper_suspendAndFork(JNIEnv *env, jobject jobject) {
+Java_com_kwai_koom_javaoom_hprof_ForkJvmHeapDumper_suspendAndFork(
+    JNIEnv *env, jobject jobject) {
   return HprofDump::GetInstance().SuspendAndFork();
 }
 
 JNIEXPORT void JNICALL
-Java_com_kwai_koom_javaoom_hprof_ForkJvmHeapDumper_exitProcess(JNIEnv *env, jobject jobject) {
+Java_com_kwai_koom_javaoom_hprof_ForkJvmHeapDumper_exitProcess(
+    JNIEnv *env, jobject jobject) {
   ALOGI("process %d will exit!", getpid());
   _exit(0);
 }
 
-JNIEXPORT jboolean JNICALL Java_com_kwai_koom_javaoom_hprof_ForkJvmHeapDumper_resumeAndWait(
+JNIEXPORT jboolean JNICALL
+Java_com_kwai_koom_javaoom_hprof_ForkJvmHeapDumper_resumeAndWait(
     JNIEnv *env, jobject jobject, jint pid) {
   return HprofDump::GetInstance().ResumeAndWait(pid);
 }
@@ -84,8 +92,9 @@ JNIEXPORT jboolean JNICALL Java_com_kwai_koom_javaoom_hprof_ForkJvmHeapDumper_re
 /**
  * JNI bridge for native handler
  */
-JNIEXPORT jboolean JNICALL Java_com_kwai_koom_javaoom_hprof_NativeHandler_isARM64(JNIEnv *env,
-                                                                                  jclass clazz) {
+JNIEXPORT jboolean JNICALL
+Java_com_kwai_koom_javaoom_hprof_NativeHandler_isARM64(JNIEnv *env,
+                                                       jclass clazz) {
 #if defined(__aarch64__) || defined(__x86_64__)
   return JNI_TRUE;
 #elif defined(__arm__) || defined(__i386__)

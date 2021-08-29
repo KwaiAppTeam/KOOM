@@ -20,7 +20,6 @@
 #include "thread_hook.h"
 
 #include <dlopencb.h>
-#include <link.h>
 #include <kwai_util/kwai_macros.h>
 #include <link.h>
 #include <sys/prctl.h>
@@ -112,7 +111,8 @@ int ThreadHooker::HookThreadCreate(pthread_t *tidp, const pthread_attr_t *attr,
     koom::CallStack::FastUnwind(thread_create_arg->pc,
                                 koom::Constant::kMaxCallStackDepth);
     thread_create_arg->stack_time = Util::CurrentTimeNs() - time;
-    return pthread_create(tidp, attr, reinterpret_cast<void *(*)(void *)>(HookThreadStart),
+    return pthread_create(tidp, attr,
+                          reinterpret_cast<void *(*)(void *)>(HookThreadStart),
                           reinterpret_cast<void *>(hook_arg));
   }
   return pthread_create(tidp, attr, start_rtn, arg);
@@ -128,8 +128,10 @@ ALWAYS_INLINE void ThreadHooker::HookThreadStart(void *arg) {
     pthread_attr_getdetachstate(&attr, &state);
   }
   int tid = (int)syscall(SYS_gettid);
-  koom::Log::info(thread_tag, "HookThreadStart %p, %d, %d", self, tid, hookArg->thread_create_arg->stack_time);
-  auto info = new HookAddInfo(tid, Util::CurrentTimeNs(), self, state == PTHREAD_CREATE_DETACHED,
+  koom::Log::info(thread_tag, "HookThreadStart %p, %d, %d", self, tid,
+                  hookArg->thread_create_arg->stack_time);
+  auto info = new HookAddInfo(tid, Util::CurrentTimeNs(), self,
+                              state == PTHREAD_CREATE_DETACHED,
                               hookArg->thread_create_arg);
 
   sHookLooper->post(ACTION_ADD_THREAD, info);
@@ -140,8 +142,7 @@ ALWAYS_INLINE void ThreadHooker::HookThreadStart(void *arg) {
 }
 
 int ThreadHooker::HookThreadDetach(pthread_t t) {
-  if (!hookEnabled())
-    return pthread_detach(t);
+  if (!hookEnabled()) return pthread_detach(t);
 
   int c_tid = (int)syscall(SYS_gettid);
   koom::Log::info(thread_tag, "HookThreadDetach c_tid:%0x", c_tid);
@@ -152,8 +153,7 @@ int ThreadHooker::HookThreadDetach(pthread_t t) {
 }
 
 int ThreadHooker::HookThreadJoin(pthread_t t, void **return_value) {
-  if (!hookEnabled())
-    return pthread_join(t, return_value);
+  if (!hookEnabled()) return pthread_join(t, return_value);
 
   int c_tid = (int)syscall(SYS_gettid);
   koom::Log::info(thread_tag, "HookThreadJoin c_tid:%0x", c_tid);
@@ -164,8 +164,7 @@ int ThreadHooker::HookThreadJoin(pthread_t t, void **return_value) {
 }
 
 void ThreadHooker::HookThreadExit(void *return_value) {
-  if (!hookEnabled())
-    pthread_exit(return_value);
+  if (!hookEnabled()) pthread_exit(return_value);
 
   koom::Log::info(thread_tag, "HookThreadExit");
   int tid = (int)syscall(SYS_gettid);
@@ -182,4 +181,4 @@ void ThreadHooker::Start() { ThreadHooker::InitHook(); }
 void ThreadHooker::Stop() {}
 
 bool ThreadHooker::hookEnabled() { return isRunning; }
-} // namespace koom
+}  // namespace koom

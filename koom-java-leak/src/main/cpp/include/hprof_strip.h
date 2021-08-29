@@ -21,6 +21,7 @@
 #define KOOM_HPROF_STRIP_H
 
 #include <android-base/macros.h>
+
 #include <memory>
 #include <string>
 
@@ -28,7 +29,7 @@ namespace kwai {
 namespace leak_monitor {
 
 class HprofStrip {
-public:
+ public:
   static HprofStrip &GetInstance();
   static void HookInit();
   int HookOpenInternal(const char *path_name, int flags, ...);
@@ -36,7 +37,7 @@ public:
   bool IsHookSuccess() const;
   void SetHprofName(const char *hprof_name);
 
-private:
+ private:
   HprofStrip();
   ~HprofStrip() = default;
   DISALLOW_COPY_AND_ASSIGN(HprofStrip);
@@ -45,8 +46,8 @@ private:
   static int GetIntFromBytes(const unsigned char *buf, int index);
   static int GetByteSizeFromType(unsigned char basic_type);
 
-  int ProcessHeap(const void *buf, int first_index, int max_len, int heap_serial_no,
-                  int array_serial_no);
+  int ProcessHeap(const void *buf, int first_index, int max_len,
+                  int heap_serial_no, int array_serial_no);
   void reset();
 
   int hprof_fd_;
@@ -64,7 +65,7 @@ private:
   int strip_index_list_pair_[kStripListLength];
 };
 
-} // namespace leak_monitor
-} // namespace kwai
+}  // namespace leak_monitor
+}  // namespace kwai
 
-#endif // KOOM_HPROF_STRIP_H
+#endif  // KOOM_HPROF_STRIP_H
