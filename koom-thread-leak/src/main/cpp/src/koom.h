@@ -21,6 +21,7 @@
 #define APM_KOOM_H
 
 #include <jni.h>
+
 #include "thread/hook_looper.h"
 
 namespace koom {
@@ -43,15 +44,13 @@ extern void Start();
 
 extern void Stop();
 
-extern void Report(JNIEnv *env,
-                   jobject obj,
-                   jstring type);
+extern void Report(JNIEnv *env, jobject obj, jstring type);
 
 extern void Refresh();
 
 JNIEnv *GetEnv(bool doAttach = true);
 
 void JavaCallback(const char *value, bool doAttach = true);
-}
+}  // namespace koom
 
-#endif //APM_KOOM_H
+#endif  // APM_KOOM_H

@@ -24,28 +24,28 @@ namespace koom {
 ThreadItem::ThreadItem() = default;
 
 ThreadItem::ThreadItem(const ThreadItem &threadItem) {
-    this->create_time = threadItem.create_time;
-    this->id = threadItem.id;
-    this->create_call_stack.assign(threadItem.create_call_stack);
-    this->thread_detached = threadItem.thread_detached;
-    this->thread_internal_id = threadItem.thread_internal_id;
-    this->startTime = threadItem.startTime;
-    this->exitTime = threadItem.exitTime;
-    this->thread_reported = threadItem.thread_reported;
-    this->name.assign(threadItem.name);
-    this->collect_mode.assign(threadItem.collect_mode);
+  this->create_time = threadItem.create_time;
+  this->id = threadItem.id;
+  this->create_call_stack.assign(threadItem.create_call_stack);
+  this->thread_detached = threadItem.thread_detached;
+  this->thread_internal_id = threadItem.thread_internal_id;
+  this->startTime = threadItem.startTime;
+  this->exitTime = threadItem.exitTime;
+  this->thread_reported = threadItem.thread_reported;
+  this->name.assign(threadItem.name);
+  this->collect_mode.assign(threadItem.collect_mode);
 }
 
 void ThreadItem::Clear() {
-    this->id = 0;
-    this->create_time = 0;
-    this->create_call_stack.clear();
-    this->thread_internal_id = 0;
-    this->startTime = 0LL;
-    this->thread_detached = false;
-    this->exitTime = 0LL;
-    this->thread_reported = false;
-    this->name.clear();
-    this->collect_mode.clear();
+  this->id = 0;
+  this->create_time = 0;
+  this->create_call_stack.clear();
+  this->thread_internal_id = 0;
+  this->startTime = 0LL;
+  this->thread_detached = false;
+  this->exitTime = 0LL;
+  this->thread_reported = false;
+  this->name.clear();
+  this->collect_mode.clear();
 }
-}
+}  // namespace koom

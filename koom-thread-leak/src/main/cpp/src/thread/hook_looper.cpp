@@ -18,24 +18,21 @@
  */
 
 #include "hook_looper.h"
+
 #include "koom.h"
 #include "loop_item.h"
 namespace koom {
 const char *looper_tag = "koom-hook-looper";
-HookLooper::HookLooper() : looper() {
-  this->holder = new koom::ThreadHolder();
-}
-HookLooper::~HookLooper() {
-  delete this->holder;
-}
+HookLooper::HookLooper() : looper() { this->holder = new koom::ThreadHolder(); }
+HookLooper::~HookLooper() { delete this->holder; }
 void HookLooper::handle(int what, void *data) {
   looper::handle(what, data);
   switch (what) {
     case ACTION_ADD_THREAD: {
       koom::Log::info(looper_tag, "AddThread");
       auto info = static_cast<HookAddInfo *>(data);
-      holder->AddThread(info->tid, info->pthread, info->is_thread_detached, info->time,
-                        info->create_arg);
+      holder->AddThread(info->tid, info->pthread, info->is_thread_detached,
+                        info->time, info->create_arg);
       delete info;
       break;
     }
@@ -68,11 +65,8 @@ void HookLooper::handle(int what, void *data) {
       break;
     }
     default: {
-
     }
   }
 }
-void HookLooper::post(int what, void *data) {
-  looper::post(what, data);
-}
-}
+void HookLooper::post(int what, void *data) { looper::post(what, data); }
+}  // namespace koom

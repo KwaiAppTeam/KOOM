@@ -20,11 +20,12 @@
 #ifndef APM_THREAD_HOOK_H
 #define APM_THREAD_HOOK_H
 
-#include <sys/types.h>
-#include "common/callstack.h"
-#include <pthread.h>
-#include <jni.h>
 #include <android/dlext.h>
+#include <jni.h>
+#include <pthread.h>
+#include <sys/types.h>
+
+#include "common/callstack.h"
 #include "hook_looper.h"
 #include "koom.h"
 
@@ -44,7 +45,8 @@ class ThreadHooker {
   static void HookThreadExit(void *return_value);
   static bool RegisterSo(const std::string &lib, int source);
   static void InitHook();
-  static void DlopenCallback(std::set<std::string> &libs, int source, std::string &sourcelib);
+  static void DlopenCallback(std::set<std::string> &libs, int source,
+                             std::string &sourcelib);
   static void HookLibs(std::set<std::string> &libs, int source);
   static bool hookEnabled();
 };
@@ -55,15 +57,13 @@ class StartRtnArg {
   void *(*start_rtn)(void *);
   ThreadCreateArg *thread_create_arg;
 
-  StartRtnArg(void *arg,
-              long long time,
-              void *(*start_rtn)(void *)) {
+  StartRtnArg(void *arg, long long time, void *(*start_rtn)(void *)) {
     this->arg = arg;
     this->start_rtn = start_rtn;
     thread_create_arg = new ThreadCreateArg();
     thread_create_arg->time = time;
   }
 };
-}
+}  // namespace koom
 
-#endif //APM_THREAD_HOOK_H
+#endif  // APM_THREAD_HOOK_H

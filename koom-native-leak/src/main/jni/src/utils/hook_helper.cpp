@@ -62,7 +62,8 @@ bool HookHelper::HookImpl() {
     for (auto &method : methods_) {
       if (xhook_register(pattern.c_str(), method.first.c_str(), method.second,
                          nullptr) != EXIT_SUCCESS) {
-        ALOGE("xhook_register pattern %s method %s fail", pattern.c_str(), method.first.c_str());
+        ALOGE("xhook_register pattern %s method %s fail", pattern.c_str(),
+              method.first.c_str());
         pthread_mutex_unlock(&DlopenCb::hook_mutex);
         return false;
       }
@@ -72,7 +73,8 @@ bool HookHelper::HookImpl() {
   for (auto &pattern : ignore_pattern_) {
     for (auto &method : methods_) {
       if (xhook_ignore(pattern.c_str(), method.first.c_str()) != EXIT_SUCCESS) {
-        ALOGE("xhook_ignore pattern %s method %s fail", pattern.c_str(), method.first.c_str());
+        ALOGE("xhook_ignore pattern %s method %s fail", pattern.c_str(),
+              method.first.c_str());
         pthread_mutex_unlock(&DlopenCb::hook_mutex);
         return false;
       }

@@ -38,16 +38,12 @@ class ThreadCreateArg {
   std::ostringstream java_stack;
   uintptr_t pc[koom::Constant::kMaxCallStackDepth]{};
   ThreadCreateArg() {}
-  ~ThreadCreateArg() {
-    memset(pc, 0, sizeof(pc));
-  }
+  ~ThreadCreateArg() { memset(pc, 0, sizeof(pc)); }
 };
 
 struct SimpleHookInfo {
   long long time;
-  SimpleHookInfo(long long time) {
-    this->time = time;
-  }
+  SimpleHookInfo(long long time) { this->time = time; }
 };
 struct HookInfo {
   pthread_t thread_id;
@@ -78,12 +74,8 @@ struct HookAddInfo {
   bool is_thread_detached;
   ThreadCreateArg *create_arg;
 
-  HookAddInfo(int tid,
-              long long time,
-              pthread_t pthread,
-              bool isThreadDetached,
-              ThreadCreateArg *thread_create_arg
-  ) {
+  HookAddInfo(int tid, long long time, pthread_t pthread, bool isThreadDetached,
+              ThreadCreateArg *thread_create_arg) {
     this->tid = tid;
     this->time = time;
     this->pthread = pthread;
@@ -91,5 +83,5 @@ struct HookAddInfo {
     this->create_arg = thread_create_arg;
   };
 };
-}
-#endif //KOOM_KOOM_THREAD_LEAK_SRC_MAIN_CPP_SRC_THREAD_LOOP_ITEM_H_
+}  // namespace koom
+#endif  // KOOM_KOOM_THREAD_LEAK_SRC_MAIN_CPP_SRC_THREAD_LOOP_ITEM_H_
