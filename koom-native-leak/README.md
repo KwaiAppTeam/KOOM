@@ -21,7 +21,7 @@ repositories {
 - Add dependency in project app/build.gradle
 ```groovy
 dependencies {
-    implementation "com.kuaishou.koom:koom-native-leak:2.0.0"
+    implementation "com.kuaishou.koom:koom-native-leak:${latest_version}"
 }
 ```
 ## Code usage

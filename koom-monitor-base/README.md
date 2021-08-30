@@ -13,7 +13,7 @@ repositories {
 - Add dependency in project app/build.gradle
 ```groovy
 dependencies {
-    implementation "com.kuaishou.koom:koom-monitor-base:2.0.0"
+    implementation "com.kuaishou.koom:koom-monitor-base:${latest_version}"
 }
 ```
 ## Code usage

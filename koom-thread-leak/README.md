@@ -13,10 +13,17 @@ Used to monitor the application thread leakage problem, its core principle
 
 # ThreadLeakMonitor access
 ## Dependent configuration
+- Add mavenCentral to the repositories of the project root directory build.gradle
 ```groovy
-......
+repositories {
+    mavenCentral()
+}
+```
+
+- Add dependency in project app/build.gradle
+```groovy
 dependencies {
-  ......
+    implementation "com.kuaishou.koom:koom-thread-leak:${latest_version}"
 }
 ```
 ## use
