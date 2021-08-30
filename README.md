@@ -12,7 +12,7 @@ KOOM creates a mobile high performance online memory monitoring solution，which
 With the increasing complexity of mobile terminal business logic and the gradual popularity of scenarios with high memory requirements such as 4K codec and AR magic watch, the OOM problem has become the number one problem in the stability management of the Kuaishou client. 
 In the daily version iteration process, OOM surges occasionally occur, and the online environment is very complicated. There are thousands of AB experiments. Pre-prevention and post-recovery cannot be achieved. Therefore, high-performance online memory monitoring solutions are urgently needed.
 
-So how should OOM governance be built? At present, KOOM has the capability of monitoring leakage of Java Heap/Native Heap/Thread, and will build multi-business scenarios and multi-dimensional "32/64; virtual memory/physical memory" monitoring in the future.
+So how should OOM governance be built? At present, KOOM has the capability of monitoring leakage of Java Heap/Native Heap/Thread, and will build multi-dimensional and multi-business scenarios monitoring in the future.
 
 ## Features
 
