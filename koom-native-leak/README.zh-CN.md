@@ -11,45 +11,46 @@
 
 # LeakMonitor 接入
 ## 依赖配置
+- 项目根目录 build.gradle 中增加 mavenCentral
 ```groovy
-......
+repositories {
+    mavenCentral()
+}
+```
+- 项目 app/build.gradle 中增加依赖
+```groovy
 dependencies {
-  ......
+    implementation "com.kuaishou.koom:koom-native-leak:2.0.0"
 }
 ```
 ## 使用
-- 初始化 MonitorManager
-
+- 初始化 MonitorManager, 参考[这里](../koom-monitor-base/README.zh-CN.md)
 由于 LeakMonitor 依赖 MonitorManager，确保 MonitorManager 已经初始化
 
 - 初始化 LeakMonitor
 ```java
-......
 LeakMonitorConfig config = new LeakMonitorConfig.Builder()
-    .setLoopInterval(50000) // 设置轮训的间隔
-    .setLeakItemThreshold(200) // 收集泄漏的native对象的上限
-    .setMonitorThreshold(16) // 设置监听的最小内存值
-    .setNativeHeapAllocatedThreshold(0) // 设置native heap分配的内存达到多少阈值开始监控
+    .setLoopInterval(50000) // 设置轮训的间隔，单位：毫秒
+    .setMonitorThreshold(16) // 设置监听的最小内存值，单位：字节
+    .setNativeHeapAllocatedThreshold(0) // 设置native heap分配的内存达到多少阈值开始监控，单位：字节
     .setSelectedSoList(new String[0]) // 不设置是监控所有， 设置是监听特定的so,  比如监控libcore.so 填写 libcore 不带.so
     .setIgnoredSoList(new String[0]) // 设置需要忽略监控的so
+    .setEnableLocalSymbolic(false) // 设置使能本地符号化，仅在 debuggable apk 下有用，release 请关闭
     .setLeakListener(leaks -> { }) // 设置泄漏监听器
     .build();
 MonitorManager.addMonitorConfig(config);
-......
 ```
 - 启动 LeakMonitor，开始周期性的检测泄漏
 ```java
-......
-LeakMonitor.INSTANCE.start()
-......
+LeakMonitor.INSTANCE.start();
 ```
 - 停止 LeakMonitor，通常不用主动停止
 ```java
-LeakMonitor.INSTANCE.stop()
+LeakMonitor.INSTANCE.stop();
 ```
 - 主动获取泄漏，在`LeakListener`中接收到泄漏信息；通常不需要主动检查
 ```java
-LeakMonitor.INSTANCE.checkLeaks()
+LeakMonitor.INSTANCE.checkLeaks();
 ```
 # FAQ
 - 为什么不支持 Android N 以下的设备？
