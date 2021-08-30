@@ -8,9 +8,13 @@ KOOM(Kwai OOM, Kill OOM)是快手性能优化团队在处理移动端OOM问题�
 
 ## KOOM 功能
 ### Java Heap 泄漏监控
+- `koom-java-leak` 模块用于 Java Heap 泄漏监控：它利用 Copy-on-write 机制 fork 子进程 dump Java Heap，解决了 
+  dump 过程中 app 长时间冻结的问题，详情参考[这里](./koom-java-leak/README.zh-CN.md)
 ### Native Heap 泄漏监控
-- `koom-native-leak` 模块是 Native Heap 泄漏监控方案：利用 [Tracing garbage collection](https://en.wikipedia.org/wiki/Tracing_garbage_collection) 机制分析整个 Native Heap，直接输出泄漏内存信息「大小、分配堆栈等』；极大的降低了业务同学分析、解决内存泄漏的成本。详情可以参考[这里](./koom-native-leak/README.md)
+- `koom-native-leak` 模块用于 Native Heap 泄漏监控：它利用 [Tracing garbage collection](https://en.wikipedia.
+  org/wiki/Tracing_garbage_collection) 机制分析整个 Native Heap，直接输出泄漏内存信息「大小、分配堆栈等』；极大的降低了业务同学分析、解决内存泄漏的成本。详情可以参考[这里](./koom-native-leak/README.zh-CN.md)
 ### Thread 泄漏监控
+- `koom-thread-leak` 模块用于 Thread 泄漏监控：它会 hook 线程的生命周期函数，周期性的上报泄漏线程信息。详情参考[这里](./koom-thread-leak/README.zh-CN.md)
 
 ## License
 
@@ -29,9 +33,12 @@ KOOM 以 Apache-2.0 证书开源，详情参见 [LICENSE](./LICENSE)。
 ## 联系我们
 
 **项目负责人**<br>
-[alhah(薛秋实)](https://github.com/alhah)<br>
+[alhah(薛秋实)](https://github.com/alhah) <br>
 
 **项目核心成员**<br>
-[alhah(薛秋实)](https://github.com/alhah) <br>[AndroidInternal(李锐)](https://github.com/AndroidInternal)<br>
+[alhah(薛秋实)](https://github.com/alhah) <br>
+[AndroidInternal(李锐)](https://github.com/AndroidInternal) <br>
+[lbtrace(王连宝)](https://github.com/lbtrace) <br>
+[shenvsv(沈冠初)](https://github.com/shenvsv) <br>
 **微信讨论群**
 <img src=./doc/images/wechat.jpg/>。

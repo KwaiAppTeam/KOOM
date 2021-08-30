@@ -17,23 +17,15 @@ So how should OOM governance be built? At present, KOOM has the capability of mo
 ## Features
 
 ### Java Leak Monitor
-
+- The `koom-java-leak` module is used for Java Heap leak monitoring: it uses the Copy-on-write 
+mechanism to fork the child process dump Java Heap, which solves the problem.
+The app freezes for a long time during the dump. For details, please refer to [here](./koom-java-leak/README.md)
 ### Native Leak Monitor
 - The `koom-native-leak` module is a Native Heap leak monitoring solution: use the [Tracing garbage collection](https://en.wikipedia.org/wiki/Tracing_garbage_collection) mechanism to analyze the entire Native Heap, and directly output the leaked memory information like: size/Allocating stacks/etc.; 
   greatly reduces the cost of analyzing and solving memory leaks for business students. For details, please refer to [here](./koom-native-leak/README.md)
 ### Thread Leak Monitor
-
-### Custom Feature
-
-See wiki [Advanced Custom Feature](https://github.com/KwaiAppTeam/KOOM/wiki/Advanced-Custom-Feature)
-
-### Compatibility
-
-See wiki [Compatibility](https://github.com/KwaiAppTeam/KOOM/wiki/Compatibility)
-
-### FAQ
-
-See wiki [FAQ](https://github.com/KwaiAppTeam/KOOM/wiki/FAQ)
+- The `koom-thread-leak` module is used for Thread leak monitoring: it hooks the life cycle 
+  function of the thread, and periodically reports the leaked thread information. For details, please refer to [here](./koom-thread-leak/README.md)
 
 ## License
 KOOM is under the Apache license 2.0. For details check out the [LICENSE](./LICENSE).

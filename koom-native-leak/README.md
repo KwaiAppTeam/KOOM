@@ -11,18 +11,35 @@ Use Native memory leak problem for monitoring application, its core principle
 
 # LeakMonitor Getting Started
 ## Setup dependencies
+- Add mavenCentral to the repositories of the project root directory build.gradle
+```groovy
+repositories {
+    mavenCentral()
+}
+```
+
+- Add dependency in project app/build.gradle
+```groovy
+dependencies {
+    implementation "com.kuaishou.koom:koom-native-leak:2.0.0"
+}
+```
 ## Code usage
-- Initialize MonitorManager
+- Initialize MonitorManager, please reference [here](../koom-monitor-base/README.md)
+  
+Since LeakMonitor depends on MonitorManager, make sure that MonitorManager has been initialized  
 - Initialize LeakMonitor
 ```java
 ......
 LeakMonitorConfig config = new LeakMonitorConfig.Builder()
-    .setLoopInterval(50000) // Set polling interval
-    .setLeakItemThreshold(200) // The limit of collecting leaked native objects
-    .setMonitorThreshold(16) // Set the threshold of the monitored memory block
-    .setNativeHeapAllocatedThreshold(0) // Set the threshold of how much memory allocated by the native heap reaches to start monitoring
+    .setLoopInterval(50000) // Set polling interval, time unit: millisecond
+    .setMonitorThreshold(16) // Set the threshold of the monitored memory block, unit: byte
+    .setNativeHeapAllocatedThreshold(0) // Set the threshold of how much memory allocated by the 
+native heap reaches to start monitoring, unit: byte
     .setSelectedSoList(new String[0]) // Set the monitor specific libraries, such as monitoring libcore.so, just write 'libcore'
     .setIgnoredSoList(new String[0]) // Set the libraries that you need to ignore monitoring
+    .setEnableLocalSymbolic(false) // Set enable local symbolic, this is helpful in debug mode. 
+    Not enable in release mode
     .setLeakListener(leaks -> { }) // Set leak listener for receive leak records
     .build();
 MonitorManager.addMonitorConfig(config);
