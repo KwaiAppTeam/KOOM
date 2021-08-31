@@ -21,13 +21,17 @@ OOMMonitor is designed for solving Android Application's Java memory leak proble
 
 ## dependencies
 
+- Add mavenCentral to the repositories of the project root directory build.gradle
 ```groovy
-......
+repositories {
+    mavenCentral()
+}
+```
 
+- Add dependency in project app/build.gradle
+```groovy
 dependencies {
-
- ......
-
+    implementation "com.kuaishou.koom:koom-java-leak:${latest_version}"
 }
 ```
 

@@ -11,10 +11,16 @@
 
 # ThreadLeakMonitor 接入
 ## 依赖配置
+- 项目根目录 build.gradle 中增加 mavenCentral
 ```groovy
-......
+repositories {
+    mavenCentral()
+}
+```
+- 项目 app/build.gradle 中增加依赖
+```groovy
 dependencies {
-  ......
+  implementation "com.kuaishou.koom:koom-thread-leak:${latest_version}"
 }
 ```
 ## 使用

@@ -12,7 +12,7 @@ repositories {
 - 项目 app/build.gradle 中增加依赖
 ```groovy
 dependencies {
-    implementation "com.kuaishou.koom:koom-monitor-base:2.0.0"
+    implementation "com.kuaishou.koom:koom-monitor-base:${latest_version}"
 }
 ```
 ## 代码初始化

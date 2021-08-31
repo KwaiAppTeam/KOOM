@@ -20,7 +20,7 @@ repositories {
 - 项目 app/build.gradle 中增加依赖
 ```groovy
 dependencies {
-    implementation "com.kuaishou.koom:koom-native-leak:2.0.0"
+    implementation "com.kuaishou.koom:koom-native-leak:${latest_version}"
 }
 ```
 ## 使用
