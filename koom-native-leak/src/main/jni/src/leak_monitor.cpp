@@ -128,7 +128,7 @@ bool LeakMonitor::Install(std::vector<std::string> *selected_list,
   }
 
   std::vector<const std::string> register_pattern = {"^/data/.*\\.so$"};
-  std::vector<const std::string> ignore_pattern = {".*/libnative-oom.so$",
+  std::vector<const std::string> ignore_pattern = {".*/libkoom-native.so$",
                                                    ".*/libxhook_lib.so$"};
 
   if (ignore_list != nullptr) {

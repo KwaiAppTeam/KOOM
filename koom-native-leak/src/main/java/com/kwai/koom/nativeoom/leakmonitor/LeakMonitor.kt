@@ -67,7 +67,7 @@ object LeakMonitor : LoopMonitor<LeakMonitorConfig>() {
       MonitorLog.e(TAG, "Native LeakMonitor NOT running in below Android N or Arm 32 bit app")
       return
     }
-    if (!loadSoQuietly("native-oom")) return
+    if (!loadSoQuietly("koom-native")) return
 
     super.init(commonConfig, monitorConfig)
   }

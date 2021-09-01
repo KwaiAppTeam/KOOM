@@ -4,7 +4,7 @@
 # Sets the minimum version of CMake required to build the native library.
 cmake_minimum_required(VERSION 3.6)
 
-set(TARGET native-oom)
+set(TARGET koom-native)
 set(THIRD_PARTY_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../../../koom-common/third-party)
 set(KWAI_ANDROID_BASE_DIR ${CMAKE_SOURCE_DIR}/../../../../koom-common/kwai-android-base)
 

@@ -10,16 +10,17 @@ task androidSourcesJar(type: Jar) {
     }
     classifier 'sources'
 }
+
 task javadocJar(type: Jar) {
     archiveClassifier.set("javadoc")
     classifier "javadoc"
 }
+
 tasks.withType(Javadoc) {
     options.addStringOption('Xdoclint:none', '-quiet')
     options.addStringOption('encoding', 'UTF-8')
     options.addStringOption('charSet', 'UTF-8')
 }
-
 
 ext {
     PUBLISH_ARTIFACT_ID = "${project.getName()}"           //project name
@@ -42,6 +43,7 @@ if (secretPropsFile.exists()) {
 } else {
     println "No props file, loading env vars"
 }
+
 afterEvaluate {
     publishing {
         publications {
@@ -76,7 +78,6 @@ afterEvaluate {
                         developer {
                             id = POM_DEVELOPER_ID
                             name = POM_DEVELOPER_NAME
-                            email = POM_DEVELOPER_EMAIL
                         }
                     }
                     // Version control info, if you're using GitHub, follow the format as seen here
@@ -92,9 +93,9 @@ afterEvaluate {
                     withXml {
                         def dependenciesNode = asNode().appendNode('dependencies')
                         project.configurations.implementation.allDependencies.each {
-                            if(it.group != null){
+                            if (it.group != null) {
                                 def dependencyNode = dependenciesNode.appendNode('dependency')
-                                if((it.group).contains(rootProject.name)) {
+                                if ((it.group).contains(rootProject.name)) {
                                     dependencyNode.appendNode('groupId', GROUP)
                                     dependencyNode.appendNode('artifactId', it.name)
                                     dependencyNode.appendNode('version', VERSION_NAME)
