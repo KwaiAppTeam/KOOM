@@ -40,15 +40,15 @@ buildscript {
     ]
 
     repositories {
+        mavenLocal()
+        mavenCentral()
         maven {
             url 'https://plugins.gradle.org/m2/'
         }
         maven {
             url 'https://maven.google.com'
         }
-        mavenCentral()
         google()
-        jcenter()
     }
     dependencies {
         classpath 'com.novoda:bintray-release:0.9'
@@ -60,9 +60,10 @@ buildscript {
 
 allprojects {
     repositories {
+        mavenLocal()
+        mavenCentral()
         maven { url 'https://jitpack.io' }
         google()
-        jcenter()
         maven{ url 'https://s01.oss.sonatype.org/service/local/repositories/releases/content/'}
     }
 }

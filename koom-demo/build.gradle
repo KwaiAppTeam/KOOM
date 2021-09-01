@@ -46,10 +46,10 @@ dependencies {
     implementation deps.androidx.constraintlayout
     implementation deps.material
     implementation deps.kotlin.stdlib
-//    implementation "com.kuaishou.koom:koom-native-leak:1.0.1"
-//    implementation "com.kuaishou.koom:koom-monitor-base:1.0.1"
-//    implementation "com.kuaishou.koom:koom-java-leak:1.0.1"
-//    implementation "com.kuaishou.koom:koom-thread-leak:1.0.1"
+//    implementation "com.kuaishou.koom:koom-native-leak:${VERSION_NAME}"
+//    implementation "com.kuaishou.koom:koom-monitor-base:${VERSION_NAME}"
+//    implementation "com.kuaishou.koom:koom-java-leak:${VERSION_NAME}"
+//    implementation "com.kuaishou.koom:koom-thread-leak:${VERSION_NAME}"
     implementation project(path: ':koom-monitor-base')
     implementation project(path: ':koom-native-leak')
     implementation project(path: ':koom-java-leak')
