@@ -17,9 +17,8 @@
 #ifndef KOOM_KWAI_ANDROID_BASE_SRC_MAIN_CPP_INCLUDE_KWAI_LINKER_ELF_WRAPPER_H_
 #define KOOM_KWAI_ANDROID_BASE_SRC_MAIN_CPP_INCLUDE_KWAI_LINKER_ELF_WRAPPER_H_
 
-#include <log/log.h>
 #include <fcntl.h>
-#include <unistd.h>
+#include <log/log.h>
 #include <sys/mman.h>
 #include <sys/types.h>
 #include <unistd.h>
@@ -29,13 +28,12 @@ namespace linker {
 class ElfWrapper {
  public:
   ElfWrapper() : start_(nullptr), size_(0) {}
-  virtual bool IsValid() {return false;}
-  ElfW(Ehdr) *Start() {
-    return reinterpret_cast<ElfW(Ehdr) *>(start_);
-  }
-  size_t Size() {
-    return size_;
-  }
+  virtual ~ElfWrapper() {}
+
+  virtual bool IsValid() { return false; }
+  ElfW(Ehdr) * Start() { return reinterpret_cast<ElfW(Ehdr) *>(start_); }
+  size_t Size() { return size_; }
+
  protected:
   void *start_;
   size_t size_;
@@ -62,7 +60,8 @@ class FileElfWrapper : public ElfWrapper {
       return;
     }
 
-    start_ = reinterpret_cast<ElfW(Ehdr) *>(mmap(0, size_, PROT_READ, MAP_SHARED, fd_, 0));
+    start_ = reinterpret_cast<ElfW(Ehdr) *>(
+        mmap(0, size_, PROT_READ, MAP_SHARED, fd_, 0));
     if (start_ == MAP_FAILED) {
       ALOGE("mmap size %d fail, errno %d", size_, errno);
       return;
@@ -78,9 +77,7 @@ class FileElfWrapper : public ElfWrapper {
     }
   }
 
-  bool IsValid() {
-    return fd_ >= 0 && start_ != MAP_FAILED && size_ > 0;
-  }
+  bool IsValid() { return fd_ >= 0 && start_ != MAP_FAILED && size_ > 0; }
 
  private:
   int fd_;
@@ -100,12 +97,11 @@ class MemoryElfWrapper : public ElfWrapper {
     size_ = elf_data_.size();
   }
 
-  bool IsValid() {
-    return start_ && size_ > 0;
-  }
+  bool IsValid() { return start_ && size_ > 0; }
+
  private:
   std::string elf_data_;
 };
-} // namespace linker
-} // namespace kwai
-#endif // KOOM_KWAI_ANDROID_BASE_SRC_MAIN_CPP_INCLUDE_KWAI_LINKER_ELF_WRAPPER_H_
+}  // namespace linker
+}  // namespace kwai
+#endif  // KOOM_KWAI_ANDROID_BASE_SRC_MAIN_CPP_INCLUDE_KWAI_LINKER_ELF_WRAPPER_H_

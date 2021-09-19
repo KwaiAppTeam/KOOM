@@ -580,7 +580,7 @@ ssize_t HprofStrip::HookWriteInternal(int fd, const void *buf, size_t count) {
         (unsigned char)((unsigned int)record_length & 0x000000ffu);
   }
 
-  ssize_t total_write = 0;
+  size_t total_write = 0;
   int start_index = 0;
   for (int i = 0; i < strip_index_; i++) {
     // 将裁剪掉的区间，通过写时过滤掉
@@ -590,7 +590,7 @@ ssize_t HprofStrip::HookWriteInternal(int fd, const void *buf, size_t count) {
       total_write += write(fd, write_buf, write_len);
     } else if (write_len < 0) {
       __android_log_print(ANDROID_LOG_ERROR, LOG_TAG,
-                          "HookWrite array i:%d writeLen<0:%lu", i, write_len);
+                          "HookWrite array i:%d writeLen<0:%zu", i, write_len);
     }
     start_index = strip_index_list_pair_[i * 2 + 1];
   }

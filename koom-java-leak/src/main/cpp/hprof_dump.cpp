@@ -27,6 +27,7 @@
 
 #include <memory>
 
+#undef LOG_TAG
 #define LOG_TAG "HprofDump"
 
 using namespace kwai::linker;

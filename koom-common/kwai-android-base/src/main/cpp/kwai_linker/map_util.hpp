@@ -189,6 +189,7 @@ class MapUtil {
       }
       addr += sizeof(phdr);
     }
+    return false;
   }
 
   static bool EndsWith(const char *target, const char *suffix) {
