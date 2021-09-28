@@ -8,12 +8,28 @@ android {
         applicationId "com.kwai.koom.demo"
         versionCode 1
         versionName "1.0"
+
+        externalNativeBuild {
+            cmake {
+                abiFilters 'armeabi-v7a', 'arm64-v8a', 'x86', 'x86_64'
+                arguments '-DANDROID_TOOLCHAIN=clang', '-DANDROID_STL=c++_shared', '-DCMAKE_VERBOSE_MAKEFILE=ON'
+                cppFlags '-Wl,--gc-sections', '-fno-exceptions', '-fno-rtti', '-fvisibility=hidden'
+                cFlags '-Wl,--gc-sections', '-fvisibility=hidden'
+            }
+        }
     }
 
     buildTypes {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    externalNativeBuild {
+        cmake {
+            path 'src/main/jni/CMakeLists.txt'
+            version '3.18.1'
         }
     }
 
@@ -26,10 +42,19 @@ android {
 }
 
 dependencies {
-    implementation project(':java-oom')
     implementation deps.androidx.appcompat
     implementation deps.androidx.constraintlayout
     implementation deps.material
+    implementation deps.kotlin.stdlib
+//    implementation "com.kuaishou.koom:koom-native-leak:${VERSION_NAME}"
+//    implementation "com.kuaishou.koom:koom-monitor-base:${VERSION_NAME}"
+//    implementation "com.kuaishou.koom:koom-java-leak:${VERSION_NAME}"
+//    implementation "com.kuaishou.koom:koom-thread-leak:${VERSION_NAME}"
+    implementation project(path: ':koom-monitor-base')
+    implementation project(path: ':koom-native-leak')
+    implementation project(path: ':koom-java-leak')
+    implementation project(path: ':koom-thread-leak')
+
     testImplementation deps.junit
     androidTestImplementation deps.androidx.test.ext
     androidTestImplementation deps.androidx.test.espresso

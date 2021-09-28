@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+  xmlns:tools="http://schemas.android.com/tools"
+  android:layout_width="match_parent"
+  android:layout_height="match_parent"
+  tools:context="com.kwai.koom.demo.MainActivity">
+
+  <Button
+    android:id="@+id/btn_start_monitor"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:text="Start Native Leak Monitor"
+    android:layout_centerInParent="true" />
+
+  <Button
+    android:id="@+id/btn_trigger_leaks"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_below="@id/btn_start_monitor"
+    android:layout_centerInParent="true"
+    android:text="Trigger Native Leaks" />
+
+  <Button
+    android:id="@+id/btn_check_leaks"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_below="@id/btn_trigger_leaks"
+    android:layout_centerInParent="true"
+    android:text="Check Leaks" />
+
+  <Button
+    android:id="@+id/btn_stop_monitor"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_below="@id/btn_check_leaks"
+    android:layout_centerInParent="true"
+    android:text="Stop Native Leak Monitor" />
+</RelativeLayout>

@@ -1,4 +1,8 @@
 <resources>
   <string name="app_name">OOM Killer</string>
-  <string name="test_report_leak">Test Report Leak</string>
+  <string name="test_java_leak">Test Java Leak</string>
+  <string name="start_java_leak">Start Java Leak</string>
+  <string name="java_leak_hint">1.See OOMonitor tag log\n\n2.Use OOMHprofUploader\n\n3.OOMReportUploader</string>
+  <string name="test_hprof_dump">Test hprof strip</string>
+  <string name="hprof_dump_hint">1.See the log, fetch hprof file from local data path\n\n2.Use jar of tools/koom-fill-crop.jar refill the original hprof</string>
 </resources>

@@ -1,17 +1,4 @@
-package com.kwai.koom.demo;
-
-import android.os.Bundle;
-import android.os.Handler;
-import android.view.View;
-import android.widget.Button;
-import android.widget.TextView;
-import androidx.appcompat.app.AppCompatActivity;
-
-import com.kwai.koom.demo.leaked.LeakMaker;
-import com.kwai.koom.javaoom.KOOM;
-import com.kwai.koom.javaoom.KOOMProgressListener;
-
-/**
+/*
  * Copyright 2020 Kwai, Inc. All rights reserved.
  * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -28,70 +15,40 @@ import com.kwai.koom.javaoom.KOOMProgressListener;
  *
  * @author Rui Li <lirui05@kuaishou.com>
  */
+
+package com.kwai.koom.demo;
+
+import android.os.Bundle;
+import android.view.View;
+import android.widget.Button;
+import android.widget.TextView;
+import androidx.appcompat.app.AppCompatActivity;
+
+import com.kwai.koom.base.Monitor_SoKt;
+import com.kwai.koom.demo.javaleak.JavaLeakTestActivity;
+import com.kwai.koom.demo.javaleak.test.LeakMaker;
+import com.kwai.koom.demo.nativeleak.NativeLeakTestActivity;
+import com.kwai.koom.demo.threadleak.ThreadLeakTest;
+import com.kwai.koom.demo.threadleak.ThreadLeakTestActivity;
+
 public class MainActivity extends AppCompatActivity {
 
-  private Button reportButton;
-  private TextView reportText;
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
     setContentView(R.layout.activity_main);
 
-    reportButton = findViewById(R.id.btn_report_leak);
-    reportText = findViewById(R.id.tv_report_status);
-
-    findViewById(R.id.btn_report_leak).setOnClickListener(v -> {
-      reportButton.setVisibility(View.GONE);
-      reportText.setVisibility(View.VISIBLE);
-
-      LeakMaker.makeLeak(MainActivity.this);
-
-      testReport();
+    findViewById(R.id.btn_java_leak).setOnClickListener(v -> {
+      JavaLeakTestActivity.start(MainActivity.this);
     });
 
+    findViewById(R.id.btn_test_native_leak).setOnClickListener(v -> {
+      NativeLeakTestActivity.start(MainActivity.this);
+    });
+
+    findViewById(R.id.btn_test_thread_leak).setOnClickListener(v -> {
+      ThreadLeakTestActivity.Companion.start(MainActivity.this);
+    });
   }
-
-  private void changeStatusText(KOOMProgressListener.Progress progress) {
-    mainHandler.post(() -> chanStatusTextInMain(progress));
-  }
-
-  private void chanStatusTextInMain(KOOMProgressListener.Progress progress) {
-    String text = "";
-    switch (progress) {
-      case HEAP_DUMP_START:
-        text = "heap dump started";
-        break;
-      case HEAP_DUMPED:
-        text = "heap dump ended";
-        break;
-      case HEAP_DUMP_FAILED:
-        text = "heap dump failed";
-        break;
-      case HEAP_ANALYSIS_START:
-        text = "heap analysis start";
-        break;
-      case HEAP_ANALYSIS_DONE:
-        text = "heap analysis done, please check report in " + KOOM.getInstance().getReportDir();
-        break;
-      case HEAP_ANALYSIS_FAILED:
-        text = "heap analysis failed";
-        break;
-      default:
-        break;
-    }
-    reportText.setText(text);
-  }
-
-  private Handler mainHandler;
-  private static final String TAG = "KOOM";
-
-  public void testReport() {
-    mainHandler = new Handler();
-    mainHandler.postDelayed(() -> {
-      KOOM.getInstance().manualTrigger();
-      KOOM.getInstance().setProgressListener(this::changeStatusText);
-    }, 1500);
-  }
-
 }

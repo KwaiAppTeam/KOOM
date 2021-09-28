@@ -1,0 +1,49 @@
+
+plugins {
+    id 'com.android.library'
+}
+apply from: rootProject.file('gradle/common.gradle')
+apply from: rootProject.file('gradle/mavenCentral-publish.gradle')
+
+android {
+    defaultConfig {
+        versionCode 1
+        versionName "1.0"
+
+        consumerProguardFiles "consumer-rules.pro"
+
+        externalNativeBuild {
+            cmake {
+                abiFilters 'arm64-v8a'
+                arguments '-DANDROID_STL=c++_shared'
+                cppFlags "-std=c++17", "-Wl,--gc-sections", "-fexceptions", "-fno-rtti", "-fvisibility=hidden", "-flto"
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    externalNativeBuild {
+        cmake {
+            path "src/main/cpp/CMakeLists.txt"
+            version '3.18.1'
+        }
+    }
+}
+
+dependencies {
+    implementation deps.gson
+    implementation deps.androidx.appcompat
+    implementation deps.androidx.constraintlayout
+    implementation deps.material
+    implementation project(path: ':koom-monitor-base')
+    implementation project(path: ':koom-common:kwai-android-base')
+    implementation project(path: ':koom-common:kwai-unwind')
+    implementation deps.kotlin.stdlib
+}
+

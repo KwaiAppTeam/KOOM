@@ -9,101 +9,23 @@ An OOM killer on mobile platform by Kwai.
 
 KOOM creates a mobile high performance online memory monitoring solution，which supplies a detailed report when OOM related problems are detected, and has solved a large number of OOM issues in the Kwai application. It's currently available on **Android**.
 
-## Highlights
+With the increasing complexity of mobile terminal business logic and the gradual popularity of scenarios with high memory requirements such as 4K codec and AR magic watch, the OOM problem has become the number one problem in the stability management of the Kuaishou client. 
+In the daily version iteration process, OOM surges occasionally occur, and the online environment is very complicated. There are thousands of AB experiments. Pre-prevention and post-recovery cannot be achieved. Therefore, high-performance online memory monitoring solutions are urgently needed.
 
-### High Performance
-KOOM blocks the application less than 100ms by forking child process to dump hprof, it also has an efficient leak detect module and a fast hprof analysis module.
+So how should OOM governance be built? At present, KOOM has the capability of monitoring leakage of Java Heap/Native Heap/Thread, and will build multi-dimensional and multi-business scenarios monitoring in the future.
 
-### High Reliability
-KOOM's performance and stability have withstood the test of hundreds of millions of  number of users and devices.
+## Features
 
-### Less Code
-You just need to init KOOM,  and it will take care of other things for you. Advanced custom config is also supported.
-
-
-## Getting started
-
-### First look of koom-demo
-
-Try to run the koom-demo project first, and have a general understanding of the functionality provided by KOOM.
-
-### Gradle dependencies
-
-```gradle
-dependencies {
-    implementation 'com.kwai.koom:java-oom:1.1.0'
-}
-```
-
-### Quick Tutorial
-You can setup KOOM as soon as you want to start memory monitoring, to setup on App startup, you can do like this:
-
-```Java
-public class KOOMApplication extends Application {
-
-    @Override
-    public void onCreate() {
-        super.onCreate();
-        KOOM.init(this);
-    }
-
-}
-```
-
-### Java-oom Heap Report
-
-Heap dump and analysis is executed automatically.
-
-When the java heap is over the threshold by heap monitor, the heap dump and heap analysis is triggered then.
-
-A java-oom heap report will be generated when heap analysis done.
-
-Find a time to get the report manually.
-```Java
-public void getReportManually() {
-    File reportDir = new File(KOOM.getInstance().getReportDir());
-    for (File report : reportDir.listFiles()) {
-        // Upload the report or do something else.
-    }
-}
-```
-
-Or set a listener to listen and get the report file status.
-```Java
-public void listenReportGenerateStatus() {
-    KOOM.getInstance().setHeapReportUploader(file -> {
-        // Upload the report or do something else.
-        // File is deleted automatically when callback is done by default.
-    });
-}
-```
-
-### JAVA8 Requirements
-```gradle
-compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_8
-        targetCompatibility JavaVersion.VERSION_1_8
-    }
-```
-
-### Custom Feature
-
-See wiki [Advanced Custom Feature](https://github.com/KwaiAppTeam/KOOM/wiki/Advanced-Custom-Feature)
-
-### Compatibility
-
-See wiki [Compatibility](https://github.com/KwaiAppTeam/KOOM/wiki/Compatibility)
-
-### FAQ
-
-See wiki [FAQ](https://github.com/KwaiAppTeam/KOOM/wiki/FAQ)
-
-## Performance
-Randomly dump hprof of real users online, and the time consumed by normal dump and for dump blocking users is as follows:
-
-<img src="https://github.com/KwaiAppTeam/KOOM/wiki/images/android_benchmark.png" width="500">
-
-For more detail, please refer to [our benchmark](https://github.com/KwaiAppTeam/KOOM/wiki/android_benchmark).
+### Java Leak Monitor
+- The `koom-java-leak` module is used for Java Heap leak monitoring: it uses the Copy-on-write 
+mechanism to fork the child process dump Java Heap, which solves the problem.
+The app freezes for a long time during the dump. For details, please refer to [here](./koom-java-leak/README.md)
+### Native Leak Monitor
+- The `koom-native-leak` module is a Native Heap leak monitoring solution: use the [Tracing garbage collection](https://en.wikipedia.org/wiki/Tracing_garbage_collection) mechanism to analyze the entire Native Heap, and directly output the leaked memory information like: size/Allocating stacks/etc.; 
+  greatly reduces the cost of analyzing and solving memory leaks for business students. For details, please refer to [here](./koom-native-leak/README.md)
+### Thread Leak Monitor
+- The `koom-thread-leak` module is used for Thread leak monitoring: it hooks the life cycle 
+  function of the thread, and periodically reports the leaked thread information. For details, please refer to [here](./koom-thread-leak/README.md)
 
 ## License
 KOOM is under the Apache license 2.0. For details check out the [LICENSE](./LICENSE).
