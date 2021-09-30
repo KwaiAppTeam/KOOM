@@ -21,6 +21,7 @@ repositories {
 ```groovy
 dependencies {
   implementation "com.kuaishou.koom:koom-thread-leak:${latest_version}"
+  implementation "com.kuaishou.koom:xhook:${latest_version}"
 }
 ```
 ## 使用
