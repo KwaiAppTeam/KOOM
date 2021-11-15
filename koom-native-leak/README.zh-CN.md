@@ -1,6 +1,6 @@
 # LeakMonitor 介绍
 
-用于监控应用的 Native 内存泄漏问题，它的核心原理
+用于监控应用的 Native 内存泄漏问题，它的核心原理如下，详情可参考 [libmemunreachable 实现](https://android.googlesource.com/platform/system/memory/libmemunreachable/+/master/README.md)
 - hook malloc/free 等内存分配器方法，用于记录 Native 内存分配元数据「大小、堆栈、地址等」
 - 周期性的使用 mark-and-sweep 分析整个进程 Native Heap，获取不可达的内存块信息「地址、大小」
 - 利用不可达的内存块的地址、大小等从我们记录的元数据中获取其分配堆栈，产出泄漏数据「不可达内存块地址、大小、分配堆栈等」
