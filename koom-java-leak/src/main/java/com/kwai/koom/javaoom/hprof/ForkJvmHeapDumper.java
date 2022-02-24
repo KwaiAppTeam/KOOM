@@ -54,7 +54,7 @@ public class ForkJvmHeapDumper extends HeapDumper {
     }
 
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP
-        || Build.VERSION.SDK_INT > Build.VERSION_CODES.R) {
+        || Build.VERSION.SDK_INT > Build.VERSION_CODES.S) {
       MonitorLog.e(TAG, "dump failed caused by version not supported!");
       return false;
     }

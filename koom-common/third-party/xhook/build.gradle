@@ -2,7 +2,6 @@ plugins {
     id 'com.android.library'
 }
 apply from: rootProject.file('gradle/common.gradle')
-apply from: rootProject.file('gradle/jcenter-publish.gradle')
 apply from: rootProject.file('gradle/mavenCentral-publish.gradle')
 
 android {
@@ -14,7 +13,7 @@ android {
             cmake {
                 abiFilters 'armeabi-v7a', 'arm64-v8a', 'x86', 'x86_64'
                 arguments '-DANDROID_TOOLCHAIN=clang', '-DANDROID_STL=c++_shared', '-DCMAKE_VERBOSE_MAKEFILE=ON'
-                cppFlags '-Wl,--gc-sections', '-fno-exceptions', '-fno-rtti', '-fvisibility=hidden'
+                cppFlags '-Wl,--gc-sections', '-fno-exceptions', '-fno-rtti', '-fvisibility=hidden', '-flto'
                 cFlags '-Wl,--gc-sections', '-fvisibility=hidden'
             }
         }

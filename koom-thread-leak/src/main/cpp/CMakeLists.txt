@@ -8,8 +8,9 @@ set(KWAI_UNWIND_DIR ${CMAKE_SOURCE_DIR}/../../../../koom-common/kwai-unwind)
 
 project(${TARGET})
 
-# Sets the minimum version of CMake required to build the native library.
+add_compile_options(-Oz)
 
+# Sets the minimum version of CMake required to build the native library.
 cmake_minimum_required(VERSION 3.4.1)
 
 include_directories(

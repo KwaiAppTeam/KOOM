@@ -9,7 +9,7 @@ project(${TARGET})
 # Sets the minimum version of CMake required to build the native library.
 cmake_minimum_required(VERSION 3.4.1)
 
-add_compile_options(-Wall -Wextra -Wexit-time-destructors -DDEXFILE_SUPPORT -oz)
+add_compile_options(-Wall -Wextra -Wexit-time-destructors -DDEXFILE_SUPPORT -Oz)
 
 include_directories(
         ${CMAKE_SOURCE_DIR}/include
