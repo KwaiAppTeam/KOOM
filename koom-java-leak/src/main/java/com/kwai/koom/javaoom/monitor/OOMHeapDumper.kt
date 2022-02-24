@@ -19,11 +19,7 @@
 package com.kwai.koom.javaoom.monitor
 
 import com.kwai.koom.base.MonitorLog
-import com.kwai.koom.javaoom.hprof.ForkJvmHeapDumper
-import com.kwai.koom.javaoom.hprof.ForkStripHeapDumper
-import com.kwai.koom.javaoom.hprof.HeapDumper
-import com.kwai.koom.javaoom.hprof.StandardHeapDumper
-import com.kwai.koom.javaoom.hprof.StripHprofHeapDumper
+import com.kwai.koom.javaoom.hprof.*
 import com.kwai.koom.javaoom.monitor.utils.SizeUnit
 import java.util.*
 
@@ -43,13 +39,15 @@ object OOMHeapDumper {
 
       val end = System.currentTimeMillis()
 
-      MonitorLog.i(TAG, "dump hprof complete," +
-          " dumpTime:" + (end - start) +
-          " fileName:" + hprofFile.name +
-          " origin fileSize:" + SizeUnit.BYTE.toMB(hprofFile.length()) +
-          " JVM max memory:" + SizeUnit.BYTE.toMB(Runtime.getRuntime().maxMemory()) +
-          " JVM  free memory:" + SizeUnit.BYTE.toMB(Runtime.getRuntime().freeMemory()) +
-          " JVM total memory:" + SizeUnit.BYTE.toMB(Runtime.getRuntime().totalMemory()), true)
+      MonitorLog.i(
+        TAG, "dump hprof complete," +
+            " dumpTime:" + (end - start) +
+            " fileName:" + hprofFile.name +
+            " origin fileSize:" + SizeUnit.BYTE.toMB(hprofFile.length()) +
+            " JVM max memory:" + SizeUnit.BYTE.toMB(Runtime.getRuntime().maxMemory()) +
+            " JVM  free memory:" + SizeUnit.BYTE.toMB(Runtime.getRuntime().freeMemory()) +
+            " JVM total memory:" + SizeUnit.BYTE.toMB(Runtime.getRuntime().totalMemory()), true
+      )
     } catch (e: Throwable) {
       e.printStackTrace()
 
@@ -66,7 +64,7 @@ object OOMHeapDumper {
   @JvmStatic
   fun forkDump() {
     MonitorLog.i(TAG, "forkDump")
-    dump(ForkJvmHeapDumper())
+    dump(ForkJvmHeapDumper.getInstance())
   }
 
   @JvmStatic

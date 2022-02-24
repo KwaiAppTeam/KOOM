@@ -28,10 +28,17 @@ import android.os.Debug;
 import com.kwai.koom.base.MonitorLog;
 
 public class ForkJvmHeapDumper extends HeapDumper {
-
   private static final String TAG = "OOMMonitor_ForkJvmHeapDumper";
 
-  public ForkJvmHeapDumper() {
+  private static class Holder {
+    private static final ForkJvmHeapDumper INSTANCE = new ForkJvmHeapDumper();
+  }
+
+  public static ForkJvmHeapDumper getInstance() {
+    return ForkJvmHeapDumper.Holder.INSTANCE;
+  }
+
+  private ForkJvmHeapDumper() {
     super();
     if (soLoaded) {
       init();
