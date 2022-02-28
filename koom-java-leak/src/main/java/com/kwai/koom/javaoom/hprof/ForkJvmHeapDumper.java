@@ -28,10 +28,17 @@ import android.os.Debug;
 import com.kwai.koom.base.MonitorLog;
 
 public class ForkJvmHeapDumper extends HeapDumper {
-
   private static final String TAG = "OOMMonitor_ForkJvmHeapDumper";
 
-  public ForkJvmHeapDumper() {
+  private static class Holder {
+    private static final ForkJvmHeapDumper INSTANCE = new ForkJvmHeapDumper();
+  }
+
+  public static ForkJvmHeapDumper getInstance() {
+    return ForkJvmHeapDumper.Holder.INSTANCE;
+  }
+
+  private ForkJvmHeapDumper() {
     super();
     if (soLoaded) {
       init();
@@ -47,7 +54,7 @@ public class ForkJvmHeapDumper extends HeapDumper {
     }
 
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP
-        || Build.VERSION.SDK_INT > Build.VERSION_CODES.R) {
+        || Build.VERSION.SDK_INT > Build.VERSION_CODES.S) {
       MonitorLog.e(TAG, "dump failed caused by version not supported!");
       return false;
     }

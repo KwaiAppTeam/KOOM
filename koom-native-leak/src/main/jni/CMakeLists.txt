@@ -8,6 +8,8 @@ set(TARGET koom-native)
 set(THIRD_PARTY_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../../../koom-common/third-party)
 set(KWAI_ANDROID_BASE_DIR ${CMAKE_SOURCE_DIR}/../../../../koom-common/kwai-android-base)
 
+add_compile_options(-Oz)
+
 project(${TARGET})
 
 include_directories(

@@ -8,7 +8,7 @@ project(${TARGET})
 
 cmake_minimum_required(VERSION 3.4.1)
 
-add_compile_options(-Wall -Wextra -Werror -Wno-unused-command-line-argument)
+add_compile_options(-Wall -Wextra -Werror -Wno-unused-command-line-argument -Oz)
 
 set(THIRD_PARTY_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../../../koom-common/third-party)
 set(KWAI_ANDROID_BASE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../../../koom-common/kwai-android-base)

@@ -36,7 +36,7 @@ public class ForkStripHeapDumper extends HeapDumper {
       stripHprofHeapDumper.initStripDump();
       stripHprofHeapDumper.hprofName(path);
 
-      ForkJvmHeapDumper forkJvmHeapDumper = new ForkJvmHeapDumper();
+      ForkJvmHeapDumper forkJvmHeapDumper = ForkJvmHeapDumper.getInstance();
       dumpRes = forkJvmHeapDumper.dump(path);
       MonitorLog.e(TAG, "dump end");
     } catch (Exception e) {

@@ -60,7 +60,14 @@
 #include <stdint.h>
 #include <sys/cdefs.h>
 
+/**
+ * Temporarily resolve compilation conflicts caused by __INTRODUCED_IN strict behavior change
+ */
+#ifdef __BIONIC_AVAILABILITY
+#undef __BIONIC_AVAILABILITY
+#define __BIONIC_AVAILABILITY(__what) __attribute__((__availability__(android,__what)))
 #include <android/log.h>
+#endif
 
 #if !defined(__BIONIC__) && !defined(__INTRODUCED_IN)
 #define __INTRODUCED_IN(x)
@@ -71,7 +78,7 @@ extern "C" {
 #endif
 
 /**
- * remove duplicate with NDK
+ * Remove duplicate with NDK
  */
 
 /**
@@ -87,7 +94,7 @@ extern "C" {
  *
  * Available since API level 30.
  */
-void __android_log_write_log_message(struct __android_log_message *log_message) __INTRODUCED_IN(30);
+void __android_log_write_log_message(struct __android_log_message *log_message);
 
 /**
  * Sets a user defined logger function.  All log messages sent to liblog will be set to the
@@ -99,7 +106,7 @@ void __android_log_write_log_message(struct __android_log_message *log_message) 
  *
  * Available since API level 30.
  */
-void __android_log_set_logger(__android_logger_function logger) __INTRODUCED_IN(30);
+void __android_log_set_logger(__android_logger_function logger);
 
 /**
  * Writes the log message to logd.  This is an __android_logger_function and can be provided to
@@ -109,7 +116,7 @@ void __android_log_set_logger(__android_logger_function logger) __INTRODUCED_IN(
  *
  * Available since API level 30.
  */
-void __android_log_logd_logger(const struct __android_log_message *log_message) __INTRODUCED_IN(30);
+void __android_log_logd_logger(const struct __android_log_message *log_message);
 
 /**
  * Writes the log message to stderr.  This is an __android_logger_function and can be provided to
@@ -120,7 +127,7 @@ void __android_log_logd_logger(const struct __android_log_message *log_message) 
  * Available since API level 30.
  */
 void __android_log_stderr_logger(const struct __android_log_message *log_message)
-    __INTRODUCED_IN(30);
+   ;
 
 /**
  * Sets a user defined aborter function that is called for __android_log_assert() failures.  This
@@ -131,7 +138,7 @@ void __android_log_stderr_logger(const struct __android_log_message *log_message
  *
  * Available since API level 30.
  */
-void __android_log_set_aborter(__android_aborter_function aborter) __INTRODUCED_IN(30);
+void __android_log_set_aborter(__android_aborter_function aborter);
 
 /**
  * Calls the stored aborter function.  This allows for other logging libraries to use the same
@@ -142,7 +149,7 @@ void __android_log_set_aborter(__android_aborter_function aborter) __INTRODUCED_
  *
  * Available since API level 30.
  */
-void __android_log_call_aborter(const char *abort_message) __INTRODUCED_IN(30);
+void __android_log_call_aborter(const char *abort_message);
 
 /**
  * Sets android_set_abort_message() on device then aborts().  This is the default aborter.
@@ -152,8 +159,7 @@ void __android_log_call_aborter(const char *abort_message) __INTRODUCED_IN(30);
  *
  * Available since API level 30.
  */
-void __android_log_default_aborter(const char *abort_message) __attribute__((noreturn))
-__INTRODUCED_IN(30);
+void __android_log_default_aborter(const char *abort_message) __attribute__((noreturn));
 
 /**
  * Use the per-tag properties "log.tag.<tagname>" along with the minimum priority from
@@ -172,7 +178,7 @@ __INTRODUCED_IN(30);
  *
  * Available since API level 30.
  */
-int __android_log_is_loggable(int prio, const char *tag, int default_prio) __INTRODUCED_IN(30);
+int __android_log_is_loggable(int prio, const char *tag, int default_prio);
 
 /**
  * Use the per-tag properties "log.tag.<tagname>" along with the minimum priority from
@@ -192,8 +198,7 @@ int __android_log_is_loggable(int prio, const char *tag, int default_prio) __INT
  *
  * Available since API level 30.
  */
-int __android_log_is_loggable_len(int prio, const char *tag, size_t len, int default_prio)
-    __INTRODUCED_IN(30);
+int __android_log_is_loggable_len(int prio, const char *tag, size_t len, int default_prio);
 
 /**
  * Sets the minimum priority that will be logged for this process.
@@ -204,7 +209,7 @@ int __android_log_is_loggable_len(int prio, const char *tag, size_t len, int def
  *
  * Available since API level 30.
  */
-int32_t __android_log_set_minimum_priority(int32_t priority) __INTRODUCED_IN(30);
+int32_t __android_log_set_minimum_priority(int32_t priority);
 
 /**
  * Gets the minimum priority that will be logged for this process.  If none has been set by a
@@ -215,7 +220,7 @@ int32_t __android_log_set_minimum_priority(int32_t priority) __INTRODUCED_IN(30)
  *
  * Available since API level 30.
  */
-int32_t __android_log_get_minimum_priority(void) __INTRODUCED_IN(30);
+int32_t __android_log_get_minimum_priority(void);
 
 /**
  * Sets the default tag if no tag is provided when writing a log message.  Defaults to
@@ -226,7 +231,7 @@ int32_t __android_log_get_minimum_priority(void) __INTRODUCED_IN(30);
  *
  * Available since API level 30.
  */
-void __android_log_set_default_tag(const char *tag) __INTRODUCED_IN(30);
+void __android_log_set_default_tag(const char *tag);
 
 #ifdef __cplusplus
 }

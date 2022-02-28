@@ -16,7 +16,7 @@ android {
             cmake {
                 abiFilters 'arm64-v8a'
                 arguments '-DANDROID_TOOLCHAIN=clang', '-DANDROID_STL=c++_static', '-DCMAKE_VERBOSE_MAKEFILE=ON'
-                cppFlags '-Wl,--gc-sections', '-fno-exceptions', '-fno-rtti', '-fvisibility=hidden'
+                cppFlags '-Wl,--gc-sections', '-fno-exceptions', '-fno-rtti', '-fvisibility=hidden', '-flto'
                 cFlags '-Wl,--gc-sections', '-fvisibility=hidden'
             }
         }

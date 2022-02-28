@@ -20,46 +20,30 @@ package com.kwai.koom.javaoom.monitor
 
 import android.os.Build
 import android.os.SystemClock
-
-import java.io.File
-import java.util.*
-
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.LifecycleOwner
-
-import com.kwai.koom.base.CommonConfig
-import com.kwai.koom.base.Logger
-import com.kwai.koom.base.MonitorBuildConfig
-import com.kwai.koom.base.MonitorLog
-import com.kwai.koom.base.MonitorLogger
+import com.kwai.koom.base.*
 import com.kwai.koom.base.MonitorManager.getApplication
-import com.kwai.koom.base.async
-import com.kwai.koom.base.currentActivity
-import com.kwai.koom.base.isForeground
-import com.kwai.koom.base.isMainProcess
 import com.kwai.koom.base.loop.LoopMonitor
-import com.kwai.koom.base.registerProcessLifecycleObserver
-
 import com.kwai.koom.javaoom.hprof.ForkJvmHeapDumper
 import com.kwai.koom.javaoom.monitor.OOMFileManager.hprofAnalysisDir
 import com.kwai.koom.javaoom.monitor.OOMFileManager.manualDumpDir
 import com.kwai.koom.javaoom.monitor.analysis.AnalysisExtraData
 import com.kwai.koom.javaoom.monitor.analysis.AnalysisReceiver
 import com.kwai.koom.javaoom.monitor.analysis.HeapAnalysisService
-import com.kwai.koom.javaoom.monitor.tracker.FastHugeMemoryOOMTracker
-import com.kwai.koom.javaoom.monitor.tracker.FdOOMTracker
-import com.kwai.koom.javaoom.monitor.tracker.HeapOOMTracker
-import com.kwai.koom.javaoom.monitor.tracker.PhysicalMemoryOOMTracker
-import com.kwai.koom.javaoom.monitor.tracker.ThreadOOMTracker
+import com.kwai.koom.javaoom.monitor.tracker.*
 import com.kwai.koom.javaoom.monitor.tracker.model.SystemInfo
+import java.io.File
+import java.util.*
 
 object OOMMonitor : LoopMonitor<OOMMonitorConfig>(), LifecycleEventObserver {
   private const val TAG = "OOMMonitor"
 
   private val mOOMTrackers = mutableListOf(
-      HeapOOMTracker(), ThreadOOMTracker(), FdOOMTracker(),
-      PhysicalMemoryOOMTracker(), FastHugeMemoryOOMTracker())
+    HeapOOMTracker(), ThreadOOMTracker(), FdOOMTracker(),
+    PhysicalMemoryOOMTracker(), FastHugeMemoryOOMTracker()
+  )
   private val mTrackReasons = mutableListOf<String>()
 
   private var mMonitorInitTime = 0L
@@ -127,7 +111,8 @@ object OOMMonitor : LoopMonitor<OOMMonitorConfig>(), LifecycleEventObserver {
 
   override fun call(): LoopState {
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP
-        || Build.VERSION.SDK_INT > Build.VERSION_CODES.R) {
+      || Build.VERSION.SDK_INT > Build.VERSION_CODES.S
+    ) {
       return LoopState.Terminate
     }
 
@@ -141,18 +126,24 @@ object OOMMonitor : LoopMonitor<OOMMonitorConfig>(), LifecycleEventObserver {
   override fun getLoopInterval() = monitorConfig.loopInterval
 
   private fun isExceedAnalysisTimes(): Boolean {
-    MonitorLog.i(TAG, "OOMPreferenceManager.getAnalysisTimes:${OOMPreferenceManager.getAnalysisTimes()}")
+    MonitorLog.i(
+      TAG,
+      "OOMPreferenceManager.getAnalysisTimes:${OOMPreferenceManager.getAnalysisTimes()}"
+    )
 
     if (MonitorBuildConfig.DEBUG) {
       return false
     }
 
     return (OOMPreferenceManager.getAnalysisTimes() > monitorConfig.analysisMaxTimesPerVersion)
-        .also { if (it) MonitorLog.e(TAG, "current version is out of max analysis times!") }
+      .also { if (it) MonitorLog.e(TAG, "current version is out of max analysis times!") }
   }
 
   private fun isExceedAnalysisPeriod(): Boolean {
-    MonitorLog.i(TAG, "OOMPreferenceManager.getFirstAnalysisTime():" + OOMPreferenceManager.getFirstLaunchTime())
+    MonitorLog.i(
+      TAG,
+      "OOMPreferenceManager.getFirstAnalysisTime():" + OOMPreferenceManager.getFirstLaunchTime()
+    )
 
     if (MonitorBuildConfig.DEBUG) {
       return false
@@ -161,7 +152,7 @@ object OOMMonitor : LoopMonitor<OOMMonitorConfig>(), LifecycleEventObserver {
     val analysisPeriod = System.currentTimeMillis() - OOMPreferenceManager.getFirstLaunchTime()
 
     return (analysisPeriod > monitorConfig.analysisPeriodPerVersion)
-        .also { if (it) MonitorLog.e(TAG, "current version is out of max analysis period!") }
+      .also { if (it) MonitorLog.e(TAG, "current version is out of max analysis period!") }
   }
 
   private fun trackOOM(): LoopState {
@@ -217,9 +208,11 @@ object OOMMonitor : LoopMonitor<OOMMonitorConfig>(), LifecycleEventObserver {
           jsonFile.createNewFile()
           startAnalysisService(file, jsonFile, "reanalysis")
         } else {
-            MonitorLog.i(TAG,
+          MonitorLog.i(
+            TAG,
             if (jsonFile.length() == 0L) "last analysis isn't succeed, delete file"
-            else "delete old files", true)
+            else "delete old files", true
+          )
           jsonFile.delete()
           file.delete()
         }
@@ -235,9 +228,9 @@ object OOMMonitor : LoopMonitor<OOMMonitorConfig>(), LifecycleEventObserver {
   }
 
   private fun startAnalysisService(
-      hprofFile: File,
-      jsonFile: File,
-      reason: String
+    hprofFile: File,
+    jsonFile: File,
+    reason: String
   ) {
     if (hprofFile.length() == 0L) {
       hprofFile.delete()
@@ -247,7 +240,13 @@ object OOMMonitor : LoopMonitor<OOMMonitorConfig>(), LifecycleEventObserver {
 
     if (!getApplication().isForeground) {
       MonitorLog.e(TAG, "try startAnalysisService, but not foreground")
-      mForegroundPendingRunnables.add(Runnable { startAnalysisService(hprofFile, jsonFile, reason) })
+      mForegroundPendingRunnables.add(Runnable {
+        startAnalysisService(
+          hprofFile,
+          jsonFile,
+          reason
+        )
+      })
       return
     }
 
@@ -260,29 +259,29 @@ object OOMMonitor : LoopMonitor<OOMMonitorConfig>(), LifecycleEventObserver {
     }
 
     HeapAnalysisService.startAnalysisService(
-        getApplication(),
-        hprofFile.canonicalPath,
-        jsonFile.canonicalPath,
-        extraData,
-        object : AnalysisReceiver.ResultCallBack {
-          override fun onError() {
-            MonitorLog.e(TAG, "heap analysis error, do file delete", true)
+      getApplication(),
+      hprofFile.canonicalPath,
+      jsonFile.canonicalPath,
+      extraData,
+      object : AnalysisReceiver.ResultCallBack {
+        override fun onError() {
+          MonitorLog.e(TAG, "heap analysis error, do file delete", true)
 
-            hprofFile.delete()
-            jsonFile.delete()
-          }
+          hprofFile.delete()
+          jsonFile.delete()
+        }
 
-          override fun onSuccess() {
-            MonitorLog.i(TAG, "heap analysis success, do upload", true)
+        override fun onSuccess() {
+          MonitorLog.i(TAG, "heap analysis success, do upload", true)
 
-            val content = jsonFile.readText()
+          val content = jsonFile.readText()
 
-            MonitorLogger.addExceptionEvent(content, Logger.ExceptionType.OOM_STACKS)
+          MonitorLogger.addExceptionEvent(content, Logger.ExceptionType.OOM_STACKS)
 
-            monitorConfig.reportUploader?.upload(jsonFile, content)
-            monitorConfig.hprofUploader?.upload(hprofFile, OOMHprofUploader.HprofType.ORIGIN)
-          }
-        })
+          monitorConfig.reportUploader?.upload(jsonFile, content)
+          monitorConfig.hprofUploader?.upload(hprofFile, OOMHprofUploader.HprofType.ORIGIN)
+        }
+      })
   }
 
   private fun dumpAndAnalysis() {
@@ -308,7 +307,7 @@ object OOMMonitor : LoopMonitor<OOMMonitorConfig>(), LifecycleEventObserver {
 
       MonitorLog.i(TAG, "hprof analysis dir:$hprofAnalysisDir")
 
-      ForkJvmHeapDumper().run {
+      ForkJvmHeapDumper.getInstance().run {
         dump(hprofFile.absolutePath)
       }
 
