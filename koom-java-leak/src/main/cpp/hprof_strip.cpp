@@ -120,6 +120,8 @@ enum HprofTagBytes {
   HEAP_TYPE_BYTE_SIZE = 4,
 };
 
+#define VERBOSE_LOG false
+
 static constexpr int U4 = 4;
 
 ALWAYS_INLINE int HprofStrip::GetShortFromBytes(const unsigned char *buf,
@@ -540,7 +542,16 @@ void HprofStrip::reset() {
   strip_bytes_sum_ = 0;
 }
 
-ssize_t HprofStrip::HookWriteInternal(int fd, const void *buf, size_t count) {
+size_t HprofStrip::FullyWrite(int fd, const void *buf, ssize_t count) {
+  size_t left = count;
+  while (left > 0) {
+    ssize_t written = write(fd, (unsigned char*)buf + (count - left), left);
+    if (written != -1) left -= written;
+  }
+  return count;
+}
+
+ssize_t HprofStrip::HookWriteInternal(int fd, const void *buf, ssize_t count) {
   if (fd != hprof_fd_) {
     return write(fd, buf, count);
   }
@@ -587,7 +598,7 @@ ssize_t HprofStrip::HookWriteInternal(int fd, const void *buf, size_t count) {
     void *write_buf = (void *)((unsigned char *)buf + start_index);
     auto write_len = (size_t)(strip_index_list_pair_[i * 2] - start_index);
     if (write_len > 0) {
-      total_write += write(fd, write_buf, write_len);
+      total_write += FullyWrite(fd, write_buf, write_len);
     } else if (write_len < 0) {
       __android_log_print(ANDROID_LOG_ERROR, LOG_TAG,
                           "HookWrite array i:%d writeLen<0:%zu", i, write_len);
@@ -597,12 +608,12 @@ ssize_t HprofStrip::HookWriteInternal(int fd, const void *buf, size_t count) {
   auto write_len = (size_t)(count - start_index);
   if (write_len > 0) {
     void *write_buf = (void *)((unsigned char *)buf + start_index);
-    total_write += write(fd, write_buf, count - start_index);
+    total_write += FullyWrite(fd, write_buf, count - start_index);
   }
 
   hook_write_serial_num_++;
 
-  if (total_write != count) {
+  if (VERBOSE_LOG && total_write != count) {
     __android_log_print(ANDROID_LOG_INFO, LOG_TAG,
                         "hook write, hprof strip happens");
   }
@@ -659,5 +670,6 @@ ALWAYS_INLINE bool HprofStrip::IsHookSuccess() const {
 void HprofStrip::SetHprofName(const char *hprof_name) {
   hprof_name_ = hprof_name;
 }
+
 }  // namespace leak_monitor
 }  // namespace kwai

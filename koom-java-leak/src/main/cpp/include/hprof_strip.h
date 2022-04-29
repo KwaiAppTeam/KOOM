@@ -33,7 +33,7 @@ class HprofStrip {
   static HprofStrip &GetInstance();
   static void HookInit();
   int HookOpenInternal(const char *path_name, int flags, ...);
-  ssize_t HookWriteInternal(int fd, const void *buf, size_t count);
+  ssize_t HookWriteInternal(int fd, const void *buf, ssize_t count);
   bool IsHookSuccess() const;
   void SetHprofName(const char *hprof_name);
 
@@ -48,6 +48,8 @@ class HprofStrip {
 
   int ProcessHeap(const void *buf, int first_index, int max_len,
                   int heap_serial_no, int array_serial_no);
+
+  static size_t FullyWrite(int fd, const void *buf, ssize_t count);
   void reset();
 
   int hprof_fd_;
