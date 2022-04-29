@@ -7,3 +7,6 @@ captures
 .externalNativeBuild
 .cxx
 local.properties
+.classpath
+.project
+.settings/
