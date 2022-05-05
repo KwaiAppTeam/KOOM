@@ -1,5 +1,5 @@
 apply plugin: 'maven-publish'
-apply plugin: 'signing'
+//apply plugin: 'signing'
 
 task androidSourcesJar(type: Jar) {
     if (project.hasProperty("android")) {
@@ -129,9 +129,9 @@ afterEvaluate {
             }
         }
     }
-    signing {
-        sign publishing.publications
-    }
+//    signing {
+//        sign publishing.publications
+//    }
 }
 
 
