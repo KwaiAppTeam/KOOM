@@ -26,7 +26,7 @@ import androidx.lifecycle.LifecycleOwner
 import com.kwai.koom.base.*
 import com.kwai.koom.base.MonitorManager.getApplication
 import com.kwai.koom.base.loop.LoopMonitor
-import com.kwai.koom.javaoom.hprof.ForkJvmHeapDumper
+import com.kwai.koom.fastdump.ForkJvmHeapDumper
 import com.kwai.koom.javaoom.monitor.OOMFileManager.hprofAnalysisDir
 import com.kwai.koom.javaoom.monitor.OOMFileManager.manualDumpDir
 import com.kwai.koom.javaoom.monitor.analysis.AnalysisExtraData
@@ -307,7 +307,7 @@ object OOMMonitor : LoopMonitor<OOMMonitorConfig>(), LifecycleEventObserver {
 
       MonitorLog.i(TAG, "hprof analysis dir:$hprofAnalysisDir")
 
-      ForkJvmHeapDumper.getInstance().run {
+      com.kwai.koom.fastdump.ForkJvmHeapDumper.getInstance().run {
         dump(hprofFile.absolutePath)
       }
 

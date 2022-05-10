@@ -22,6 +22,8 @@ import java.io.IOException;
 
 import android.os.Debug;
 
+import com.kwai.koom.fastdump.HeapDumper;
+
 public class StandardHeapDumper extends HeapDumper {
 
   @Override

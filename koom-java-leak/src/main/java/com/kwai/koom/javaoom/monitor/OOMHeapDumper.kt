@@ -26,7 +26,7 @@ import java.util.*
 object OOMHeapDumper {
   private const val TAG = "OOMHeapDumper"
 
-  private fun dump(dumper: HeapDumper) {
+  private fun dump(dumper: com.kwai.koom.fastdump.HeapDumper) {
     try {
       MonitorLog.i(TAG, "dump hprof start")
 
@@ -64,7 +64,7 @@ object OOMHeapDumper {
   @JvmStatic
   fun forkDump() {
     MonitorLog.i(TAG, "forkDump")
-    dump(ForkJvmHeapDumper.getInstance())
+    dump(com.kwai.koom.fastdump.ForkJvmHeapDumper.getInstance())
   }
 
   @JvmStatic

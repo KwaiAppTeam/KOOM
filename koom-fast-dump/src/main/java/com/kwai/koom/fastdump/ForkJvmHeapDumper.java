@@ -18,7 +18,7 @@
  * @author Rui Li <lirui05@kuaishou.com>
  */
 
-package com.kwai.koom.javaoom.hprof;
+package com.kwai.koom.fastdump;
 
 import java.io.IOException;
 

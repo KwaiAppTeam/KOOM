@@ -13,26 +13,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  * <p>
- * Hprof dumper
+ * A jvm hprof dumper which use io hook to strip, primitive
+ * array and Zygote/Image heap space will be stripped.
  *
  * @author Rui Li <lirui05@kuaishou.com>
  */
 
-package com.kwai.koom.javaoom.hprof;
+package com.kwai.koom.fastdump;
 
-public abstract class HeapDumper {
+import static com.kwai.koom.base.Monitor_SoKt.loadSoQuietly;
 
-  protected final boolean soLoaded;
+public class NativeHandler {
+  private static boolean sSoLoaded;
 
-  public HeapDumper() {
-    soLoaded = NativeHandler.load();
+  public static boolean load() {
+    if (!sSoLoaded) {
+      return sSoLoaded = loadSoQuietly("koom-fast-dump");
+    }
+
+    return true;
   }
 
-  /**
-   * dump may cost several seconds, make sure called in a separated thread.
-   *
-   * @param path dump file
-   * @return dump result success or not
-   */
-  public abstract boolean dump(String path);
+  static {
+    load();
+  }
 }

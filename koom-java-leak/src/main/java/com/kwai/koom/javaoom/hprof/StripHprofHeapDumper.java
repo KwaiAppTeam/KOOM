@@ -27,6 +27,7 @@ import android.os.Build;
 import android.os.Debug;
 
 import com.kwai.koom.base.MonitorLog;
+import com.kwai.koom.fastdump.HeapDumper;
 
 public class StripHprofHeapDumper extends HeapDumper {
 

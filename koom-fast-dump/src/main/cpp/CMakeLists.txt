@@ -1,7 +1,7 @@
 # For more information about using CMake with Android Studio, read the
 # documentation: https://d.android.com/studio/projects/add-native-code.html
 
-set(TARGET koom-java-leak)
+set(TARGET koom-fast-dump)
 project(${TARGET})
 
 # Sets the minimum version of CMake required to build the native library.
@@ -10,19 +10,16 @@ cmake_minimum_required(VERSION 3.4.1)
 
 add_compile_options(-Wall -Wextra -Werror -Wno-unused-command-line-argument -Oz)
 
-set(THIRD_PARTY_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../../../koom-common/third-party)
 set(KWAI_ANDROID_BASE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../../../koom-common/kwai-android-base)
 
 include_directories(
         ${CMAKE_CURRENT_SOURCE_DIR}/include/
-        ${THIRD_PARTY_DIR}/xhook/src/main/cpp/xhook/src/
         ${KWAI_ANDROID_BASE_DIR}/src/main/cpp/include/
         ${KWAI_ANDROID_BASE_DIR}/src/main/cpp/liblog/include/
 )
 
 link_directories(
         ${KWAI_ANDROID_BASE_DIR}/src/main/libs/${ANDROID_ABI}/
-        ${THIRD_PARTY_DIR}/xhook/src/main/libs/${ANDROID_ABI}/
 )
 
 # Creates and names a library, sets it as either STATIC
@@ -36,7 +33,7 @@ add_library( # Sets the name of the library.
         SHARED
 
         # Provides a relative path to your source file(s).
-        native_bridge.cpp hprof_strip.cpp)
+        native_bridge.cpp hprof_dump.cpp)
 
 # Searches for a specified prebuilt library and stores the path as a
 # variable. Because CMake includes system libraries in the search path by
@@ -58,7 +55,6 @@ find_library( # Sets the name of the path variable.
 target_link_libraries( # Specifies the target library.
         ${TARGET}
 
-        xhook_lib
         kwai-android-base
         # Links the target library to the log library
         # included in the NDK.
