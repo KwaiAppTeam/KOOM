@@ -60,7 +60,7 @@ dependencies {
     implementation project(path: ':koom-monitor-base')
     implementation project(path: ':koom-common:third-party:xhook')
     implementation project(path: ':koom-common:kwai-android-base')
-    implementation project(path: ':koom-fast-dump')
+    api project(path: ':koom-fast-dump')
     api project(path: ':koom-common:third-party:shark')
 }
 

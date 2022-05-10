@@ -51,7 +51,7 @@ public class JavaLeakTestActivity extends AppCompatActivity {
 
         //Pull the hprof from the devices.
         //adb shell "run-as com.kwai.koom.demo cat 'files/test.hprof'" > ~/temp/test.hprof
-        new ForkStripHeapDumper().dump(
+        ForkStripHeapDumper.getInstance().dump(
             this.getFilesDir().getAbsolutePath() + File.separator + "test.hprof");
         break;
     }

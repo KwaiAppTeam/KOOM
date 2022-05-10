@@ -52,13 +52,6 @@ android {
 }
 
 dependencies {
-//    implementation deps.gson
-//    implementation deps.androidx.appcompat
-//    implementation deps.androidx.constraintlayout
-//    implementation deps.material
-//    implementation deps.kotlin.stdlib
     implementation project(path: ':koom-monitor-base')
-//    implementation project(':koom-common:third-party:xhook')
     implementation project(path: ':koom-common:kwai-android-base')
-//    api project(':koom-common:third-party:shark')
 }

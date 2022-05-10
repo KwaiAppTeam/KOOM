@@ -20,6 +20,8 @@
 
 package com.kwai.koom.fastdump;
 
+import static com.kwai.koom.base.Monitor_SoKt.loadSoQuietly;
+
 import java.io.IOException;
 
 import android.os.Build;
@@ -27,8 +29,9 @@ import android.os.Debug;
 
 import com.kwai.koom.base.MonitorLog;
 
-public class ForkJvmHeapDumper extends HeapDumper {
+public class ForkJvmHeapDumper implements HeapDumper {
   private static final String TAG = "OOMMonitor_ForkJvmHeapDumper";
+  private boolean mLoadSuccess;
 
   private static class Holder {
     private static final ForkJvmHeapDumper INSTANCE = new ForkJvmHeapDumper();
@@ -38,24 +41,28 @@ public class ForkJvmHeapDumper extends HeapDumper {
     return ForkJvmHeapDumper.Holder.INSTANCE;
   }
 
-  private ForkJvmHeapDumper() {
-    super();
-    if (soLoaded) {
-      init();
+  private ForkJvmHeapDumper() {}
+
+  private void init () {
+    if (mLoadSuccess) {
+      return;
+    }
+    if (loadSoQuietly("koom-fast-dump")) {
+      mLoadSuccess = true;
+      nativeInit();
     }
   }
 
   @Override
-  public boolean dump(String path) {
+  public synchronized boolean dump(String path) {
     MonitorLog.i(TAG, "dump " + path);
-    if (!soLoaded) {
-      MonitorLog.e(TAG, "dump failed caused by so not loaded!");
-      return false;
-    }
-
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP
         || Build.VERSION.SDK_INT > Build.VERSION_CODES.S) {
-      MonitorLog.e(TAG, "dump failed caused by version not supported!");
+      throw new UnsupportedOperationException("dump failed caused by sdk version not supported!");
+    }
+    init();
+    if (!mLoadSuccess) {
+      MonitorLog.e(TAG, "dump failed caused by so not loaded!");
       return false;
     }
 
@@ -70,10 +77,10 @@ public class ForkJvmHeapDumper extends HeapDumper {
       } else if (pid > 0) {
         // Parent process
         dumpRes = resumeAndWait(pid);
-        MonitorLog.i(TAG, "notify from pid " + pid);
+        MonitorLog.i(TAG, "dump " + dumpRes + ", notify from pid " + pid);
       }
     } catch (IOException e) {
-      MonitorLog.e(TAG, "dump failed caused by " + e.toString());
+      MonitorLog.e(TAG, "dump failed caused by " + e);
       e.printStackTrace();
     }
     return dumpRes;
@@ -82,7 +89,7 @@ public class ForkJvmHeapDumper extends HeapDumper {
   /**
    * Init before do dump.
    */
-  private native void init();
+  private native void nativeInit();
 
   /**
    * Suspend the whole ART, and then fork a process for dumping hprof.

@@ -663,10 +663,6 @@ HprofStrip::HprofStrip()
             strip_index_list_pair_ + arraysize(strip_index_list_pair_), 0);
 }
 
-ALWAYS_INLINE bool HprofStrip::IsHookSuccess() const {
-  return is_hook_success_;
-}
-
 void HprofStrip::SetHprofName(const char *hprof_name) {
   hprof_name_ = hprof_name;
 }

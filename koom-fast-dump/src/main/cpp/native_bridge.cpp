@@ -42,7 +42,7 @@ extern "C" {
 /**
  * JNI bridge for hprof dump
  */
-JNIEXPORT void JNICALL Java_com_kwai_koom_fastdump_ForkJvmHeapDumper_init(
+JNIEXPORT void JNICALL Java_com_kwai_koom_fastdump_ForkJvmHeapDumper_nativeInit(
     JNIEnv *env ATTRIBUTE_UNUSED, jobject jobject ATTRIBUTE_UNUSED) {
   HprofDump::GetInstance().Initialize();
 }

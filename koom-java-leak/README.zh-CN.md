@@ -105,16 +105,8 @@ OOMMonitor.stopLoop()
 
 - 如何裁剪镜像？
 
-  - 普通裁剪dump
-
     - ```java
-      new StripHprofHeapDumper().dump(path)
-      ```
-
-  - 需要子进程dump
-
-    - ```java
-      new ForkStripHeapDumper().dump(path)
+      ForkStripHeapDumper.getInstance().dump(path)
       ```
 
 - 裁剪的镜像如何恢复，使得AS Profiler/MAT能够打开？

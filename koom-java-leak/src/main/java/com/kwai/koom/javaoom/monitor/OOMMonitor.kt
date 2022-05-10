@@ -307,7 +307,7 @@ object OOMMonitor : LoopMonitor<OOMMonitorConfig>(), LifecycleEventObserver {
 
       MonitorLog.i(TAG, "hprof analysis dir:$hprofAnalysisDir")
 
-      com.kwai.koom.fastdump.ForkJvmHeapDumper.getInstance().run {
+      ForkJvmHeapDumper.getInstance().run {
         dump(hprofFile.absolutePath)
       }
 

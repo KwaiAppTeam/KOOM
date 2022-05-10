@@ -20,19 +20,12 @@
 
 package com.kwai.koom.fastdump;
 
-public abstract class HeapDumper {
-
-  protected final boolean soLoaded;
-
-  public HeapDumper() {
-    soLoaded = NativeHandler.load();
-  }
-
+public interface HeapDumper {
   /**
    * dump may cost several seconds, make sure called in a separated thread.
    *
    * @param path dump file
    * @return dump result success or not
    */
-  public abstract boolean dump(String path);
+  boolean dump(String path);
 }
