@@ -1,9 +1,9 @@
 apply plugin: 'maven-publish'
-//apply plugin: 'signing'
+apply plugin: 'signing'
 
 task androidSourcesJar(type: Jar) {
     if (project.hasProperty("android")) {
-        from android.sourceSets.main.java.sourceFiles
+        from android.sourceSets.main.java.srcDirs
     } else {
         from sourceSets.main.allSource
     }
@@ -44,18 +44,47 @@ if (secretPropsFile.exists()) {
 }
 
 afterEvaluate {
-    publishing {
-        publications {
-            mavenAndroid(MavenPublication) {
+    def curArtifactId
+    android.libraryVariants.all { variant ->
+        // Skipped debug variants
+        if (variant.buildType.name == "debug") {
+            return
+        }
+        def hasFlavors = !variant.flavorName.isEmpty()
+
+        def artifactIdSuffix = hasFlavors ? variant.flavorName.replace('_', '-').capitalize() : ''
+        variant.productFlavors.each { flavor ->
+            def flavorArtifactIdSuffix = flavor.ext.has('artifactIdSuffix') ? flavor.ext.artifactIdSuffix : flavor.name
+            if (!flavorArtifactIdSuffix.isEmpty()) {
+                artifactIdSuffix = artifactIdSuffix.replace(flavor.name.capitalize(), "-${flavorArtifactIdSuffix}")
+            } else {
+                artifactIdSuffix = artifactIdSuffix.replace(flavor.name.capitalize(), "")
+            }
+        }
+        if (!artifactIdSuffix.isEmpty() && !artifactIdSuffix.startsWith('-')) {
+            artifactIdSuffix = '-' + artifactIdSuffix
+        }
+
+        curArtifactId = "${project.getName()}${artifactIdSuffix}"
+
+        def publicationName = "android${variant.name.capitalize()}"
+        publishing.publications {
+            "$publicationName"(MavenPublication) {
                 // The coordinates of the library, being set from variables that
                 // we'll set up in a moment
                 groupId GROUP
-                artifactId "${project.getName()}"
+                artifactId curArtifactId
                 version VERSION_NAME
 
                 // Two artifacts, the `aar` and the sources
                 if (project.hasProperty("android")) {
-                    artifact("$buildDir/outputs/aar/${project.getName()}-release.aar")
+                    if (hasFlavors) {
+                        variant.productFlavors.each { flavor ->
+                            artifact("build/outputs/aar/${project.getName()}-${flavor.name}-release.aar")
+                        }
+                    } else {
+                        artifact("build/outputs/aar/${project.getName()}-release.aar")
+                    }
                     artifact androidSourcesJar
                 } else {
                     artifact("$buildDir/libs/${project.getName()}.jar")
@@ -96,7 +125,12 @@ afterEvaluate {
                                 def dependencyNode = dependenciesNode.appendNode('dependency')
                                 if ((it.group).contains(rootProject.name)) {
                                     dependencyNode.appendNode('groupId', GROUP)
-                                    dependencyNode.appendNode('artifactId', it.name)
+                                    // Consider a java project like "shark"
+                                    if (it.dependencyProject.hasProperty("android")) {
+                                        dependencyNode.appendNode('artifactId', "$it.name${artifactIdSuffix}")
+                                    } else {
+                                        dependencyNode.appendNode('artifactId', it.name)
+                                    }
                                     dependencyNode.appendNode('version', VERSION_NAME)
                                 } else {
                                     dependencyNode.appendNode('groupId', it.group)
@@ -109,29 +143,30 @@ afterEvaluate {
                 }
             }
         }
-        repositories {
-            // The repository to publish to, Sonatype/MavenCentral
-            maven {
-                // This is an arbitrary name, you may also use "mavencentral" or
-                // any other name that's descriptive for you
-                name = rootProject.name
-                def releasesRepoUrl = "https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/"
-                def snapshotsRepoUrl = "https://s01.oss.sonatype.org/content/repositories/snapshots/"
-                // You only need this if you want to publish snapshots, otherwise just set the URL
-                // to the release repo directly
-                url = version.endsWith('SNAPSHOT') ? snapshotsRepoUrl : releasesRepoUrl
+    }
 
-                // The username and password we've fetched earlier
-                credentials {
-                    username ossrhUsername
-                    password ossrhPassword
-                }
+    publishing.repositories {
+        // The repository to publish to, Sonatype/MavenCentral
+        maven {
+            // This is an arbitrary name, you may also use "mavencentral" or
+            // any other name that's descriptive for you
+            name = rootProject.name
+            def releasesRepoUrl = "https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/"
+            def snapshotsRepoUrl = "https://s01.oss.sonatype.org/content/repositories/snapshots/"
+            // You only need this if you want to publish snapshots, otherwise just set the URL
+            // to the release repo directly
+            url = version.endsWith('SNAPSHOT') ? snapshotsRepoUrl : releasesRepoUrl
+
+            // The username and password we've fetched earlier
+            credentials {
+                username ossrhUsername
+                password ossrhPassword
             }
         }
     }
-//    signing {
-//        sign publishing.publications
-//    }
+    signing {
+        sign publishing.publications
+    }
 }
 
 

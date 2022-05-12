@@ -3,7 +3,7 @@ plugins {
 }
 
 apply from: rootProject.file('gradle/common.gradle')
-apply from: rootProject.file('gradle/mavenCentral-publish.gradle')
+apply from: rootProject.file('gradle/mavenCentral-android-publish.gradle')
 
 android {
 
@@ -85,4 +85,3 @@ dependencies {
     api project(path: ':koom-fast-dump')
     api project(path: ':koom-common:third-party:shark')
 }
-

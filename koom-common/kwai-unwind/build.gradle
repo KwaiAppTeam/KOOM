@@ -3,7 +3,7 @@ plugins {
     id 'kotlin-android'
 }
 apply from: rootProject.file('gradle/common.gradle')
-apply from: rootProject.file('gradle/mavenCentral-publish.gradle')
+apply from: rootProject.file('gradle/mavenCentral-android-publish.gradle')
 
 android {
     defaultConfig {
