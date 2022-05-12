@@ -39,6 +39,10 @@ android {
 //            jniLibs.srcDir('src/main/libs')
         }
     }
+
+    packagingOptions {
+        exclude('lib/*/libc++_shared.so')
+    }
 }
 
 dependencies {

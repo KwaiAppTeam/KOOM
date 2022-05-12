@@ -38,6 +38,9 @@ android {
 //            jni.srcDirs = []
         }
     }
+    packagingOptions {
+        exclude('lib/*/libc++_shared.so')
+    }
 }
 
 dependencies {

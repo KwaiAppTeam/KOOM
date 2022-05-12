@@ -16,4 +16,3 @@ dependencies {
     // See https://github.com/square/leakcanary/issues/1624
     implementation deps.okio_1x
 }
-

@@ -49,6 +49,9 @@ android {
             version "3.18.1"
         }
     }
+    packagingOptions {
+        exclude('lib/*/libc++_shared.so')
+    }
 }
 
 dependencies {
