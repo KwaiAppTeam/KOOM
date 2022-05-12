@@ -20,6 +20,12 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
+
+    flavorDimensions "stl_mode"
+    productFlavors {
+        StaticCpp.dimension = "stl_mode"
+        SharedCpp.dimension = "stl_mode"
+    }
 }
 
 dependencies {

@@ -540,7 +540,8 @@ int async_safe_write_log(int priority, const char *tag, const char *msg) {
   return result;
 }
 
-int async_safe_format_log_va_list(int priority, const char *tag, const char *format, va_list args) {
+KWAI_EXPORT int async_safe_format_log_va_list(int priority, const char *tag, const char *format,
+                                              va_list args) {
   ErrnoRestorer errno_restorer;
   char buffer[1024];
   BufferOutputStream os(buffer, sizeof(buffer));
