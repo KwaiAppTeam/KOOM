@@ -20,6 +20,7 @@
 
 package com.kwai.koom.fastdump;
 
+import static com.kwai.koom.base.Monitor_ApplicationKt.sdkVersionMatch;
 import static com.kwai.koom.base.Monitor_SoKt.loadSoQuietly;
 
 import java.io.IOException;
@@ -27,7 +28,9 @@ import java.io.IOException;
 import android.os.Build;
 import android.os.Debug;
 
+import com.kwai.koom.base.MonitorBuildConfig;
 import com.kwai.koom.base.MonitorLog;
+import com.kwai.koom.base.MonitorManager;
 
 public class ForkJvmHeapDumper implements HeapDumper {
   private static final String TAG = "OOMMonitor_ForkJvmHeapDumper";
@@ -56,8 +59,7 @@ public class ForkJvmHeapDumper implements HeapDumper {
   @Override
   public synchronized boolean dump(String path) {
     MonitorLog.i(TAG, "dump " + path);
-    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP
-        || Build.VERSION.SDK_INT > Build.VERSION_CODES.S) {
+    if (!sdkVersionMatch()) {
       throw new UnsupportedOperationException("dump failed caused by sdk version not supported!");
     }
     init();

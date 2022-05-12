@@ -18,6 +18,7 @@
 
 package com.kwai.koom.javaoom.hprof;
 
+import static com.kwai.koom.base.Monitor_ApplicationKt.sdkVersionMatch;
 import static com.kwai.koom.base.Monitor_SoKt.loadSoQuietly;
 
 import android.os.Build;
@@ -53,8 +54,7 @@ public class ForkStripHeapDumper implements HeapDumper {
   @Override
   public synchronized boolean dump(String path) {
     MonitorLog.i(TAG, "dump " + path);
-    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP
-        || Build.VERSION.SDK_INT > Build.VERSION_CODES.S) {
+    if (!sdkVersionMatch()) {
       throw new UnsupportedOperationException("dump failed caused by sdk version not supported!");
     }
     init();

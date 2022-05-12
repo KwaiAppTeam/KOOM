@@ -110,9 +110,7 @@ object OOMMonitor : LoopMonitor<OOMMonitorConfig>(), LifecycleEventObserver {
   }
 
   override fun call(): LoopState {
-    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP
-      || Build.VERSION.SDK_INT > Build.VERSION_CODES.S
-    ) {
+    if (!sdkVersionMatch()) {
       return LoopState.Terminate
     }
 

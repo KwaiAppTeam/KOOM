@@ -37,6 +37,7 @@ class CommonConfig private constructor(
 
     // MonitorBuildConfig common properties
     internal val debugMode: Boolean,
+    internal val sdkVersionMatch: Boolean,
     internal val versionNameInvoker: () -> String,
 
     internal val logger: Logger,
@@ -53,6 +54,7 @@ class CommonConfig private constructor(
     private lateinit var mApplication: Application
 
     private var mDebugMode = true
+    private var mSdkVersionMatch = false
     private lateinit var mVersionNameInvoker: () -> String
     private lateinit var mDeviceIdInvoker: (() -> String)
 
@@ -74,6 +76,10 @@ class CommonConfig private constructor(
 
     fun setDebugMode(debugMode: Boolean) = apply {
       mDebugMode = debugMode
+    }
+
+    fun setSdkVersionMatch(sdkVersionMatch: Boolean) = apply {
+      mSdkVersionMatch = sdkVersionMatch
     }
 
     fun setVersionNameInvoker(versionNameInvoker: () -> String) = apply {
@@ -118,6 +124,7 @@ class CommonConfig private constructor(
         application = mApplication,
 
         debugMode = mDebugMode,
+        sdkVersionMatch = mSdkVersionMatch,
         versionNameInvoker = mVersionNameInvoker,
 
         rootFileInvoker = mRootFileInvoker ?: {

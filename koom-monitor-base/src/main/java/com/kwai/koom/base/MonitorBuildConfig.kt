@@ -21,6 +21,7 @@ package com.kwai.koom.base
 import android.os.Build
 
 object MonitorBuildConfig {
+
   @JvmStatic
   val DEBUG by lazy { MonitorManager.commonConfig.debugMode }
 
