@@ -16,20 +16,6 @@ dependencies {
 }
 ```
 ## 代码初始化
-- 定义初始化任务
-```kotlin
-object CommonInitTask : InitTask {
-  override fun init(application: Application) {
-    val config = CommonConfig.Builder()
-      .setApplication(application) // Set application
-      .setVersionNameInvoker { "1.0.0" } // Set version name, java leak feature use it
-      .build()
-
-    MonitorManager.initCommonConfig(config)
-      .apply { onApplicationCreate() }
-  }
-}
-```  
 - 在 `Application` 的 `onCreate` 方法中初始化
 ```java
 public class KOOMApplication extends Application {
@@ -37,7 +23,7 @@ public class KOOMApplication extends Application {
   @Override
   public void onCreate() {
     super.onCreate();
-    CommonInitTask.INSTANCE.init(this);
+    DefaultInitTask.INSTANCE.init(this);
   }
 }
 ```
