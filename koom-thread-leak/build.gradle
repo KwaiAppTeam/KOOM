@@ -28,11 +28,6 @@ android {
                     cppFlags '-Wl,--gc-sections', '-fvisibility=hidden', '-flto'
                 }
             }
-            externalNativeBuild {
-                cmake {
-                    cppFlags '-Wl,--gc-sections', '-fvisibility=hidden', '-flto'
-                }
-            }
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
