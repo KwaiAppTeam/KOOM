@@ -43,6 +43,10 @@ fun Application.registerProcessLifecycleObserver(observer: LifecycleEventObserve
 fun Application.unregisterProcessLifecycleObserver(observer: LifecycleEventObserver) =
     _lifecycleEventObservers.remove(observer)
 
+fun sdkVersionMatch(): Boolean {
+  return MonitorManager.commonConfig.sdkVersionMatch
+}
+
 internal fun registerApplicationExtension() {
   getApplication().registerActivityLifecycleCallbacks(object : Application.ActivityLifecycleCallbacks {
     private fun updateCurrentActivityWeakRef(activity: Activity) {

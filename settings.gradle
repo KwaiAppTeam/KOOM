@@ -8,3 +8,4 @@ include ':koom-common:third-party:shark'
 include ':koom-common:kwai-unwind'
 include ':koom-common:kwai-android-base'
 rootProject.name = "KOOM"
+include ':koom-fast-dump'

@@ -104,16 +104,10 @@ OOMMonitor.stopLoop()
 
 - How to strip hprof in the dump process to reduced the hprof file size mostly？
 
-    - simple strip dump
-
-        ```java
-        new StripHprofHeapDumper().dump(path)
-        ```
-
     - strip dump in the subprocess
 
         ```java
-        new ForkStripHeapDumper().dump(path)
+        ForkStripHeapDumper.getInstance().dump(path)
         ```
 
 - How to refill the stripped hprof， make it available to AS Profiler and MAT？

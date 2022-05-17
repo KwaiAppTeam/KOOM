@@ -1,0 +1,78 @@
+plugins {
+    id 'com.android.library'
+}
+
+apply from: rootProject.file('gradle/common.gradle')
+apply from: rootProject.file('gradle/mavenCentral-android-publish.gradle')
+
+android {
+
+    defaultConfig {
+        versionCode 1
+        versionName "1.0"
+
+        consumerProguardFiles "consumer-rules.pro"
+
+        externalNativeBuild {
+            cmake {
+                abiFilters 'armeabi-v7a', 'arm64-v8a', 'x86', 'x86_64'
+                cppFlags '-std=c++17', '-fno-exceptions', '-fno-rtti'
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            externalNativeBuild {
+                cmake {
+                    cppFlags '-Wl,--gc-sections', '-fvisibility=hidden', '-flto'
+                }
+            }
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+
+    externalNativeBuild {
+        cmake {
+            path file('src/main/cpp/CMakeLists.txt')
+            version "3.18.1"
+        }
+    }
+
+    flavorDimensions "stl_mode"
+    productFlavors {
+        StaticCpp {
+            dimension "stl_mode"
+            ext.artifactIdSuffix = 'static'
+            externalNativeBuild {
+                cmake {
+                    arguments = ["-DANDROID_STL=c++_static"]
+                }
+            }
+        }
+        SharedCpp {
+            dimension "stl_mode"
+            ext.artifactIdSuffix = ''
+            externalNativeBuild {
+                cmake {
+                    arguments = ["-DANDROID_STL=c++_shared"]
+                }
+            }
+        }
+    }
+
+    packagingOptions {
+        exclude('lib/*/libc++_shared.so')
+    }
+}
+
+dependencies {
+    implementation project(path: ':koom-monitor-base')
+    implementation project(path: ':koom-common:kwai-android-base')
+}

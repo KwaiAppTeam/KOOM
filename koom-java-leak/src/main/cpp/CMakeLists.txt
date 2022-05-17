@@ -1,7 +1,7 @@
 # For more information about using CMake with Android Studio, read the
 # documentation: https://d.android.com/studio/projects/add-native-code.html
 
-set(TARGET koom-java)
+set(TARGET koom-strip-dump)
 project(${TARGET})
 
 # Sets the minimum version of CMake required to build the native library.
@@ -36,7 +36,7 @@ add_library( # Sets the name of the library.
         SHARED
 
         # Provides a relative path to your source file(s).
-        native_bridge.cpp hprof_strip.cpp hprof_dump.cpp)
+        native_bridge.cpp hprof_strip.cpp)
 
 # Searches for a specified prebuilt library and stores the path as a
 # variable. Because CMake includes system libraries in the search path by

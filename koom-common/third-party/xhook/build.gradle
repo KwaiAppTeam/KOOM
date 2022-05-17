@@ -2,7 +2,7 @@ plugins {
     id 'com.android.library'
 }
 apply from: rootProject.file('gradle/common.gradle')
-apply from: rootProject.file('gradle/mavenCentral-publish.gradle')
+apply from: rootProject.file('gradle/mavenCentral-android-publish.gradle')
 
 android {
     defaultConfig {
@@ -12,32 +12,54 @@ android {
         externalNativeBuild {
             cmake {
                 abiFilters 'armeabi-v7a', 'arm64-v8a', 'x86', 'x86_64'
-                arguments '-DANDROID_TOOLCHAIN=clang', '-DANDROID_STL=c++_shared', '-DCMAKE_VERBOSE_MAKEFILE=ON'
-                cppFlags '-Wl,--gc-sections', '-fno-exceptions', '-fno-rtti', '-fvisibility=hidden', '-flto'
-                cFlags '-Wl,--gc-sections', '-fvisibility=hidden'
+                cppFlags '-std=c++17', '-fno-exceptions', '-fno-rtti'
             }
         }
-    }
-
-    externalNativeBuild {
-      cmake {
-        path "src/main/cpp/xhook/CMakeLists.txt"
-        version '3.18.1'
-      }
     }
 
     buildTypes {
         release {
             minifyEnabled false
+            externalNativeBuild {
+                cmake {
+                    cppFlags '-Wl,--gc-sections', '-fvisibility=hidden', '-flto'
+                }
+            }
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
 
-    sourceSets {
-        main {
-            java.srcDirs = ['src/main/java']
-//            jniLibs.srcDir('src/main/libs')
+    externalNativeBuild {
+        cmake {
+            path "src/main/cpp/xhook/CMakeLists.txt"
+            version '3.18.1'
         }
+    }
+
+    flavorDimensions "stl_mode"
+    productFlavors {
+        StaticCpp {
+            dimension "stl_mode"
+            ext.artifactIdSuffix = 'static'
+            externalNativeBuild {
+                cmake {
+                    arguments = ["-DANDROID_STL=c++_static"]
+                }
+            }
+        }
+        SharedCpp {
+            dimension "stl_mode"
+            ext.artifactIdSuffix = ''
+            externalNativeBuild {
+                cmake {
+                    arguments = ["-DANDROID_STL=c++_shared"]
+                }
+            }
+        }
+    }
+
+    packagingOptions {
+        exclude('lib/*/libc++_shared.so')
     }
 }
 

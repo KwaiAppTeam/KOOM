@@ -1,7 +1,18 @@
+# v2.2.0
+New Features
+- Support leakcanary custom dumper.
+- Add two flavors StaticCpp and SharedCpp.
+
+# v2.1.0
+Enhancement
+- Support Android S.
+- AndroidGradlePlugin update to 7.1.0.
+- NDK update to 23.1.7779620.
+
 # v2.0.0
 New Features
-- Add Native Leak Monitor
-- Add Thread Leak Monitor
+- Add Native Leak Monitor.
+- Add Thread Leak Monitor.
 
 # v1.1.0
 Enhancement

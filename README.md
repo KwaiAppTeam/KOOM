@@ -27,6 +27,38 @@ The app freezes for a long time during the dump. For details, please refer to [h
 - The `koom-thread-leak` module is used for Thread leak monitoring: it hooks the life cycle 
   function of the thread, and periodically reports the leaked thread information. For details, please refer to [here](./koom-thread-leak/README.md)
 
+## STL Support
+All Native modules support two access modes, c++_shared and c++_static. For details, please 
+refer to [cpp-support](https://developer.android.com/ndk/guides/cpp-support).
+- Add dependency to the project build.gradle (take koom-fast-dump as an example)：
+```groovy
+dependencies {
+  // In shared mode, multiple modules share the same libc++_shared.so (STL), and the package 
+  // size is small, but when multiple modules depend on different STL versions, the final 
+  // compilation will conflict.
+  implementation "com.kuaishou.koom:koom-fast-dump:${latest_version}"
+  // Or in static mode, each module has its own STL, the package size is large, and there are no 
+  // compilation and runtime problems.
+  implementation "com.kuaishou.koom:koom-fast-dump-static:${latest_version}"
+}
+```
+- Introduce a way to resolve the conflict of shared mode, add `pickFirst` in the project root 
+  directory build.gradle：
+```groovy
+packagingOptions {
+  // Select the first libc++_shared.so when packaging apk, it may encounter unpredictable bugs 
+  // at runtime, use it with caution!
+  pickFirst 'lib/*/libc++_shared.so'
+}
+```
+
+## minSdk
+- The minSdk of all modules is 18. If the minSdk of your app is lower than that, it needs to be 
+  compatible with overrideLibrary in the manifest.
+```xml
+  <uses-sdk tools:overrideLibrary="com.kwai.koom.fastdump, com.kwai.android.base, com.kwai.koom.base" />
+```
+
 ## License
 KOOM is under the Apache license 2.0. For details check out the [LICENSE](./LICENSE).
 

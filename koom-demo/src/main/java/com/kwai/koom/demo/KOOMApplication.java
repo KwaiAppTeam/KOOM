@@ -20,13 +20,13 @@ package com.kwai.koom.demo;
 
 import android.app.Application;
 
-import com.kwai.koom.demo.common.CommonInitTask;
+import com.kwai.koom.base.DefaultInitTask;
 
 public class KOOMApplication extends Application {
 
   @Override
   public void onCreate() {
     super.onCreate();
-    CommonInitTask.INSTANCE.init(this);
+    DefaultInitTask.INSTANCE.init(this);
   }
 }

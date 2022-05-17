@@ -18,31 +18,63 @@
 
 package com.kwai.koom.javaoom.hprof;
 
+import static com.kwai.koom.base.Monitor_ApplicationKt.sdkVersionMatch;
+import static com.kwai.koom.base.Monitor_SoKt.loadSoQuietly;
+
+import android.os.Build;
+
 import com.kwai.koom.base.MonitorLog;
+import com.kwai.koom.fastdump.ForkJvmHeapDumper;
+import com.kwai.koom.fastdump.HeapDumper;
 
-public class ForkStripHeapDumper extends HeapDumper {
+public class ForkStripHeapDumper implements HeapDumper {
   private static final String TAG = "OOMMonitor_ForkStripHeapDumper";
+  private boolean mLoadSuccess;
 
-  public ForkStripHeapDumper() {
-    super();
+  private static class Holder {
+    private static final ForkStripHeapDumper INSTANCE = new ForkStripHeapDumper();
+  }
+
+  public static ForkStripHeapDumper getInstance() {
+    return ForkStripHeapDumper.Holder.INSTANCE;
+  }
+
+  private ForkStripHeapDumper() {}
+
+  private void init() {
+    if (mLoadSuccess) {
+      return;
+    }
+    if (loadSoQuietly("koom-strip-dump")) {
+      mLoadSuccess = true;
+      initStripDump();
+    }
   }
 
   @Override
-  public boolean dump(String path) {
-    MonitorLog.e(TAG, "dump " + path);
-    boolean dumpRes;
-    try {
-      StripHprofHeapDumper stripHprofHeapDumper = new StripHprofHeapDumper();
-      stripHprofHeapDumper.initStripDump();
-      stripHprofHeapDumper.hprofName(path);
-
-      ForkJvmHeapDumper forkJvmHeapDumper = ForkJvmHeapDumper.getInstance();
-      dumpRes = forkJvmHeapDumper.dump(path);
-      MonitorLog.e(TAG, "dump end");
-    } catch (Exception e) {
-      e.printStackTrace();
+  public synchronized boolean dump(String path) {
+    MonitorLog.i(TAG, "dump " + path);
+    if (!sdkVersionMatch()) {
+      throw new UnsupportedOperationException("dump failed caused by sdk version not supported!");
+    }
+    init();
+    if (!mLoadSuccess) {
+      MonitorLog.e(TAG, "dump failed caused by so not loaded!");
       return false;
+    }
+    boolean dumpRes = false;
+    try {
+      hprofName(path);
+      dumpRes = ForkJvmHeapDumper.getInstance().dump(path);
+      MonitorLog.i(TAG, "dump result " + dumpRes);
+    } catch (Exception e) {
+      MonitorLog.e(TAG, "dump failed caused by " + e);
+      e.printStackTrace();
     }
     return dumpRes;
   }
+
+  public native void initStripDump();
+
+  public native void hprofName(String name);
 }

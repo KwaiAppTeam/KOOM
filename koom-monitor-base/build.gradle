@@ -2,7 +2,7 @@ plugins {
     id 'com.android.library'
 }
 apply from: rootProject.file('gradle/common.gradle')
-apply from: rootProject.file('gradle/mavenCentral-publish.gradle')
+apply from: rootProject.file('gradle/mavenCentral-android-publish.gradle')
 
 
 android {
@@ -18,6 +18,28 @@ android {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    flavorDimensions "stl_mode"
+    productFlavors {
+        StaticCpp {
+            dimension "stl_mode"
+            ext.artifactIdSuffix = 'static'
+            externalNativeBuild {
+                cmake {
+                    arguments = ["-DANDROID_STL=c++_static"]
+                }
+            }
+        }
+        SharedCpp {
+            dimension "stl_mode"
+            ext.artifactIdSuffix = ''
+            externalNativeBuild {
+                cmake {
+                    arguments = ["-DANDROID_STL=c++_shared"]
+                }
+            }
         }
     }
 }
