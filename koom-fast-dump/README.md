@@ -53,13 +53,14 @@ LeakCanary.config = LeakCanary.config.copy(
 
 
 - Key Log
-
-> 16743 16766 I OOMMonitor_ForkJvmHeapDumper: dump xxx.hprof. <br>
-> 16743 16766 I OOMMonitor_ForkJvmHeapDumper: before suspend and fork. <br>
-> // The pid changes from 16743 to 16807, and the child process starts to dump <br>
-> 16807 16807 I mple.leakcanar: hprof: heap dump "xxx.hprof" starting... <br>
-> // The child process dump finished, it takes 6.4s <br>
-> 16807 16807 I mple.leakcanar: hprof: heap dump completed (24MB) in 6.411s objects 330914 objects with stack traces 0 <br>
-> 16807 16807 I JNIBridge: process 16807 will exit! <br>
-> // The main process is notified by the completion of the child process dump <br>
-> 16743 16766 I OOMMonitor_ForkJvmHeapDumper: dump true, notify from pid 16807 <br>
+```kotlin
+16743 16766 I OOMMonitor_ForkJvmHeapDumper: dump xxx.hprof.
+16743 16766 I OOMMonitor_ForkJvmHeapDumper: before suspend and fork.
+// The pid changes from 16743 to 16807, and the child process starts to dump
+16807 16807 I mple.leakcanar: hprof: heap dump "xxx.hprof" starting...
+// The child process dump finished, it takes 6.4s
+16807 16807 I mple.leakcanar: hprof: heap dump completed (24MB) in 6.411s objects 330914 objects with stack traces 0
+16807 16807 I JNIBridge: process 16807 will exit!
+// The main process is notified by the completion of the child process dump
+16743 16766 I OOMMonitor_ForkJvmHeapDumper: dump true, notify from pid 16807
+```
