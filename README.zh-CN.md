@@ -18,13 +18,16 @@ KOOM(Kwai OOM, Kill OOM)是快手性能优化团队在处理移动端OOM问题�
 
 ## STL 支持
 所有Native模块均支持c++_shared和c++_static两种接入模式，详情参考 [cpp-support](https://developer.android.com/ndk/guides/cpp-support)
-- 项目 build.gradle 中增加依赖(以koom-fast-dump为例)：
+- 项目 build.gradle 中增加依赖(以koom-java-leak为例)：
 ```groovy
 dependencies {
   // shared模式，多个模块共享同一个libc++_shared.so，包体较小，但当多个模块依赖的STL版本不同时，最终编译会发生冲突。
-  implementation "com.kuaishou.koom:koom-fast-dump:${latest_version}"
+  implementation "com.kuaishou.koom:koom-java-leak:${latest_version}"
   // or static模式，包体较大，无编译和运行时问题。
-  implementation "com.kuaishou.koom:koom-fast-dump-static:${latest_version}"
+  implementation "com.kuaishou.koom:koom-java-leak-static:${latest_version}"
+  // 如果依赖多个模块，shared和static模式不能混用，如下写法是错误的，切记！
+  implementation "com.kuaishou.koom:koom-java-leak-static:${latest_version}"
+  implementation "com.kuaishou.koom:koom-monitor-base:${latest_version}"
 }
 ```
 - 介绍一种解决shared模式冲突的办法，项目根目录 build.gradle 中增加pickFirst：
