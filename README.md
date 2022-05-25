@@ -30,16 +30,21 @@ The app freezes for a long time during the dump. For details, please refer to [h
 ## STL Support
 All Native modules support two access modes, c++_shared and c++_static. For details, please 
 refer to [cpp-support](https://developer.android.com/ndk/guides/cpp-support).
-- Add dependency to the project build.gradle (take koom-fast-dump as an example)：
+- Add dependency to the project build.gradle (take koom-java-leak as an example)：
 ```groovy
 dependencies {
   // In shared mode, multiple modules share the same libc++_shared.so (STL), and the package 
   // size is small, but when multiple modules depend on different STL versions, the final 
-  // compilation will conflict.
-  implementation "com.kuaishou.koom:koom-fast-dump:${latest_version}"
+  // compilation will conflict. For example, you might get "dlopen failed: cannot locate symbol
+  // "__emutls_get_address" referenced by" errors.
+  implementation "com.kuaishou.koom:koom-java-leak:${latest_version}"
   // Or in static mode, each module has its own STL, the package size is large, and there are no 
   // compilation and runtime problems.
-  implementation "com.kuaishou.koom:koom-fast-dump-static:${latest_version}"
+  implementation "com.kuaishou.koom:koom-java-leak-static:${latest_version}"
+  // If you depend on multiple modules, the shared and static modes cannot be mixed. 
+  // The following way is wrong, remember!
+  implementation "com.kuaishou.koom:koom-java-leak-static:${latest_version}"
+  implementation "com.kuaishou.koom:koom-monitor-base:${latest_version}"
 }
 ```
 - Introduce a way to resolve the conflict of shared mode, add `pickFirst` in the project root 
