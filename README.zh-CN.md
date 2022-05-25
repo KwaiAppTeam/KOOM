@@ -22,6 +22,7 @@ KOOM(Kwai OOM, Kill OOM)是快手性能优化团队在处理移动端OOM问题�
 ```groovy
 dependencies {
   // shared模式，多个模块共享同一个libc++_shared.so，包体较小，但当多个模块依赖的STL版本不同时，最终编译会发生冲突。
+  // 例如, 可能会遇到 "dlopen failed: cannot locate symbol "__emutls_get_address" referenced by" 错误.
   implementation "com.kuaishou.koom:koom-java-leak:${latest_version}"
   // or static模式，包体较大，无编译和运行时问题。
   implementation "com.kuaishou.koom:koom-java-leak-static:${latest_version}"
