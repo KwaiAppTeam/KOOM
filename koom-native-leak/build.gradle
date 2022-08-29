@@ -54,8 +54,11 @@ android {
             dimension "stl_mode"
             ext.artifactIdSuffix = ''
             externalNativeBuild {
+		// Because koom-native-leak hook memory allocator, and hook implementation using some apis(may invoke memory allocator) from 
+		// libc++, then loop call lead stack overflow. so we always using "c++_static", and this increase package size,
+		// you can dynamic delivery native-leak module using plugin technology
                 cmake {
-                    arguments = ["-DANDROID_STL=c++_shared"]
+                    arguments = ["-DANDROID_STL=c++_static"]
                 }
             }
         }
