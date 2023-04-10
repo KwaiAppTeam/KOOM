@@ -144,7 +144,6 @@ bool HprofDump::ResumeAndWait(pid_t pid) {
       }
       return true;
     }
-    return false;
   }
 }
 
