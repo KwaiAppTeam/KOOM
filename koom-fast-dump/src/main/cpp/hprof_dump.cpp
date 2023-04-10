@@ -136,7 +136,7 @@ bool HprofDump::ResumeAndWait(pid_t pid) {
   }
   int status;
   for (;;) {
-    if (waitpid(pid, &status, 0) != -1 || errno != EINTR) {
+    if (waitpid(pid, &status, 0) != -1) {
       if (!WIFEXITED(status)) {
         ALOGE("Child process %d exited with status %d, terminated by signal %d",
               pid, WEXITSTATUS(status), WTERMSIG(status));
@@ -144,6 +144,11 @@ bool HprofDump::ResumeAndWait(pid_t pid) {
       }
       return true;
     }
+    // 被信号中断调用的话，再发起一次waitpid调用即可
+    if (errno == EINTR){
+      continue;
+    }
+    return false;
   }
 }
 
