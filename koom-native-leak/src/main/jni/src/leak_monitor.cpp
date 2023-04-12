@@ -205,7 +205,8 @@ std::vector<std::shared_ptr<AllocRecord>> LeakMonitor::GetLeakAllocs() {
       if (is_leak(unreachable, live)) {
         leak_allocs.push_back(live);
         // Just remove leak allocation(never be free)
-        UnregisterAlloc(live->address);
+        // live->address has been confused, we need to revert it first
+        UnregisterAlloc(CONFUSE(live->address));
       }
     }
   }
@@ -238,7 +239,7 @@ ALWAYS_INLINE void LeakMonitor::RegisterAlloc(uintptr_t address, size_t size) {
 }
 
 ALWAYS_INLINE void LeakMonitor::UnregisterAlloc(uintptr_t address) {
-  live_alloc_records_.Erase(address);
+  live_alloc_records_.Erase(CONFUSE(address));
 }
 
 ALWAYS_INLINE void LeakMonitor::OnMonitor(uintptr_t address, size_t size) {
