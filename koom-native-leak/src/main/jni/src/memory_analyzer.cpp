@@ -92,13 +92,13 @@ MemoryAnalyzer::CollectUnreachableMem() {
       unreachable_memory.begin(), unreachable_memory.end(), filter_regex);
   std::sregex_iterator unreachable_end;
   for (; unreachable_begin != unreachable_end; ++unreachable_begin) {
-    std::string line = unreachable_begin->str();
+    const auto& line = unreachable_begin->str();
     auto address =
         std::stoul(line.substr(line.find_last_of(' ') + 1,
                                line.length() - line.find_last_of(' ') - 1),
                    0, 16);
     auto size = std::stoul(line.substr(0, line.find_first_of(' ')));
-    unreachable_mem.push_back(std::pair<uintptr_t, size_t>(address, size));
+    unreachable_mem.emplace_back(address, size);
   }
   return std::move(unreachable_mem);
 }
