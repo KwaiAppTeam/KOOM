@@ -144,7 +144,7 @@ bool HprofDump::ResumeAndWait(pid_t pid) {
       }
       return true;
     }
-    // 被信号中断调用的话，再发起一次waitpid调用即可
+    // if waitpid is interrupted by the signal,just call it again
     if (errno == EINTR){
       continue;
     }
