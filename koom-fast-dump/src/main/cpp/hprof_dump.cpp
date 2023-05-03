@@ -136,13 +136,17 @@ bool HprofDump::ResumeAndWait(pid_t pid) {
   }
   int status;
   for (;;) {
-    if (waitpid(pid, &status, 0) != -1 || errno != EINTR) {
+    if (waitpid(pid, &status, 0) != -1) {
       if (!WIFEXITED(status)) {
         ALOGE("Child process %d exited with status %d, terminated by signal %d",
               pid, WEXITSTATUS(status), WTERMSIG(status));
         return false;
       }
       return true;
+    }
+    // if waitpid is interrupted by the signal,just call it again
+    if (errno == EINTR){
+      continue;
     }
     return false;
   }
