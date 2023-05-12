@@ -204,9 +204,8 @@ std::vector<std::shared_ptr<AllocRecord>> LeakMonitor::GetLeakAllocs() {
     for (auto &unreachable : unreachable_allocs) {
       if (is_leak(unreachable, live)) {
         leak_allocs.push_back(live);
-        // Just remove leak allocation(never be free)
         // live->address has been confused, we need to revert it first
-        UnregisterAlloc(CONFUSE(live->address));
+        freeMonitor(reinterpret_cast<void*>(CONFUSE(live->address)));
       }
     }
   }
