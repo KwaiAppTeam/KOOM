@@ -78,7 +78,7 @@ MemoryAnalyzer::CollectUnreachableMem() {
   int origin_dumpable = prctl(PR_GET_DUMPABLE);
 
   // libmemunreachable NOT work in release apk because it using ptrace
-  if (prctl(PR_SET_DUMPABLE, 1, 0, 0, 0) == -1) {
+  if (prctl(PR_SET_DUMPABLE, 1) == -1) {
     ALOGE("Set process dumpable Fail");
     return std::move(unreachable_mem);
   }
@@ -87,7 +87,7 @@ MemoryAnalyzer::CollectUnreachableMem() {
   std::string unreachable_memory = get_unreachable_fn_(false, 1024);
 
   // Unset "dumpable" for security
-  prctl(PR_SET_DUMPABLE, origin_dumpable, 0, 0, 0);
+  prctl(PR_SET_DUMPABLE, origin_dumpable);
 
   std::regex filter_regex("[0-9]+ bytes unreachable at [A-Za-z0-9]+");
   std::sregex_iterator unreachable_begin(
