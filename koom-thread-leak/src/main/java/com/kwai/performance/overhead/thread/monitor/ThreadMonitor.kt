@@ -66,9 +66,8 @@ object ThreadMonitor : LoopMonitor<ThreadMonitorConfig>() {
   }
 
   private fun handleNativeInit(): Boolean {
-    if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.O || Build.VERSION.SDK_INT > Build
-            .VERSION_CODES.R) {
-      monitorConfig.listener?.onError("not support P below or R above now!")
+    if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.O || Build.VERSION.SDK_INT > Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+      monitorConfig.listener?.onError("not support P below or UPSIDE_DOWN_CAKE above now!")
       return false
     }
     if (!isArm64()) {
