@@ -78,6 +78,7 @@ class CommonConfig private constructor(
       mDebugMode = debugMode
     }
 
+    // NOTE(fork dump): fork dump check sdkVersionMatch first
     fun setSdkVersionMatch(sdkVersionMatch: Boolean) = apply {
       mSdkVersionMatch = sdkVersionMatch
     }
