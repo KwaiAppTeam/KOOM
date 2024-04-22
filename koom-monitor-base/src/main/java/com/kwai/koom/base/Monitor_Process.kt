@@ -23,6 +23,7 @@ import android.content.Context
 import android.os.Build
 import android.os.Process
 import com.kwai.koom.base.MonitorManager.getApplication
+import com.kwai.koom.base.utils.ProcessUtil
 import java.io.File
 
 enum class Abi {
@@ -92,18 +93,5 @@ private fun getProcessNameByProc(): String? {
 }
 
 private fun getProcessNameByAms(): String? {
-  try {
-    val activityManager = MonitorManager.getApplication().getSystemService(Context.ACTIVITY_SERVICE)
-        as ActivityManager
-
-    val appProcessList = activityManager.runningAppProcesses
-    for (processInfo in appProcessList.orEmpty()) {
-      if (processInfo.pid == Process.myPid()) {
-        return processInfo.processName
-      }
-    }
-  } catch (e: Exception) {
-    e.printStackTrace()
-  }
-  return null
+  return ProcessUtil.getCurrentProcessName(MonitorManager.getApplication())
 }
