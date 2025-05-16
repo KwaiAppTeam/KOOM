@@ -27,7 +27,7 @@ object DefaultInitTask : InitTask {
       .setApplication(application) // Set application
       .setVersionNameInvoker { "1.0.0" } // Set version name, java leak feature use it
       .setSdkVersionMatch(
-        Build.VERSION.SDK_INT <= Build.VERSION_CODES.UPSIDE_DOWN_CAKE &&
+        Build.VERSION.SDK_INT <= 36 &&
             Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP
       )  // Set if current sdk version is supported
       .build()

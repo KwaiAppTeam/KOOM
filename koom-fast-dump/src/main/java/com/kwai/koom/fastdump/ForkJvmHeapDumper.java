@@ -23,14 +23,11 @@ package com.kwai.koom.fastdump;
 import static com.kwai.koom.base.Monitor_ApplicationKt.sdkVersionMatch;
 import static com.kwai.koom.base.Monitor_SoKt.loadSoQuietly;
 
-import java.io.IOException;
+import android.text.TextUtils;
 
-import android.os.Build;
-import android.os.Debug;
+import androidx.annotation.NonNull;
 
-import com.kwai.koom.base.MonitorBuildConfig;
 import com.kwai.koom.base.MonitorLog;
-import com.kwai.koom.base.MonitorManager;
 
 public class ForkJvmHeapDumper implements HeapDumper {
   private static final String TAG = "OOMMonitor_ForkJvmHeapDumper";
@@ -68,23 +65,13 @@ public class ForkJvmHeapDumper implements HeapDumper {
       return false;
     }
 
-    boolean dumpRes = false;
-    try {
-      MonitorLog.i(TAG, "before suspend and fork.");
-      int pid = suspendAndFork();
-      if (pid == 0) {
-        // Child process
-        Debug.dumpHprofData(path);
-        exitProcess();
-      } else if (pid > 0) {
-        // Parent process
-        dumpRes = resumeAndWait(pid);
-        MonitorLog.i(TAG, "dump " + dumpRes + ", notify from pid " + pid);
-      }
-    } catch (IOException e) {
-      MonitorLog.e(TAG, "dump failed caused by " + e);
-      e.printStackTrace();
+    if (TextUtils.isEmpty(path)) {
+      MonitorLog.e(TAG, "dump failed caused by empty path!");
+      return false;
     }
+
+    boolean dumpRes = forkDump(path, true);
+    MonitorLog.i(TAG, String.format("dump to %s %s %s", path, "and wait", dumpRes ? "success" : "failure"));
     return dumpRes;
   }
 
@@ -93,22 +80,5 @@ public class ForkJvmHeapDumper implements HeapDumper {
    */
   private native void nativeInit();
 
-  /**
-   * Suspend the whole ART, and then fork a process for dumping hprof.
-   *
-   * @return return value of fork
-   */
-  private native int suspendAndFork();
-
-  /**
-   * Resume the whole ART, and then wait child process to notify.
-   *
-   * @param pid pid of child process.
-   */
-  private native boolean resumeAndWait(int pid);
-
-  /**
-   * Exit current process.
-   */
-  private native void exitProcess();
+  private native boolean forkDump(@NonNull String path, boolean waitPid);
 }
