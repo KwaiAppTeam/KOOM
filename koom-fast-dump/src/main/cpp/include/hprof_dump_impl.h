@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021. Kwai, Inc. All rights reserved.
+ * Copyright (c) 2025. Kwai, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,50 +13,42 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * Created by Qiushi Xue <xueqiushi@kuaishou.com> on 2021.
+ * Created by wangzefeng <wangzefeng@kuaishou.com> on 2025.
  *
  */
 
-#ifndef KOOM_HPROF_DUMP_H
-#define KOOM_HPROF_DUMP_H
+#ifndef KOOM_HPROF_DUMP_IMPL_H_
+#define KOOM_HPROF_DUMP_IMPL_H_
 
-#include <android-base/macros.h>
-
-#include <memory>
-#include <string>
+#include <sys/types.h>
 
 namespace kwai {
 namespace leak_monitor {
 
-inline void FastExit(int exit_code) {
-  _exit(exit_code);
-}
-
-class HprofDumpImpl;
-
-class HprofDump {
+class HprofDumpImpl {
  public:
-  static HprofDump &GetInstance();
+  static HprofDumpImpl &GetInstance(int android_api);
 
-  void Initialize();
+ public:
+  virtual ~HprofDumpImpl() {};
 
+ public:
+  virtual bool Initialize() = 0;
+
+ public:
+  virtual bool Suspend() = 0;
+  virtual pid_t Fork();
+  virtual bool Resume() = 0;
+
+  virtual void DumpHeap(const char* filename) = 0;
+
+ public:
   // Avoid Any Not Necessary actions on the forked process
   pid_t SuspendAndFork();
-  bool Resume();
   bool ResumeAndWait(pid_t pid);
-
-  void DumpHeap(const char* filename);
-
- private:
-  HprofDump();
-  ~HprofDump() = default;
-  DISALLOW_COPY_AND_ASSIGN(HprofDump);
-
- private:
-  HprofDumpImpl &impl_;
 };
 
-}  // namespace leak_monitor
-}  // namespace kwai
+} // namespace leak_monitor
+} // namespace kwai
 
-#endif  // KOOM_HPROF_DUMP_H
+#endif //KOOM_HPROF_DUMP_IMPL_H_

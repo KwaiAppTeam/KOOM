@@ -47,23 +47,28 @@ JNIEXPORT void JNICALL Java_com_kwai_koom_fastdump_ForkJvmHeapDumper_nativeInit(
   HprofDump::GetInstance().Initialize();
 }
 
-JNIEXPORT jint JNICALL
-Java_com_kwai_koom_fastdump_ForkJvmHeapDumper_suspendAndFork(
-    JNIEnv *env ATTRIBUTE_UNUSED, jobject jobject ATTRIBUTE_UNUSED) {
-  return HprofDump::GetInstance().SuspendAndFork();
-}
-
-JNIEXPORT void JNICALL
-Java_com_kwai_koom_fastdump_ForkJvmHeapDumper_exitProcess(
-    JNIEnv *env ATTRIBUTE_UNUSED, jobject jobject ATTRIBUTE_UNUSED) {
-  ALOGI("process %d will exit!", getpid());
-  _exit(0);
-}
-
 JNIEXPORT jboolean JNICALL
-Java_com_kwai_koom_fastdump_ForkJvmHeapDumper_resumeAndWait(
-    JNIEnv *env ATTRIBUTE_UNUSED, jobject jobject ATTRIBUTE_UNUSED, jint pid) {
-  return HprofDump::GetInstance().ResumeAndWait(pid);
+Java_com_kwai_koom_fastdump_ForkJvmHeapDumper_forkDump(
+    JNIEnv *env, jobject,
+    jstring j_path, jboolean wait_pid
+) {
+  bool dump_success = false;
+  auto c_path = env->GetStringUTFChars(j_path, nullptr);
+  std::string file_name(c_path);
+  env->ReleaseStringUTFChars(j_path, c_path);
+
+  auto pid = HprofDump::GetInstance().SuspendAndFork();
+  if (pid == 0) {
+    HprofDump::GetInstance().DumpHeap(file_name.c_str());
+    FastExit(0);
+  } else if (pid > 0) {
+    dump_success =
+        JNI_TRUE == wait_pid
+            ? HprofDump::GetInstance().ResumeAndWait(pid)
+            : HprofDump::GetInstance().Resume();
+  }
+
+  return dump_success;
 }
 
 #ifdef __cplusplus
