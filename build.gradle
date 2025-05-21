@@ -68,6 +68,7 @@ allprojects {
         mavenCentral()
         maven { url 'https://jitpack.io' }
         google()
+        maven { url 'https://s01.oss.sonatype.org/service/local/repositories/releases/content/' }
     }
 }
 
