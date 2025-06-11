@@ -60,7 +60,15 @@ LeakMonitor.INSTANCE.stop()
 ```java
 LeakMonitor.INSTANCE.checkLeaks()
 ```
-
+- **Attention**, please make sure that the config in `app/AndroidManifest.xml`, `android:extractNativeLibs` attribute must be `true`, otherwise LeakMonitor can not obtain any native leak record
+```xml
+...
+<application
+    ...
+    android:extractNativeLibs="true"
+    ...
+    />
+```
 # FAQ
 - Why are devices below Android N not supported?
     - AOSP added the libmemunreachable module after Android N, "Of course, you can also extract it by yourself and test it in the APP."
