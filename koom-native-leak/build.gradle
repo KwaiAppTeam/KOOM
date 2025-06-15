@@ -1,10 +1,12 @@
 plugins {
     id 'com.android.library'
+    id 'org.jetbrains.kotlin.android'
 }
 apply from: rootProject.file('gradle/common.gradle')
 apply from: rootProject.file('gradle/mavenCentral-android-publish.gradle')
 
 android {
+    namespace 'com.kwai.koom.nativeoom'
     defaultConfig {
         versionCode 1
         versionName "1.0"
@@ -54,9 +56,6 @@ android {
             dimension "stl_mode"
             ext.artifactIdSuffix = ''
             externalNativeBuild {
-		// Because koom-native-leak hook memory allocator, and hook implementation using some apis(may invoke memory allocator) from 
-		// libc++, then infinite recursive call lead stack overflow. so we always using "c++_static", and this increase package size,
-		// you can dynamic delivery native-leak module using plugin technology
                 cmake {
                     arguments = ["-DANDROID_STL=c++_static"]
                 }

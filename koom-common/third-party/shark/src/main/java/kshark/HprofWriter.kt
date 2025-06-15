@@ -347,6 +347,8 @@ class HprofWriter private constructor(
       is HeapDumpEndRecord -> {
         throw IllegalArgumentException("HprofWriter automatically emits HeapDumpEndRecord")
       }
+
+      else -> {}
     }
   }
 
