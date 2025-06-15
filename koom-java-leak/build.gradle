@@ -6,6 +6,7 @@ apply from: rootProject.file('gradle/common.gradle')
 apply from: rootProject.file('gradle/mavenCentral-android-publish.gradle')
 
 android {
+    namespace 'com.kwai.koom.javaoom'
 
     defaultConfig {
         versionCode 1
@@ -34,8 +35,8 @@ android {
     }
 
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_8
-        targetCompatibility JavaVersion.VERSION_1_8
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
     }
 
     externalNativeBuild {

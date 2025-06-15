@@ -7,12 +7,11 @@ task androidSourcesJar(type: Jar) {
     } else {
         from sourceSets.main.allSource
     }
-    classifier 'sources'
+    archiveClassifier.set("sources")
 }
 
 task javadocJar(type: Jar) {
     archiveClassifier.set("javadoc")
-    classifier "javadoc"
 }
 
 tasks.withType(Javadoc) {

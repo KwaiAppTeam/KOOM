@@ -592,6 +592,8 @@ internal class HprofInMemoryIndex private constructor(
               writeTruncatedLong(recordSize, bytesForPrimitiveArraySize)
             }
         }
+
+        else -> {}
       }
     }
 
@@ -688,6 +690,8 @@ internal class HprofInMemoryIndex private constructor(
               reader.skipPrimitiveArrayDumpRecord()
               maxPrimitiveArraySize = max(maxPrimitiveArraySize, reader.bytesRead - bytesReadStart)
             }
+
+            else -> {}
           }
         })
 

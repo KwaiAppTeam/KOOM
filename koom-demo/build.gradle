@@ -1,9 +1,11 @@
 plugins {
     id 'com.android.application'
+    id 'org.jetbrains.kotlin.android'
 }
 apply from: rootProject.file('gradle/common.gradle')
 
 android {
+    namespace 'com.kwai.koom.demo'
     defaultConfig {
         applicationId "com.kwai.koom.demo"
         versionCode 1
@@ -35,8 +37,12 @@ android {
 
     flavorDimensions "stl_mode"
     productFlavors {
-        StaticCpp.dimension = "stl_mode"
-        SharedCpp.dimension = "stl_mode"
+        StaticCpp {
+            dimension "stl_mode"
+        }
+        SharedCpp {
+            dimension "stl_mode"
+        }
     }
 
     packagingOptions {
