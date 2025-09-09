@@ -40,7 +40,7 @@ static const char *kGetUnreachableMemoryStringSymbolBelowO =
     "_Z26GetUnreachableMemoryStringbm";
 
 MemoryAnalyzer::MemoryAnalyzer()
-    : get_unreachable_fn_(nullptr), handle_(nullptr) {
+    : get_unreachable_fn_(nullptr) {
   auto handle = kwai::linker::DlFcn::dlopen(kLibMemUnreachableName, RTLD_NOW);
   if (!handle) {
     ALOGE("dlopen %s error: %s", kLibMemUnreachableName, dlerror());
@@ -56,12 +56,7 @@ MemoryAnalyzer::MemoryAnalyzer()
         reinterpret_cast<GetUnreachableFn>(kwai::linker::DlFcn::dlsym(
             handle, kGetUnreachableMemoryStringSymbolBelowO));
   }
-}
-
-MemoryAnalyzer::~MemoryAnalyzer() {
-  if (handle_) {
-    kwai::linker::DlFcn::dlclose(handle_);
-  }
+  kwai::linker::DlFcn::dlclose(handle);
 }
 
 bool MemoryAnalyzer::IsValid() { return get_unreachable_fn_ != nullptr; }
