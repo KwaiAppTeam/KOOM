@@ -53,6 +53,15 @@ LeakMonitor.INSTANCE.stop();
 ```java
 LeakMonitor.INSTANCE.checkLeaks();
 ```
+- **注意**，请确保`app/AndroidManifest.xml`中的配置，`android:extractNativeLibs`属性必须为`true`，否则无法抓取到native泄漏
+```xml
+...
+<application
+    ...
+    android:extractNativeLibs="true"
+    ...
+    />
+```
 # FAQ
 - 为什么不支持 Android N 以下的设备？
     - AOSP 在 Android N 之后系统才增加了 libmemunreachable 模块「当然也可以自己抽出来在 APP 测实现」
