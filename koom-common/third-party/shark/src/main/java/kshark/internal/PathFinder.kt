@@ -276,6 +276,7 @@ internal class PathFinder(
         is HeapClass -> visitClassRecord(heapObject, node)
         is HeapInstance -> visitInstance(heapObject, node)
         is HeapObjectArray -> visitObjectArray(heapObject, node)
+        else -> {}
       }
     }
     return PathFindingResults(

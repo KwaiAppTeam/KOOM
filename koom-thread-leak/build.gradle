@@ -1,4 +1,3 @@
-
 plugins {
     id 'com.android.library'
 }
@@ -6,6 +5,7 @@ apply from: rootProject.file('gradle/common.gradle')
 apply from: rootProject.file('gradle/mavenCentral-android-publish.gradle')
 
 android {
+    namespace 'com.kwai.performance.overhead.thread.monitor'
     defaultConfig {
         versionCode 1
         versionName "1.0"

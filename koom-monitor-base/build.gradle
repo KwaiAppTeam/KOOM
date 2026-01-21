@@ -6,6 +6,7 @@ apply from: rootProject.file('gradle/mavenCentral-android-publish.gradle')
 
 
 android {
+    namespace 'com.kwai.koom.base'
     defaultConfig {
         versionCode 1
         versionName "1.0"
