@@ -34,7 +34,6 @@ class HprofStrip {
   static void HookInit();
   int HookOpenInternal(const char *path_name, int flags, ...);
   ssize_t HookWriteInternal(int fd, const void *buf, ssize_t count);
-  bool IsHookSuccess() const;
   void SetHprofName(const char *hprof_name);
 
  private:
