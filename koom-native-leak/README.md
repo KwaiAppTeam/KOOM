@@ -35,12 +35,10 @@ Since LeakMonitor depends on MonitorManager, make sure that MonitorManager has b
 LeakMonitorConfig config = new LeakMonitorConfig.Builder()
     .setLoopInterval(50000) // Set polling interval, time unit: millisecond
     .setMonitorThreshold(16) // Set the threshold of the monitored memory block, unit: byte
-    .setNativeHeapAllocatedThreshold(0) // Set the threshold of how much memory allocated by the 
-native heap reaches to start monitoring, unit: byte
+    .setNativeHeapAllocatedThreshold(0) // Set the threshold of how much memory allocated by the native heap reaches to start monitoring, unit: byte
     .setSelectedSoList(new String[0]) // Set the monitor specific libraries, such as monitoring libcore.so, just write 'libcore'
     .setIgnoredSoList(new String[0]) // Set the libraries that you need to ignore monitoring
-    .setEnableLocalSymbolic(false) // Set enable local symbolic, this is helpful in debug mode. 
-    Not enable in release mode
+    .setEnableLocalSymbolic(false) // Set enable local symbolic, this is helpful in debug mode. Not enable in release mode
     .setLeakListener(leaks -> { }) // Set leak listener for receive leak records
     .build();
 MonitorManager.addMonitorConfig(config);
