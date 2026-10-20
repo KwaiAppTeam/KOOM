@@ -25,10 +25,6 @@ ext {
     PUBLISH_ARTIFACT_ID = "${project.getName()}"           //project name
 }
 
-ext["signing.keyId"] = ''
-ext["signing.password"] = ''
-ext["signing.secretKeyRingFile"] = ''
-
 File secretPropsFile = project.rootProject.file('.gradle/gradle.properties')
 if (secretPropsFile.exists()) {
     println "Found secret props file, loading props"

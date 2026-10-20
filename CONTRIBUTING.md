@@ -45,17 +45,16 @@ Please make sure the following is done when submitting a pull request:
 
 ## Maven Central Publishing
 
-Configure `sonatypeUsername` / `sonatypePassword` with a [Central Portal user token](https://central.sonatype.org/publish/generate-portal-token/)
-in `~/.gradle/gradle.properties`, or set `ORG_GRADLE_PROJECT_sonatypeUsername` / `ORG_GRADLE_PROJECT_sonatypePassword`.
-Keep the existing PGP signing configuration in `.gradle/gradle.properties` and set `VERSION_NAME` before building:
+Configure `sonatypeUsername` / `sonatypePassword` and the existing `signing.*` properties in `~/.gradle/gradle.properties`.
+Use the same `KOOM_RELEASE_VERSION` for both steps:
 
 ```sh
-./gradlew assembleRelease :koom-common:third-party:shark:jar -x :koom-demo:assembleRelease
-./gradlew publishToSonatype closeSonatypeStagingRepository
+./gradlew -PVERSION_NAME="$KOOM_RELEASE_VERSION" assembleRelease :koom-common:third-party:shark:jar -x :koom-demo:assembleRelease
+./gradlew -PVERSION_NAME="$KOOM_RELEASE_VERSION" publishToSonatype closeSonatypeStagingRepository
 ```
 
 Closing transfers the deployment to the [Central Portal](https://central.sonatype.com/publishing/deployments) for validation and manual publication.
-For `-SNAPSHOT` versions, run `publishToSonatype` without the close task.
+For an upload test, stop at `VALIDATED`. For `-SNAPSHOT` versions, omit the close task.
 
 ## License
 
