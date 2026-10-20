@@ -25,12 +25,6 @@ ext {
     PUBLISH_ARTIFACT_ID = "${project.getName()}"           //project name
 }
 
-ext["signing.keyId"] = ''
-ext["signing.password"] = ''
-ext["signing.secretKeyRingFile"] = ''
-ext["ossrhUsername"] = ''
-ext["ossrhPassword"] = ''
-
 File secretPropsFile = project.rootProject.file('.gradle/gradle.properties')
 if (secretPropsFile.exists()) {
     println "Found secret props file, loading props"
@@ -86,6 +80,7 @@ afterEvaluate {
                         artifact("build/outputs/aar/${project.getName()}-release.aar")
                     }
                     artifact androidSourcesJar
+                    artifact javadocJar
                 } else {
                     artifact("$buildDir/libs/${project.getName()}.jar")
                     artifact androidSourcesJar
@@ -123,7 +118,7 @@ afterEvaluate {
                         project.configurations.implementation.allDependencies.each {
                             if (it.group != null) {
                                 def dependencyNode = dependenciesNode.appendNode('dependency')
-                                if ((it.group).contains(rootProject.name)) {
+                                if (it instanceof ProjectDependency) {
                                     dependencyNode.appendNode('groupId', GROUP)
                                     // Consider a java project like "shark"
                                     if (it.dependencyProject.hasProperty("android")) {
@@ -145,25 +140,6 @@ afterEvaluate {
         }
     }
 
-    publishing.repositories {
-        // The repository to publish to, Sonatype/MavenCentral
-        maven {
-            // This is an arbitrary name, you may also use "mavencentral" or
-            // any other name that's descriptive for you
-            name = rootProject.name
-            def releasesRepoUrl = "https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/"
-            def snapshotsRepoUrl = "https://s01.oss.sonatype.org/content/repositories/snapshots/"
-            // You only need this if you want to publish snapshots, otherwise just set the URL
-            // to the release repo directly
-            url = version.endsWith('SNAPSHOT') ? snapshotsRepoUrl : releasesRepoUrl
-
-            // The username and password we've fetched earlier
-            credentials {
-                username ossrhUsername
-                password ossrhPassword
-            }
-        }
-    }
     signing {
         sign publishing.publications
     }
