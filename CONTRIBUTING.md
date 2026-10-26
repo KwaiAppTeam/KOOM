@@ -43,6 +43,19 @@ Please make sure the following is done when submitting a pull request:
 2. For C++ Code Style reference [Google C++ Code Style](https://google.github.io/styleguide/cppguide.html).
 
 
+## Maven Central Publishing
+
+Configure `sonatypeUsername` / `sonatypePassword` and the existing `signing.*` properties in `~/.gradle/gradle.properties`.
+Use the same `KOOM_RELEASE_VERSION` for both steps:
+
+```sh
+./gradlew -PVERSION_NAME="$KOOM_RELEASE_VERSION" assembleRelease :koom-common:third-party:shark:jar -x :koom-demo:assembleRelease
+./gradlew -PVERSION_NAME="$KOOM_RELEASE_VERSION" publishToSonatype closeSonatypeStagingRepository
+```
+
+Closing transfers the deployment to the [Central Portal](https://central.sonatype.com/publishing/deployments) for validation and manual publication.
+For an upload test, stop at `VALIDATED`. For `-SNAPSHOT` versions, omit the close task.
+
 ## License
 
 By contributing to KOOM, you agree that your contributions will be licensed under its [Apache LICENSE](./LICENSE).
