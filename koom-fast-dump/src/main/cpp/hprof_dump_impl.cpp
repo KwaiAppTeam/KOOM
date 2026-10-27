@@ -35,6 +35,7 @@
 #include "hprof_dump_below_v_impl.h"
 #include "hprof_dump_v_impl.h"
 #include "hprof_dump_b_impl.h"
+#include "hprof_dump_c_impl.h"
 
 #undef LOG_TAG
 #define LOG_TAG "HprofDumpImpl"
@@ -88,7 +89,7 @@ HprofDumpImpl &HprofDumpImpl::GetInstance(int android_api) {
   if (android_api == __ANDROID_API_B__) {
     return HprofDumpBImpl::GetInstance();
   }
-  return HprofDumpVImpl::GetInstance();
+  return HprofDumpCImpl::GetInstance();
 }
 
 pid_t HprofDumpImpl::Fork() {
