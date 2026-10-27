@@ -34,7 +34,7 @@ class ScopedGCCriticalSection;
 class MutexLock;
 
 /**
- * HprofDumpImpl for Android 15 - Android 16 (Baklava)
+ * HprofDumpImpl for Android 15
  *
  * use art::ScopedSuspendAll::ScopedSuspendAll to Suspend & Resume,
  * use art::hprof::DumpHeap to DumpHeap, **Resume before DumpHeap**

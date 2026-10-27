@@ -34,6 +34,7 @@
 #include "hprof_dump_below_r_impl.h"
 #include "hprof_dump_below_v_impl.h"
 #include "hprof_dump_v_impl.h"
+#include "hprof_dump_b_impl.h"
 
 #undef LOG_TAG
 #define LOG_TAG "HprofDumpImpl"
@@ -77,12 +78,17 @@ void InstallChildFatalSignalHandlers() {
 HprofDumpImpl &HprofDumpImpl::GetInstance(int android_api) {
   if (android_api < __ANDROID_API_R__) {
     return HprofDumpBelowRImpl::GetInstance();
-  } else if (android_api < __ANDROID_API_V__) {
+  }
+  if (android_api < __ANDROID_API_V__) {
     return HprofDumpBelowVImpl::GetInstance();
-  } else {
-    // hprof_constructor_fnc_ symbol not exists on Android 14
+  }
+  if (android_api == __ANDROID_API_V__) {
     return HprofDumpVImpl::GetInstance();
   }
+  if (android_api == __ANDROID_API_B__) {
+    return HprofDumpBImpl::GetInstance();
+  }
+  return HprofDumpVImpl::GetInstance();
 }
 
 pid_t HprofDumpImpl::Fork() {

@@ -38,7 +38,8 @@ add_library( # Sets the name of the library.
         hprof_dump_impl.cpp
         hprof_dump_below_r_impl.cpp
         hprof_dump_below_v_impl.cpp
-        hprof_dump_v_impl.cpp)
+        hprof_dump_v_impl.cpp
+        hprof_dump_b_impl.cpp)
 
 # Searches for a specified prebuilt library and stores the path as a
 # variable. Because CMake includes system libraries in the search path by
