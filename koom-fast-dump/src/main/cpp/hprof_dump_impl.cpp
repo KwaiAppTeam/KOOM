@@ -23,6 +23,7 @@
 #include <sys/prctl.h>
 #include <sys/wait.h>
 #include <cerrno>
+#include <signal.h>
 
 #include <log/kcheck.h>
 
@@ -38,6 +39,26 @@
 
 namespace kwai {
 namespace leak_monitor {
+
+namespace {
+
+constexpr int kChildSignalExitStatusBase = 128;
+
+void ChildFatalSignalHandler(int signal_number, siginfo_t*, void*) {
+  // The child is disposable. Keep the handler async-signal-safe and let the
+  // parent observe the failure through waitpid().
+  _exit(kChildSignalExitStatusBase + signal_number);
+}
+
+bool InstallChildFatalSignalHandler() {
+  struct sigaction action = {};
+  sigemptyset(&action.sa_mask);
+  action.sa_sigaction = ChildFatalSignalHandler;
+  action.sa_flags = SA_SIGINFO;
+  return sigaction(SIGSEGV, &action, nullptr) == 0;
+}
+
+}  // namespace
 
 HprofDumpImpl &HprofDumpImpl::GetInstance(int android_api) {
   if (android_api < __ANDROID_API_R__) {
@@ -61,6 +82,8 @@ pid_t HprofDumpImpl::SuspendAndFork() {
 
   pid_t pid = Fork();
   if (pid == 0) {
+    // Best effort for now; install-failure policy is handled separately.
+    (void)InstallChildFatalSignalHandler();
     // Set timeout for child process
     alarm(60);
     prctl(PR_SET_NAME, "forked-dump-process");
