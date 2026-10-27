@@ -45,18 +45,31 @@ namespace {
 
 constexpr int kChildSignalExitStatusBase = 128;
 
+// Keep this list aligned with the fatal signals handled by crash-monitor.
+constexpr int kChildFatalSignals[] = {
+    SIGSEGV,
+    SIGABRT,
+    SIGBUS,
+    SIGILL,
+    SIGFPE,
+    SIGTRAP,
+    SIGSYS,
+    SIGSTKFLT,
+};
+
 void ChildFatalSignalHandler(int signal_number, siginfo_t*, void*) {
-  // The child is disposable. Keep the handler async-signal-safe and let the
-  // parent observe the failure through waitpid().
+  // Keep this handler async-signal-safe; the parent observes the exit status.
   _exit(kChildSignalExitStatusBase + signal_number);
 }
 
-bool InstallChildFatalSignalHandler() {
+void InstallChildFatalSignalHandlers() {
   struct sigaction action = {};
   sigemptyset(&action.sa_mask);
   action.sa_sigaction = ChildFatalSignalHandler;
   action.sa_flags = SA_SIGINFO;
-  return sigaction(SIGSEGV, &action, nullptr) == 0;
+  for (const int signal_number : kChildFatalSignals) {
+    (void)sigaction(signal_number, &action, nullptr);
+  }
 }
 
 }  // namespace
@@ -89,8 +102,8 @@ pid_t HprofDumpImpl::SuspendAndFork() {
     return -1;
   }
   if (pid == 0) {
-    // Best effort for now; install-failure policy is handled separately.
-    (void)InstallChildFatalSignalHandler();
+    // Best effort: continue even if a signal handler cannot be installed.
+    InstallChildFatalSignalHandlers();
     // Set timeout for child process
     alarm(60);
     prctl(PR_SET_NAME, "forked-dump-process");
