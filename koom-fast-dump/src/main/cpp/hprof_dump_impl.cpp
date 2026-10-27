@@ -23,6 +23,7 @@
 #include <sys/prctl.h>
 #include <sys/wait.h>
 #include <cerrno>
+#include <cstring>
 #include <signal.h>
 
 #include <log/kcheck.h>
@@ -82,7 +83,8 @@ pid_t HprofDumpImpl::SuspendAndFork() {
 
   pid_t pid = Fork();
   if (pid == -1) {
-    ALOGE("Fork dump process failed, resume parent process");
+    const int fork_errno = errno;
+    ALOGE("Fork dump process failed: %s", std::strerror(fork_errno));
     Resume();
     return -1;
   }
