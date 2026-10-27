@@ -81,6 +81,11 @@ pid_t HprofDumpImpl::SuspendAndFork() {
   }
 
   pid_t pid = Fork();
+  if (pid == -1) {
+    ALOGE("Fork dump process failed, resume parent process");
+    Resume();
+    return -1;
+  }
   if (pid == 0) {
     // Best effort for now; install-failure policy is handled separately.
     (void)InstallChildFatalSignalHandler();
