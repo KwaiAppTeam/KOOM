@@ -76,9 +76,16 @@ bool HprofDumpImpl::ResumeAndWait(pid_t pid) {
   int status;
   for (;;) {
     if (waitpid(pid, &status, 0) != -1) {
+      if (WIFSIGNALED(status)) {
+        ALOGE("Child process %d terminated by signal %d", pid, WTERMSIG(status));
+        return false;
+      }
       if (!WIFEXITED(status)) {
-        ALOGE("Child process %d exited with status %d, terminated by signal %d",
-              pid, WEXITSTATUS(status), WTERMSIG(status));
+        ALOGE("Child process %d exited with unexpected wait status %d", pid, status);
+        return false;
+      }
+      if (WEXITSTATUS(status) != 0) {
+        ALOGE("Child process %d exited with status %d", pid, WEXITSTATUS(status));
         return false;
       }
       return true;
