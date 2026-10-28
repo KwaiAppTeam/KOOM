@@ -32,6 +32,10 @@ class LeakMonitorConfig(
     val leakListener: LeakListener
 ) : MonitorConfig<LeakMonitor>() {
 
+  // Keep the original Int property and constructor for existing consumers.
+  var nativeHeapAllocatedThresholdBytes: Long = nativeHeapAllocatedThreshold.toLong()
+    private set
+
   class Builder : MonitorConfig.Builder<LeakMonitorConfig> {
     /**
      * List of so to be monitored
@@ -51,7 +55,7 @@ class LeakMonitorConfig(
     /**
      * If Native Heap exceed NativeHeapAllocatedThreshold will trigger leak analysis
      */
-    private var mNativeHeapAllocatedThreshold = 0
+    private var mNativeHeapAllocatedThreshold = 0L
 
     /**
      * Default is 300s, memory analysis is time consume, NOT below 300s in Production Environment
@@ -82,6 +86,10 @@ class LeakMonitorConfig(
     }
 
     fun setNativeHeapAllocatedThreshold(nativeHeapAllocatedThreshold: Int) = apply {
+      mNativeHeapAllocatedThreshold = nativeHeapAllocatedThreshold.toLong()
+    }
+
+    fun setNativeHeapAllocatedThreshold(nativeHeapAllocatedThreshold: Long) = apply {
       mNativeHeapAllocatedThreshold = nativeHeapAllocatedThreshold
     }
 
@@ -104,11 +112,12 @@ class LeakMonitorConfig(
     override fun build() = LeakMonitorConfig(
         selectedSoList = mSelectedSoList,
         ignoredSoList = mIgnoredSoList,
-        nativeHeapAllocatedThreshold = mNativeHeapAllocatedThreshold,
+        nativeHeapAllocatedThreshold = mNativeHeapAllocatedThreshold
+            .coerceIn(Int.MIN_VALUE.toLong(), Int.MAX_VALUE.toLong()).toInt(),
         monitorThreshold = mMonitorThreshold,
         loopInterval = mLoopInterval,
         enableLocalSymbolic = mEnableLocalSymbolic,
         leakListener = mLeakListener
-    )
+    ).apply { nativeHeapAllocatedThresholdBytes = mNativeHeapAllocatedThreshold }
   }
 }

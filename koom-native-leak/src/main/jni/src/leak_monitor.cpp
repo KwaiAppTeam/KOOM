@@ -191,11 +191,12 @@ std::vector<std::shared_ptr<AllocRecord>> LeakMonitor::GetLeakAllocs() {
 
   auto is_leak = [&](decltype(unreachable_allocs)::value_type &unreachable,
                      std::shared_ptr<AllocRecord> &live) -> bool {
-    auto live_start = CONFUSE(live->address);
+    // Android may tag the top byte of allocated pointers.
+    constexpr uintptr_t kAddrMask = 0x00FFFFFFFFFFFFFFULL;
+    auto live_start = CONFUSE(live->address) & kAddrMask;
     auto live_end = live_start + live->size;
-    auto unreachable_start = unreachable.first;
+    auto unreachable_start = unreachable.first & kAddrMask;
     auto unreachable_end = unreachable_start + unreachable.second;
-    // TODO why
     return live_start == unreachable_start ||
            live_start >= unreachable_start && live_end <= unreachable_end;
   };

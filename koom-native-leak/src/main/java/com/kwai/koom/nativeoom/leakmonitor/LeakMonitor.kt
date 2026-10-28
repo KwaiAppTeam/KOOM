@@ -77,8 +77,8 @@ object LeakMonitor : LoopMonitor<LeakMonitorConfig>() {
    */
   @Deprecated("Unfriendly API use checkLeaks()", ReplaceWith("checkLeaks"))
   override fun call(): LoopState {
-    if (monitorConfig.nativeHeapAllocatedThreshold > 0
-        && Debug.getNativeHeapAllocatedSize() > monitorConfig.nativeHeapAllocatedThreshold) {
+    if (monitorConfig.nativeHeapAllocatedThresholdBytes > 0
+        && Debug.getNativeHeapAllocatedSize() <= monitorConfig.nativeHeapAllocatedThresholdBytes) {
       return LoopState.Continue
     }
 
