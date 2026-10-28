@@ -91,12 +91,8 @@ HOOK(void *, realloc, void *ptr, size_t size) {
 HOOK(void *, calloc, size_t item_count, size_t item_size) {
   auto result = calloc(item_count, item_size);
   if (result != nullptr) {
-    size_t total_size;
-    if (__builtin_mul_overflow(item_count, item_size, &total_size)) {
-      total_size = item_count * item_size;
-    }
     LeakMonitor::GetInstance().OnMonitor(reinterpret_cast<intptr_t>(result),
-                                         total_size);
+                                         item_count * item_size);
   }
   return result;
 }
