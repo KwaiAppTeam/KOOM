@@ -75,19 +75,29 @@ HOOK(void *, malloc, size_t size) {
 
 HOOK(void *, realloc, void *ptr, size_t size) {
   auto result = realloc(ptr, size);
-  if (ptr != nullptr) {
+  // A failed realloc(size > 0) leaves the original allocation alive. Keep its
+  // record until it is actually freed or successfully reallocated.
+  if (ptr != nullptr && (result != nullptr || size == 0)) {
     LeakMonitor::GetInstance().UnregisterAlloc(
         reinterpret_cast<uintptr_t>(ptr));
   }
-  LeakMonitor::GetInstance().OnMonitor(reinterpret_cast<intptr_t>(result),
-                                       size);
+  if (result != nullptr) {
+    LeakMonitor::GetInstance().OnMonitor(reinterpret_cast<intptr_t>(result),
+                                         size);
+  }
   return result;
 }
 
 HOOK(void *, calloc, size_t item_count, size_t item_size) {
   auto result = calloc(item_count, item_size);
-  LeakMonitor::GetInstance().OnMonitor(reinterpret_cast<intptr_t>(result),
-                                       item_count * item_size);
+  if (result != nullptr) {
+    size_t total_size;
+    if (__builtin_mul_overflow(item_count, item_size, &total_size)) {
+      total_size = item_count * item_size;
+    }
+    LeakMonitor::GetInstance().OnMonitor(reinterpret_cast<intptr_t>(result),
+                                         total_size);
+  }
   return result;
 }
 
@@ -101,9 +111,11 @@ HOOK(void *, memalign, size_t alignment, size_t byte_count) {
 
 HOOK(int, posix_memalign, void **memptr, size_t alignment, size_t size) {
   auto result = posix_memalign(memptr, alignment, size);
-  LeakMonitor::GetInstance().OnMonitor(reinterpret_cast<intptr_t>(*memptr),
-                                       size);
-  CLEAR_MEMORY(*memptr, size);
+  if (result == 0 && memptr != nullptr && *memptr != nullptr) {
+    LeakMonitor::GetInstance().OnMonitor(reinterpret_cast<intptr_t>(*memptr),
+                                         size);
+    CLEAR_MEMORY(*memptr, size);
+  }
   return result;
 }
 
