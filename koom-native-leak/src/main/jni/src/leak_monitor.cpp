@@ -121,6 +121,8 @@ bool LeakMonitor::Install(std::vector<std::string> *selected_list,
     return true;
   }
 
+  live_alloc_records_.Clear();
+  alloc_index_.store(0, std::memory_order_relaxed);
   memory_analyzer_ = std::make_unique<MemoryAnalyzer>();
   if (!memory_analyzer_->IsValid()) {
     ALOGE("memory_analyzer_ NOT Valid");
@@ -177,7 +179,7 @@ void LeakMonitor::SetMonitorThreshold(size_t threshold) {
   alloc_threshold_ = threshold;
 }
 
-std::vector<std::shared_ptr<AllocRecord>> LeakMonitor::GetLeakAllocs() {
+std::vector<std::shared_ptr<AllocRecord>> LeakMonitor::GetLeakAllocs(size_t max_count) {
   KCHECK(has_install_monitor_);
   auto unreachable_allocs = memory_analyzer_->CollectUnreachableMem();
   std::vector<std::shared_ptr<AllocRecord>> live_allocs;
@@ -204,10 +206,13 @@ std::vector<std::shared_ptr<AllocRecord>> LeakMonitor::GetLeakAllocs() {
   for (auto &live : live_allocs) {
     for (auto &unreachable : unreachable_allocs) {
       if (is_leak(unreachable, live)) {
-        leak_allocs.push_back(live);
+        if (max_count == 0 || leak_allocs.size() < max_count) {
+          leak_allocs.push_back(live);
+        }
         // Just remove leak allocation(never be free)
         // live->address has been confused, we need to revert it first
         UnregisterAlloc(CONFUSE(live->address));
+        break;
       }
     }
   }

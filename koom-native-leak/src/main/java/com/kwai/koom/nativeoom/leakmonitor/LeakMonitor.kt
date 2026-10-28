@@ -56,7 +56,7 @@ object LeakMonitor : LoopMonitor<LeakMonitorConfig>() {
   private external fun nativeGetAllocIndex(): Long
 
   @JvmStatic
-  private external fun nativeGetLeakAllocs(leakRecordMap: Map<String, LeakRecord>)
+  private external fun nativeGetLeakAllocs(leakRecordMap: Map<String, LeakRecord>, maxLeakCount: Int)
 
   private val mIndex = AtomicInteger()
 
@@ -83,7 +83,7 @@ object LeakMonitor : LoopMonitor<LeakMonitorConfig>() {
     }
 
     mutableMapOf<String, LeakRecord>()
-      .apply { nativeGetLeakAllocs(this) }
+      .apply { nativeGetLeakAllocs(this, monitorConfig.leakItemsThreshold) }
       .also { AllocationTagLifecycleCallbacks.bindAllocationTag(it) }
       .also { MonitorLog.i(TAG, "LeakRecordMap size: ${it.size}") }
       .also { monitorConfig.leakListener.onLeak(it.values) }
@@ -161,7 +161,7 @@ object LeakMonitor : LoopMonitor<LeakMonitorConfig>() {
         return@Runnable
       }
       mutableMapOf<String, LeakRecord>()
-        .apply { nativeGetLeakAllocs(this) }
+        .apply { nativeGetLeakAllocs(this, monitorConfig.leakItemsThreshold) }
         .also { AllocationTagLifecycleCallbacks.bindAllocationTag(it) }
         .also { MonitorLog.i(TAG, "LeakRecordMap size: ${it.size}") }
         .also { monitorConfig.leakListener.onLeak(it.values) }

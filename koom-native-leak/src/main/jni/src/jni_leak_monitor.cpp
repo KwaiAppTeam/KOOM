@@ -178,13 +178,15 @@ static jobject BuildLeakRecord(JNIEnv *env, uint64_t index, uint32_t size,
                         frames);
 }
 
-static void GetLeakAllocs(JNIEnv *env, jclass, jobject leak_record_map) {
+static void GetLeakAllocs(JNIEnv *env, jclass, jobject leak_record_map,
+                          jint max_leak_count) {
   ScopedLocalRef<jclass> map_class(env, env->GetObjectClass(leak_record_map));
   jmethodID put_method;
   GET_METHOD_ID(put_method, map_class.get(), "put",
                 "(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;");
   std::vector<std::shared_ptr<AllocRecord>> leak_allocs =
-      LeakMonitor::GetInstance().GetLeakAllocs();
+      LeakMonitor::GetInstance().GetLeakAllocs(
+          max_leak_count > 0 ? static_cast<size_t>(max_leak_count) : 0);
 
   for (auto &leak_alloc : leak_allocs) {
     if (leak_alloc->num_backtraces <= kNumDropFrame) {
@@ -242,7 +244,7 @@ static const JNINativeMethod kLeakMonitorMethods[] = {
     {"nativeSetMonitorThreshold", "(I)V",
      reinterpret_cast<void *>(SetMonitorThreshold)},
     {"nativeGetAllocIndex", "()J", reinterpret_cast<void *>(GetAllocIndex)},
-    {"nativeGetLeakAllocs", "(Ljava/util/Map;)V",
+    {"nativeGetLeakAllocs", "(Ljava/util/Map;I)V",
      reinterpret_cast<void *>(GetLeakAllocs)}};
 
 extern "C" JNIEXPORT jint JNI_OnLoad(JavaVM *vm, void *reserved) {

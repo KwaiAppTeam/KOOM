@@ -36,6 +36,9 @@ class LeakMonitorConfig(
   var nativeHeapAllocatedThresholdBytes: Long = nativeHeapAllocatedThreshold.toLong()
     private set
 
+  var leakItemsThreshold: Int = 200
+    private set
+
   class Builder : MonitorConfig.Builder<LeakMonitorConfig> {
     /**
      * List of so to be monitored
@@ -56,6 +59,7 @@ class LeakMonitorConfig(
      * If Native Heap exceed NativeHeapAllocatedThreshold will trigger leak analysis
      */
     private var mNativeHeapAllocatedThreshold = 0L
+    private var mLeakItemsThreshold = 200
 
     /**
      * Default is 300s, memory analysis is time consume, NOT below 300s in Production Environment
@@ -93,6 +97,11 @@ class LeakMonitorConfig(
       mNativeHeapAllocatedThreshold = nativeHeapAllocatedThreshold
     }
 
+    /** Maximum records per check; values <= 0 disable the limit. */
+    fun setLeakItemsThreshold(leakItemsThreshold: Int) = apply {
+      mLeakItemsThreshold = leakItemsThreshold
+    }
+
     fun setMonitorThreshold(mallocThreshold: Int) = apply {
       mMonitorThreshold = mallocThreshold
     }
@@ -118,6 +127,9 @@ class LeakMonitorConfig(
         loopInterval = mLoopInterval,
         enableLocalSymbolic = mEnableLocalSymbolic,
         leakListener = mLeakListener
-    ).apply { nativeHeapAllocatedThresholdBytes = mNativeHeapAllocatedThreshold }
+    ).apply {
+      nativeHeapAllocatedThresholdBytes = mNativeHeapAllocatedThreshold
+      leakItemsThreshold = mLeakItemsThreshold
+    }
   }
 }
