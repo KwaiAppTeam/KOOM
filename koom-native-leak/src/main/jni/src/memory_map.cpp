@@ -158,7 +158,11 @@ static void ReadLoadbias(MapEntry *entry) {
                               &phdr.p_vaddr)) {
         return;
       }
-      entry->load_bias = phdr.p_vaddr - phdr.p_offset;
+      if (phdr.p_vaddr >= phdr.p_offset) {
+        entry->load_bias = phdr.p_vaddr - phdr.p_offset;
+      } else {
+        entry->load_bias = 0;
+      }
       return;
     }
     addr += sizeof(phdr);
