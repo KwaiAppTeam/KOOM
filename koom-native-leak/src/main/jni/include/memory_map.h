@@ -46,6 +46,7 @@ struct MapEntry {
       : start(start),
         end(end),
         offset(offset),
+        load_bias(0),
         name(name, name_len),
         flags(flags) {}
 

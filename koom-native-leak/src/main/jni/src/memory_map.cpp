@@ -239,7 +239,8 @@ MapEntry *MemoryMap::CalculateRelPc(uintptr_t pc, uintptr_t *rel_pc) {
 
         if (prev_entry->valid) {
           entry->elf_start_offset = prev_entry->offset;
-          *rel_pc = pc - entry->start + entry->offset + prev_entry->load_bias;
+          *rel_pc = pc - entry->start + (entry->offset - prev_entry->offset) +
+                    prev_entry->load_bias;
           return entry;
         }
       }
