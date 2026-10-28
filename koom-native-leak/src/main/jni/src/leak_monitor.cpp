@@ -191,7 +191,7 @@ void LeakMonitor::SetMonitorThreshold(size_t threshold) {
   alloc_threshold_ = threshold;
 }
 
-std::vector<std::shared_ptr<AllocRecord>> LeakMonitor::GetLeakAllocs(size_t max_count) {
+std::vector<std::shared_ptr<AllocRecord>> LeakMonitor::GetLeakAllocs() {
   KCHECK(has_install_monitor_);
   auto unreachable_allocs = memory_analyzer_->CollectUnreachableMem();
   std::vector<std::shared_ptr<AllocRecord>> live_allocs;
@@ -218,9 +218,7 @@ std::vector<std::shared_ptr<AllocRecord>> LeakMonitor::GetLeakAllocs(size_t max_
   for (auto &live : live_allocs) {
     for (auto &unreachable : unreachable_allocs) {
       if (is_leak(unreachable, live)) {
-        if (max_count == 0 || leak_allocs.size() < max_count) {
-          leak_allocs.push_back(live);
-        }
+        leak_allocs.push_back(live);
         // Just remove leak allocation(never be free)
         // live->address has been confused, we need to revert it first
         UnregisterAlloc(CONFUSE(live->address));

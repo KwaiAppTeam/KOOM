@@ -61,7 +61,7 @@ class LeakMonitor {
                std::vector<std::string> *ignore_list);
   void Uninstall();
   void SetMonitorThreshold(size_t threshold);
-  std::vector<std::shared_ptr<AllocRecord>> GetLeakAllocs(size_t max_count);
+  std::vector<std::shared_ptr<AllocRecord>> GetLeakAllocs();
   uint64_t CurrentAllocIndex();
   void OnMonitor(uintptr_t address, size_t size);
   void RegisterAlloc(uintptr_t address, size_t size);

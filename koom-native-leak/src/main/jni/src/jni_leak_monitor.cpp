@@ -185,8 +185,8 @@ static void GetLeakAllocs(JNIEnv *env, jclass, jobject leak_record_map,
   GET_METHOD_ID(put_method, map_class.get(), "put",
                 "(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;");
   std::vector<std::shared_ptr<AllocRecord>> leak_allocs =
-      LeakMonitor::GetInstance().GetLeakAllocs(
-          max_leak_count > 0 ? static_cast<size_t>(max_leak_count) : 0);
+      LeakMonitor::GetInstance().GetLeakAllocs();
+  jint valid_leak_count = 0;
 
   for (auto &leak_alloc : leak_allocs) {
     if (leak_alloc->num_backtraces <= kNumDropFrame) {
@@ -221,6 +221,10 @@ static void GetLeakAllocs(JNIEnv *env, jclass, jobject leak_record_map,
       continue;
     }
 
+    if (max_leak_count > 0 && valid_leak_count >= max_leak_count) {
+      break;
+    }
+
     char address[sizeof(uintptr_t) * 2 + 1];
     snprintf(address, sizeof(uintptr_t) * 2 + 1, "%lx",
              CONFUSE(leak_alloc->address));
@@ -233,6 +237,7 @@ static void GetLeakAllocs(JNIEnv *env, jclass, jobject leak_record_map,
         env,
         env->CallObjectMethod(leak_record_map, put_method, memory_address.get(),
                               leak_record_ref.get()));
+    valid_leak_count++;
   }
 }
 
