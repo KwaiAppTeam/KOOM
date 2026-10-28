@@ -33,12 +33,14 @@
 #include <cxxabi.h>
 #include <dlfcn.h>
 #include <elf.h>
+#include <fcntl.h>
 #include <inttypes.h>
 #include <link.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/mman.h>
+#include <unistd.h>
 
 #include <vector>
 
@@ -86,6 +88,17 @@ static MapEntry *ParseLine(char *line) {
   return entry;
 }
 
+// A map entry may become stale before it is validated. Read through
+// /proc/self/mem so an unmapped page does not crash the monitor.
+static bool SafeReadMap(uintptr_t addr, void *buf, size_t len) {
+  static int mem_fd = open("/proc/self/mem", O_RDONLY | O_CLOEXEC);
+  if (mem_fd < 0) {
+    return false;
+  }
+  return pread(mem_fd, buf, len, static_cast<off64_t>(addr)) ==
+         static_cast<ssize_t>(len);
+}
+
 template <typename T>
 static inline bool GetVal(MapEntry *entry, uintptr_t addr, T *store) {
   if (!(entry->flags & PROT_READ) || addr < entry->start ||
@@ -96,8 +109,7 @@ static inline bool GetVal(MapEntry *entry, uintptr_t addr, T *store) {
   if (addr & (sizeof(T) - 1)) {
     return false;
   }
-  *store = *reinterpret_cast<T *>(addr);
-  return true;
+  return SafeReadMap(addr, store, sizeof(T));
 }
 
 static bool ValidElf(MapEntry *entry) {
@@ -107,7 +119,11 @@ static bool ValidElf(MapEntry *entry) {
     return false;
   }
 
-  return memcmp(reinterpret_cast<void *>(addr), ELFMAG, SELFMAG) == 0;
+  char mag[SELFMAG];
+  if (!SafeReadMap(addr, mag, SELFMAG)) {
+    return false;
+  }
+  return memcmp(mag, ELFMAG, SELFMAG) == 0;
 }
 
 static void ReadLoadbias(MapEntry *entry) {
