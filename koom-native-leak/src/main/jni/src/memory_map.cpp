@@ -169,6 +169,94 @@ static void ReadLoadbias(MapEntry *entry) {
   }
 }
 
+struct LoadedObjectInfo {
+  void *dli_fbase;
+  uintptr_t load_base = 0;
+  bool matched = false;
+  bool read_build_id = false;
+  std::string build_id;
+};
+
+static std::string ReadBuildId(const struct dl_phdr_info *info) {
+  static const char hex[] = "0123456789abcdef";
+  for (size_t i = 0; i < info->dlpi_phnum; ++i) {
+    const ElfW(Phdr) &phdr = info->dlpi_phdr[i];
+    if (phdr.p_type != PT_NOTE) {
+      continue;
+    }
+    uintptr_t addr;
+    uintptr_t end;
+    if (__builtin_add_overflow(info->dlpi_addr, phdr.p_vaddr, &addr) ||
+        __builtin_add_overflow(addr, phdr.p_filesz, &end)) {
+      continue;
+    }
+    while (end - addr >= sizeof(ElfW(Nhdr))) {
+      ElfW(Nhdr) note;
+      if (!SafeReadMap(addr, &note, sizeof(note))) {
+        break;
+      }
+      size_t name_size;
+      size_t desc_size;
+      if (__builtin_add_overflow(static_cast<size_t>(note.n_namesz), size_t(3), &name_size) ||
+          __builtin_add_overflow(static_cast<size_t>(note.n_descsz), size_t(3), &desc_size)) {
+        break;
+      }
+      name_size &= ~size_t(3);
+      desc_size &= ~size_t(3);
+      size_t remaining = end - addr - sizeof(note);
+      if (name_size > remaining || desc_size > remaining - name_size) {
+        break;
+      }
+      uintptr_t name_addr = addr + sizeof(note);
+      uintptr_t desc_addr = name_addr + name_size;
+      char name[4];
+      if (note.n_type == NT_GNU_BUILD_ID && note.n_namesz == sizeof(name) &&
+          note.n_descsz != 0 && SafeReadMap(name_addr, name, sizeof(name)) &&
+          memcmp(name, "GNU", sizeof(name)) == 0) {
+        std::vector<uint8_t> bytes(note.n_descsz);
+        if (!SafeReadMap(desc_addr, bytes.data(), bytes.size())) {
+          break;
+        }
+        std::string build_id;
+        for (uint8_t byte : bytes) {
+          build_id += hex[byte >> 4];
+          build_id += hex[byte & 0x0f];
+        }
+        return build_id;
+      }
+      addr = desc_addr + desc_size;
+    }
+  }
+  return {};
+}
+
+static int FindLoadedObject(struct dl_phdr_info *info, size_t, void *data) {
+  if (info == nullptr || info->dlpi_name == nullptr) {
+    return 0;
+  }
+
+  auto *loaded_object = reinterpret_cast<LoadedObjectInfo *>(data);
+  for (size_t i = 0; i < info->dlpi_phnum; ++i) {
+    const ElfW(Phdr) &phdr = info->dlpi_phdr[i];
+    if (phdr.p_type != PT_LOAD) {
+      continue;
+    }
+
+    void *map_start = reinterpret_cast<void *>(info->dlpi_addr + phdr.p_vaddr);
+    if (map_start == loaded_object->dli_fbase) {
+      loaded_object->load_base = info->dlpi_addr;
+      loaded_object->matched = true;
+      if (loaded_object->read_build_id) {
+        loaded_object->build_id = ReadBuildId(info);
+      }
+      return 1;
+    }
+    // The first PT_LOAD is the address used to match dladdr's object base.
+    break;
+  }
+  return 0;
+}
+
 static void inline Init(MapEntry *entry) {
   if (entry->init) {
     return;
@@ -248,6 +336,35 @@ MapEntry *MemoryMap::CalculateRelPc(uintptr_t pc, uintptr_t *rel_pc) {
     *rel_pc = pc - entry->start + entry->load_bias;
   }
   return entry;
+}
+
+bool MemoryMap::CalculateRelPcFromLoader(uintptr_t pc, uintptr_t *rel_pc,
+                                         std::string *build_id) {
+  if (rel_pc == nullptr) {
+    return false;
+  }
+  if (build_id != nullptr) {
+    build_id->clear();
+  }
+
+  Dl_info dl_info;
+  if (dladdr(reinterpret_cast<void *>(pc), &dl_info) == 0 ||
+      dl_info.dli_fbase == nullptr) {
+    return false;
+  }
+
+  LoadedObjectInfo loaded_object{dl_info.dli_fbase};
+  loaded_object.read_build_id = build_id != nullptr;
+  if (!dl_iterate_phdr(FindLoadedObject, &loaded_object) ||
+      !loaded_object.matched || pc <= loaded_object.load_base) {
+    return false;
+  }
+
+  *rel_pc = pc - loaded_object.load_base;
+  if (build_id != nullptr) {
+    *build_id = std::move(loaded_object.build_id);
+  }
+  return true;
 }
 
 std::string MemoryMap::FormatSymbol(MapEntry *entry, uintptr_t pc) {

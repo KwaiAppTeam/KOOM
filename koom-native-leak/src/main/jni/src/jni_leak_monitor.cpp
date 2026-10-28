@@ -53,6 +53,7 @@ struct ClassInfo {
 
 static ClassInfo g_leak_record;
 static ClassInfo g_frame_info;
+static jfieldID g_build_id_field;
 
 static const char *kLeakMonitorFullyName =
     "com/kwai/koom/nativeoom/leakmonitor/LeakMonitor";
@@ -73,6 +74,7 @@ static void Clean(JNIEnv *env) {
     env->DeleteGlobalRef(g_frame_info.global_ref);
     memset(&g_frame_info, 0, sizeof(g_frame_info));
   }
+  g_build_id_field = nullptr;
 }
 
 template <typename T>
@@ -113,6 +115,8 @@ static bool InstallMonitor(JNIEnv *env, jclass clz, jobjectArray selected_array,
   }
   GET_METHOD_ID(g_frame_info.construct_method, frame_info, "<init>",
                 "(JLjava/lang/String;)V");
+  g_build_id_field = env->GetFieldID(frame_info, "buildId", "Ljava/lang/String;");
+  LOG_FATAL_IF(!g_build_id_field, "GetFieldID buildId fail");
 
   g_enable_local_symbolic = enable_local_symbolic;
 
@@ -153,18 +157,25 @@ static jlong GetAllocIndex(JNIEnv *, jclass) {
   return LeakMonitor::GetInstance().CurrentAllocIndex();
 }
 
-static jobjectArray BuildFrames(
-    JNIEnv *env, std::vector<std::pair<jlong, std::string>> &frames) {
+struct FrameUploadInfo {
+  jlong rel_pc;
+  std::string symbol_info;
+  std::string build_id;
+};
+
+static jobjectArray BuildFrames(JNIEnv *env, std::vector<FrameUploadInfo> &frames) {
   jsize index = 0;
   jobjectArray frame_array =
       env->NewObjectArray(frames.size(), g_frame_info.global_ref, nullptr);
   for (auto &frame : frames) {
     ScopedLocalRef<jstring> so_name(env,
-                                    env->NewStringUTF(frame.second.c_str()));
+                                    env->NewStringUTF(frame.symbol_info.c_str()));
+    ScopedLocalRef<jstring> build_id(env, env->NewStringUTF(frame.build_id.c_str()));
     ScopedLocalRef<jobject> frame_info(
         env,
         env->NewObject(g_frame_info.global_ref, g_frame_info.construct_method,
-                       frame.first, so_name.get()));
+                       frame.rel_pc, so_name.get()));
+    env->SetObjectField(frame_info.get(), g_build_id_field, build_id.get());
     env->SetObjectArrayElement(frame_array, index++, frame_info.get());
   }
   return frame_array;
@@ -194,7 +205,7 @@ static void GetLeakAllocs(JNIEnv *env, jclass, jobject leak_record_map,
     }
 
     leak_alloc->num_backtraces -= kNumDropFrame;
-    std::vector<std::pair<jlong, std::string>> frames;
+    std::vector<FrameUploadInfo> frames;
     for (int i = 0; i < leak_alloc->num_backtraces; i++) {
       uintptr_t offset;
       auto *map_entry = g_memory_map.CalculateRelPc(
@@ -209,12 +220,19 @@ static void GetLeakAllocs(JNIEnv *env, jclass, jobject leak_record_map,
         break;
       }
 
+      uintptr_t loader_offset;
+      std::string build_id;
+      if (g_memory_map.CalculateRelPcFromLoader(
+              leak_alloc->backtrace[i + kNumDropFrame], &loader_offset, &build_id)) {
+        offset = loader_offset;
+      }
+
       std::string symbol_info =
           g_enable_local_symbolic
               ? g_memory_map.FormatSymbol(
                     map_entry, leak_alloc->backtrace[i + kNumDropFrame])
               : basename(map_entry->name.c_str());
-      frames.emplace_back(static_cast<jlong>(offset), symbol_info);
+      frames.push_back({static_cast<jlong>(offset), symbol_info, build_id});
     }
 
     if (!leak_alloc->num_backtraces || frames.empty()) {

@@ -87,6 +87,8 @@ class MemoryMap {
   ~MemoryMap();
 
   MapEntry *CalculateRelPc(uintptr_t pc, uintptr_t *rel_pc = nullptr);
+  bool CalculateRelPcFromLoader(uintptr_t pc, uintptr_t *rel_pc,
+                                std::string *build_id = nullptr);
   std::string FormatSymbol(MapEntry *entry, uintptr_t pc);
 
  private:
