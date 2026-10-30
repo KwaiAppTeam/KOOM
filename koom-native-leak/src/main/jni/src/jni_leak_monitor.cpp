@@ -20,7 +20,6 @@
 #define LOG_TAG "jni_leak_monitor"
 #include <jni.h>
 #include <jni_util/scoped_local_ref.h>
-#include <libgen.h>
 #include <log/kcheck.h>
 #include <log/log.h>
 
@@ -32,7 +31,7 @@
 #include "memory_map.h"
 
 namespace kwai {
-namespace leak_monitor {
+namespace memory_monitor {
 #define FIND_CLASS(var, class_name)                      \
   do {                                                   \
     var = env->FindClass(class_name);                    \
@@ -53,6 +52,7 @@ struct ClassInfo {
 
 static ClassInfo g_leak_record;
 static ClassInfo g_frame_info;
+static jfieldID g_sample_weight_field;
 
 static const char *kLeakMonitorFullyName =
     "com/kwai/koom/nativeoom/leakmonitor/LeakMonitor";
@@ -60,7 +60,6 @@ static const char *kLeakRecordFullyName =
     "com/kwai/koom/nativeoom/leakmonitor/LeakRecord";
 static const char *kFrameInfoFullyName =
     "com/kwai/koom/nativeoom/leakmonitor/FrameInfo";
-static const uint32_t kNumDropFrame = 2;
 static MemoryMap g_memory_map;
 static bool g_enable_local_symbolic = false;
 
@@ -73,6 +72,7 @@ static void Clean(JNIEnv *env) {
     env->DeleteGlobalRef(g_frame_info.global_ref);
     memset(&g_frame_info, 0, sizeof(g_frame_info));
   }
+  g_sample_weight_field = nullptr;
 }
 
 template <typename T>
@@ -103,6 +103,8 @@ static bool InstallMonitor(JNIEnv *env, jclass clz, jobjectArray selected_array,
   GET_METHOD_ID(g_leak_record.construct_method, leak_record, "<init>",
                 "(JILjava/lang/String;[Lcom/kwai/koom/nativeoom/leakmonitor/"
                 "FrameInfo;)V");
+  g_sample_weight_field = env->GetFieldID(leak_record, "sampleWeight", "I");
+  LOG_FATAL_IF(!g_sample_weight_field, "GetFieldID sampleWeight fail");
 
   jclass frame_info;
   FIND_CLASS(frame_info, kFrameInfoFullyName);
@@ -112,7 +114,7 @@ static bool InstallMonitor(JNIEnv *env, jclass clz, jobjectArray selected_array,
     return false;
   }
   GET_METHOD_ID(g_frame_info.construct_method, frame_info, "<init>",
-                "(JLjava/lang/String;)V");
+                "(JLjava/lang/String;Ljava/lang/String;)V");
 
   g_enable_local_symbolic = enable_local_symbolic;
 
@@ -149,74 +151,101 @@ static void SetMonitorThreshold(JNIEnv *, jclass, jint size) {
   LeakMonitor::GetInstance().SetMonitorThreshold(size);
 }
 
+static void SetSamplingWatermark(JNIEnv *, jclass, jint high, jint low) {
+  LeakMonitor::GetInstance().SetSamplingWatermark(high, low);
+}
+
 static jlong GetAllocIndex(JNIEnv *, jclass) {
   return LeakMonitor::GetInstance().CurrentAllocIndex();
 }
 
-static jobjectArray BuildFrames(
-    JNIEnv *env, std::vector<std::pair<jlong, std::string>> &frames) {
+static jint GetInterceptMode(JNIEnv *, jclass) {
+  return LeakMonitor::GetInstance().CurrentInterceptMode();
+}
+
+static jboolean GetEverSampled(JNIEnv *, jclass) {
+  return LeakMonitor::GetInstance().EverSampled();
+}
+
+static jint GetLiveAllocCount(JNIEnv *, jclass) {
+  return static_cast<jint>(LeakMonitor::GetInstance().LiveAllocCount());
+}
+
+struct FrameUploadInfo {
+  jlong rel_pc;
+  std::string symbol_info;
+  std::string build_id;
+};
+
+static jobjectArray BuildFrames(JNIEnv *env, std::vector<FrameUploadInfo> &frames) {
   jsize index = 0;
   jobjectArray frame_array =
       env->NewObjectArray(frames.size(), g_frame_info.global_ref, nullptr);
   for (auto &frame : frames) {
     ScopedLocalRef<jstring> so_name(env,
-                                    env->NewStringUTF(frame.second.c_str()));
+                                    env->NewStringUTF(frame.symbol_info.c_str()));
+    ScopedLocalRef<jstring> build_id(env, env->NewStringUTF(frame.build_id.c_str()));
     ScopedLocalRef<jobject> frame_info(
         env,
         env->NewObject(g_frame_info.global_ref, g_frame_info.construct_method,
-                       frame.first, so_name.get()));
+                       frame.rel_pc, so_name.get(), build_id.get()));
     env->SetObjectArrayElement(frame_array, index++, frame_info.get());
   }
   return frame_array;
 }
 
 static jobject BuildLeakRecord(JNIEnv *env, uint64_t index, uint32_t size,
-                               char *thread_name, jobjectArray frames) {
+                               const char *thread_name, jobjectArray frames) {
   ScopedLocalRef<jstring> name(env, env->NewStringUTF(thread_name));
   return env->NewObject(g_leak_record.global_ref,
                         g_leak_record.construct_method, index, size, name.get(),
                         frames);
 }
 
-static void GetLeakAllocs(JNIEnv *env, jclass, jobject leak_record_map) {
+static void GetLeakAllocs(JNIEnv *env, jclass, jobject leak_record_map,
+                          jint max_leak_count) {
   ScopedLocalRef<jclass> map_class(env, env->GetObjectClass(leak_record_map));
   jmethodID put_method;
   GET_METHOD_ID(put_method, map_class.get(), "put",
                 "(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;");
   std::vector<std::shared_ptr<AllocRecord>> leak_allocs =
       LeakMonitor::GetInstance().GetLeakAllocs();
+  jint valid_leak_count = 0;
 
   for (auto &leak_alloc : leak_allocs) {
-    if (leak_alloc->num_backtraces <= kNumDropFrame) {
+    if (leak_alloc->backtrace.empty()) {
       continue;
     }
 
-    leak_alloc->num_backtraces -= kNumDropFrame;
-    std::vector<std::pair<jlong, std::string>> frames;
-    for (int i = 0; i < leak_alloc->num_backtraces; i++) {
-      uintptr_t offset;
-      auto *map_entry = g_memory_map.CalculateRelPc(
-          leak_alloc->backtrace[i + kNumDropFrame], &offset);
-
-      if (!map_entry) {
+    std::vector<FrameUploadInfo> frames;
+    for (auto pc : leak_alloc->backtrace) {
+      FrameInfo frame_info;
+      if (!g_memory_map.FillFrameInfo(pc, frame_info)) {
         continue;
       }
 
-      if (map_entry->NeedIgnore()) {
-        leak_alloc->num_backtraces = i;
+      if (frame_info.NeedSkip()) {
+        continue;
+      }
+
+      if (frame_info.NeedIgnore()) {
         break;
       }
 
-      std::string symbol_info =
-          g_enable_local_symbolic
-              ? g_memory_map.FormatSymbol(
-                    map_entry, leak_alloc->backtrace[i + kNumDropFrame])
-              : basename(map_entry->name.c_str());
-      frames.emplace_back(static_cast<jlong>(offset), symbol_info);
+      std::string symbol_info = g_enable_local_symbolic ||
+                                        frame_info.IsSystemFrame()
+                                    ? g_memory_map.FormatFrameSymbol(frame_info, pc)
+                                    : frame_info.name;
+      frames.push_back({static_cast<jlong>(frame_info.rel_pc), symbol_info,
+                        frame_info.build_id});
     }
 
-    if (!leak_alloc->num_backtraces || frames.empty()) {
+    if (frames.empty()) {
       continue;
+    }
+
+    if (max_leak_count > 0 && valid_leak_count >= max_leak_count) {
+      break;
     }
 
     char address[sizeof(uintptr_t) * 2 + 1];
@@ -226,11 +255,14 @@ static void GetLeakAllocs(JNIEnv *env, jclass, jobject leak_record_map) {
     ScopedLocalRef<jobjectArray> frames_ref(env, BuildFrames(env, frames));
     ScopedLocalRef<jobject> leak_record_ref(
         env, BuildLeakRecord(env, leak_alloc->index, leak_alloc->size,
-                             leak_alloc->thread_name, frames_ref.get()));
+                             leak_alloc->thread_name.c_str(), frames_ref.get()));
+    env->SetIntField(leak_record_ref.get(), g_sample_weight_field,
+                     leak_alloc->sample_weight);
     ScopedLocalRef<jobject> no_use(
         env,
         env->CallObjectMethod(leak_record_map, put_method, memory_address.get(),
                               leak_record_ref.get()));
+    valid_leak_count++;
   }
 }
 
@@ -241,8 +273,16 @@ static const JNINativeMethod kLeakMonitorMethods[] = {
      reinterpret_cast<void *>(UninstallMonitor)},
     {"nativeSetMonitorThreshold", "(I)V",
      reinterpret_cast<void *>(SetMonitorThreshold)},
+    {"nativeSetSamplingWatermark", "(II)V",
+     reinterpret_cast<void *>(SetSamplingWatermark)},
     {"nativeGetAllocIndex", "()J", reinterpret_cast<void *>(GetAllocIndex)},
-    {"nativeGetLeakAllocs", "(Ljava/util/Map;)V",
+    {"nativeGetInterceptMode", "()I",
+     reinterpret_cast<void *>(GetInterceptMode)},
+    {"nativeGetEverSampled", "()Z",
+     reinterpret_cast<void *>(GetEverSampled)},
+    {"nativeGetLiveAllocCount", "()I",
+     reinterpret_cast<void *>(GetLiveAllocCount)},
+    {"nativeGetLeakAllocs", "(Ljava/util/Map;I)V",
      reinterpret_cast<void *>(GetLeakAllocs)}};
 
 extern "C" JNIEXPORT jint JNI_OnLoad(JavaVM *vm, void *reserved) {
@@ -264,5 +304,5 @@ extern "C" JNIEXPORT jint JNI_OnLoad(JavaVM *vm, void *reserved) {
 
   return JNI_VERSION_1_4;
 }
-}  // namespace leak_monitor
+}  // namespace memory_monitor
 }  // namespace kwai

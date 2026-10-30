@@ -25,6 +25,7 @@
 
 #include <cstddef>
 #include <iostream>
+#include <vector>
 
 #include "constants.h"
 
@@ -35,9 +36,13 @@
 #define KWAI_EXPORT __attribute__((visibility("default")))
 #endif
 
+namespace kwai {
+namespace memory_monitor {
 class StackTrace {
  public:
-  static size_t FastUnwind(uintptr_t *buf, size_t num_entries);
+  static size_t FastUnwind(std::vector<uintptr_t> &buf, size_t num_entries);
 };
+}  // namespace memory_monitor
+}  // namespace kwai
 
 #endif  // KOOM_NATIVE_OOM_SRC_MAIN_JNI_INCLUDE_UTILS_STACK_TRACE_H_

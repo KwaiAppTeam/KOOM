@@ -22,8 +22,12 @@
 
 #include <string>
 
-const uint32_t kMaxBacktraceSize = 12;
+const uint32_t kMaxBacktraceSize = 16;
 const uint32_t kMaxThreadNameLen = 16;
-const uint32_t kDefaultAllocThreshold = 15;
+const uint32_t kDefaultAllocThreshold = 8;
+const uint32_t kLargeAllocThreshold = 1024;
+const uint32_t kDefaultSamplingHighWatermark = 270000;
+const uint32_t kDefaultSamplingLowWatermark = 250000;
+const uint32_t kSmallAllocSamplingRate = 10;
 
 #endif // KOOM_NATIVE_OOM_SRC_MAIN_JNI_INCLUDE_CONSTANTS_H_

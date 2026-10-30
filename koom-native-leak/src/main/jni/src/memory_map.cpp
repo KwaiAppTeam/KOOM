@@ -33,19 +33,49 @@
 #include <cxxabi.h>
 #include <dlfcn.h>
 #include <elf.h>
+#include <fcntl.h>
 #include <inttypes.h>
 #include <link.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/mman.h>
+#include <unistd.h>
 
 #include <vector>
+
+#include "android-base/stringprintf.h"
 
 #if defined(__LP64__)
 #define PAD_PTR "016" PRIxPTR
 #else
 #define PAD_PTR "08" PRIxPTR
+#endif
+
+#ifndef NT_GNU_BUILD_ID
+#define NT_GNU_BUILD_ID 3
+#endif
+
+#ifndef ElfW
+#define ElfW(type) Elf_##type
+#endif
+
+struct BuildIdNote {
+  ElfW(Nhdr) nhdr;
+  char name[4]; /* Note name for build-id is "GNU\0" */
+  uint8_t build_id[0];
+};
+
+struct CallbackData {
+  void *dli_fbase;
+  FrameInfo frame_info;
+
+  CallbackData(void *fbase) : dli_fbase(fbase) {}
+};
+
+#if __ANDROID_API__ < __ANDROID_API_L__
+extern "C" __attribute__((weak)) int dl_iterate_phdr(
+    int (*)(struct dl_phdr_info *, size_t, void *), void *);
 #endif
 
 // Format of /proc/<PID>/maps:
@@ -86,6 +116,19 @@ static MapEntry *ParseLine(char *line) {
   return entry;
 }
 
+// Read process memory through /proc/self/mem instead of dereferencing
+// directly. A map entry may become stale (dlclose/munmap) between reading
+// /proc/self/maps and this lazy validation, so a raw dereference can crash
+// with SIGSEGV. pread fails gracefully on unmapped pages.
+static bool SafeReadMap(uintptr_t addr, void *buf, size_t len) {
+  static int mem_fd = open("/proc/self/mem", O_RDONLY | O_CLOEXEC);
+  if (mem_fd < 0) {
+    return false;
+  }
+  return pread(mem_fd, buf, len, static_cast<off64_t>(addr)) ==
+         static_cast<ssize_t>(len);
+}
+
 template <typename T>
 static inline bool GetVal(MapEntry *entry, uintptr_t addr, T *store) {
   if (!(entry->flags & PROT_READ) || addr < entry->start ||
@@ -96,8 +139,7 @@ static inline bool GetVal(MapEntry *entry, uintptr_t addr, T *store) {
   if (addr & (sizeof(T) - 1)) {
     return false;
   }
-  *store = *reinterpret_cast<T *>(addr);
-  return true;
+  return SafeReadMap(addr, store, sizeof(T));
 }
 
 static bool ValidElf(MapEntry *entry) {
@@ -107,7 +149,11 @@ static bool ValidElf(MapEntry *entry) {
     return false;
   }
 
-  return memcmp(reinterpret_cast<void *>(addr), ELFMAG, SELFMAG) == 0;
+  char mag[SELFMAG];
+  if (!SafeReadMap(addr, mag, SELFMAG)) {
+    return false;
+  }
+  return memcmp(mag, ELFMAG, SELFMAG) == 0;
 }
 
 static void ReadLoadbias(MapEntry *entry) {
@@ -142,7 +188,11 @@ static void ReadLoadbias(MapEntry *entry) {
                               &phdr.p_vaddr)) {
         return;
       }
-      entry->load_bias = phdr.p_vaddr - phdr.p_offset;
+      if (phdr.p_vaddr >= phdr.p_offset) {
+        entry->load_bias = phdr.p_vaddr - phdr.p_offset;
+      } else {
+        entry->load_bias = 0;
+      }
       return;
     }
     addr += sizeof(phdr);
@@ -158,6 +208,61 @@ static void inline Init(MapEntry *entry) {
     entry->valid = true;
     ReadLoadbias(entry);
   }
+}
+
+static int FrameInfoCallback(struct dl_phdr_info *info, size_t size,
+                             void *data_) {
+  if (!info || !info->dlpi_name) return 0;
+
+  CallbackData *callback_data = reinterpret_cast<CallbackData *>(data_);
+
+  /* Calculate address where shared object is mapped into the process space.
+   * (Using the base address and the virtual address of the first LOAD segment)
+   */
+  void *map_start = nullptr;
+  for (unsigned i = 0; i < info->dlpi_phnum; i++) {
+    if (info->dlpi_phdr[i].p_type == PT_LOAD) {
+      map_start = (void *)(info->dlpi_addr + info->dlpi_phdr[i].p_vaddr);
+      break;
+    }
+  }
+
+  if (map_start != callback_data->dli_fbase) return 0;
+
+  callback_data->frame_info.load_base = info->dlpi_addr;
+  callback_data->frame_info.name = info->dlpi_name;
+  for (unsigned i = 0; i < info->dlpi_phnum; i++) {
+    if (info->dlpi_phdr[i].p_type != PT_NOTE) continue;
+
+    BuildIdNote *note = reinterpret_cast<BuildIdNote *>(
+        (info->dlpi_addr + info->dlpi_phdr[i].p_vaddr));
+    ptrdiff_t len = info->dlpi_phdr[i].p_filesz;
+
+    while (len >= sizeof(BuildIdNote)) {
+      if (note->nhdr.n_type == NT_GNU_BUILD_ID && note->nhdr.n_descsz != 0 &&
+          note->nhdr.n_namesz == 4 && memcmp(note->name, "GNU", 4) == 0) {
+        std::string raw_build_id;
+        raw_build_id.append(reinterpret_cast<char *>(note->build_id),
+                            note->nhdr.n_descsz);
+
+        for (const char &c : raw_build_id) {
+          // Use %hhx to avoid sign extension on abis that have signed chars.
+          callback_data->frame_info.build_id +=
+              android::base::StringPrintf("%02hhx", c);
+        }
+        return 1;
+      }
+
+#define ALIGN_POT(x, pot_align) (((x) + (pot_align)-1) & ~((pot_align)-1))
+
+      size_t offset = sizeof(ElfW(Nhdr)) + ALIGN_POT(note->nhdr.n_namesz, 4) +
+                      ALIGN_POT(note->nhdr.n_descsz, 4);
+      note = (BuildIdNote *)((char *)note + offset);
+      len -= offset;
+    }
+  }
+
+  return 0;
 }
 
 bool MemoryMap::ReadMaps() {
@@ -192,6 +297,63 @@ MemoryMap::~MemoryMap() {
   entries_.clear();
 }
 
+bool MemoryMap::FillFrameInfo(uintptr_t pc, FrameInfo &frame_info) {
+  Dl_info dl_info;
+
+  if (!dladdr(reinterpret_cast<void *>(pc), &dl_info)) {
+    return false;
+  }
+
+  if (!dl_info.dli_fbase) {
+    return false;
+  }
+
+  CallbackData callback_data(dl_info.dli_fbase);
+
+  if (!dl_iterate_phdr(FrameInfoCallback, &callback_data)) {
+    return false;
+  }
+
+  if (pc <= callback_data.frame_info.load_base) {
+    return false;
+  }
+  callback_data.frame_info.rel_pc = pc - callback_data.frame_info.load_base;
+  frame_info = callback_data.frame_info;
+
+  if (frame_info.IsSystemFrame()) {
+    const char *symbol = dl_info.dli_sname;
+    if (symbol != nullptr) {
+      // 记录符号起始地址，供上层格式化 "symbol+offset"（与原 FormatSymbol 输出对齐）
+      frame_info.sym_addr = reinterpret_cast<uintptr_t>(dl_info.dli_saddr);
+      char *demangled_name =
+          abi::__cxa_demangle(symbol, nullptr, nullptr, nullptr);
+      const char *name;
+      if (demangled_name != nullptr) {
+        name = demangled_name;
+      } else {
+        name = symbol;
+      }
+      frame_info.symbol = name;
+      free(demangled_name);
+    }
+  }
+  return true;
+}
+
+std::string MemoryMap::FormatFrameSymbol(const FrameInfo &frame_info,
+                                          uintptr_t pc) {
+  char buf[1024];
+  if (!frame_info.symbol.empty() && frame_info.sym_addr != 0 &&
+      pc >= frame_info.sym_addr) {
+    snprintf(buf, sizeof(buf), "  %s (%s+%" PRIuPTR ")\n",
+             frame_info.name.c_str(), frame_info.symbol.c_str(),
+             pc - frame_info.sym_addr);
+  } else {
+    snprintf(buf, sizeof(buf), "  %s\n", frame_info.name.c_str());
+  }
+  return buf;
+}
+
 MapEntry *MemoryMap::CalculateRelPc(uintptr_t pc, uintptr_t *rel_pc) {
   MapEntry pc_entry(pc);
 
@@ -219,7 +381,7 @@ MapEntry *MemoryMap::CalculateRelPc(uintptr_t pc, uintptr_t *rel_pc) {
 
         if (prev_entry->valid) {
           entry->elf_start_offset = prev_entry->offset;
-          *rel_pc = pc - entry->start + entry->offset + prev_entry->load_bias;
+          *rel_pc = pc - entry->start + (entry->offset - prev_entry->offset) + prev_entry->load_bias;
           return entry;
         }
       }

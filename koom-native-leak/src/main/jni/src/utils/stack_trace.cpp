@@ -19,6 +19,8 @@
 
 #include "utils/stack_trace.h"
 
+namespace kwai {
+namespace memory_monitor {
 static const uint32_t kT32InstrLen = 2;
 static const uint32_t kA32InstrLen = 4;
 static const uint32_t kA64InstrLen = 4;
@@ -62,7 +64,7 @@ static inline uintptr_t GetAdjustPC(uintptr_t pc) {
   return pc;
 }
 
-KWAI_EXPORT size_t StackTrace::FastUnwind(uintptr_t *buf, size_t num_entries) {
+KWAI_EXPORT size_t StackTrace::FastUnwind(std::vector<uintptr_t> &buf, size_t num_entries) {
   pthread_once(&once_control_tls, fast_unwind_init);
   auto begin = reinterpret_cast<uintptr_t>(__builtin_frame_address(0));
   auto end = get_thread_stack_top();
@@ -74,7 +76,7 @@ KWAI_EXPORT size_t StackTrace::FastUnwind(uintptr_t *buf, size_t num_entries) {
   while (num_frames < kMaxBacktraceSize) {
     auto *frame = reinterpret_cast<frame_record *>(begin);
     if (num_frames < num_entries) {
-      buf[num_frames] = GetAdjustPC(frame->return_addr);
+      buf.push_back(GetAdjustPC(frame->return_addr));
     }
     ++num_frames;
     if (frame->next_frame < begin + sizeof(frame_record) ||
@@ -85,3 +87,5 @@ KWAI_EXPORT size_t StackTrace::FastUnwind(uintptr_t *buf, size_t num_entries) {
   }
   return num_frames;
 }
+}  // namespace memory_monitor
+}  // namespace kwai

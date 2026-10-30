@@ -31,14 +31,26 @@
 
 #include <sys/cdefs.h>
 
+#include "android-base/strings.h"
+#include <cstring>
 #include <mutex>
 #include <set>
 #include <string>
+
+// The bundled kwai-android-base shared library does not export EndsWith.
+static inline bool MapNameEndsWith(const std::string &name, const char *suffix) {
+  const size_t length = std::strlen(suffix);
+  return name.size() >= length &&
+         name.compare(name.size() - length, length, suffix) == 0;
+}
 
 #define LIB_ART "libart.so"
 #define OAT_SUFFEX ".oat"
 #define ODEX_SUFFEX ".odex"
 #define DEX_SUFFEX ".dex"
+#define SELF_NAME "libkoom-native.so"
+#define HOOK_LIB_NAME "libxhook_lib.so"
+#define APP_SO_PREFEX "/data/"
 
 struct MapEntry {
   MapEntry(uintptr_t start, uintptr_t end, uintptr_t offset, const char *name,
@@ -46,20 +58,23 @@ struct MapEntry {
       : start(start),
         end(end),
         offset(offset),
+        load_bias(0),
         name(name, name_len),
         flags(flags) {}
 
   explicit MapEntry(uintptr_t pc) : start(pc), end(pc) {}
 
+  bool NeedSkip() {
+    return MapNameEndsWith(name, SELF_NAME) ||
+           MapNameEndsWith(name, HOOK_LIB_NAME);
+  }
+
+  // FP unwind need terminate when coming to ART frame.
   bool NeedIgnore() {
-    auto ends_with = [](std::string &target,
-                        const std::string &suffix) -> bool {
-      return target.size() >= suffix.size() &&
-             target.substr(target.size() - suffix.size(), suffix.size()) ==
-                 suffix;
-    };
-    return ends_with(name, LIB_ART) || ends_with(name, OAT_SUFFEX) ||
-           ends_with(name, ODEX_SUFFEX) || ends_with(name, DEX_SUFFEX);
+    return MapNameEndsWith(name, LIB_ART) ||
+           MapNameEndsWith(name, OAT_SUFFEX) ||
+           MapNameEndsWith(name, ODEX_SUFFEX) ||
+           MapNameEndsWith(name, DEX_SUFFEX);
   }
 
   uintptr_t start;
@@ -71,6 +86,34 @@ struct MapEntry {
   int flags;
   bool init = false;
   bool valid = false;
+};
+
+struct FrameInfo {
+  uint64_t rel_pc;
+  uintptr_t load_base;
+  std::string name;
+  std::string symbol;
+  // symbol 对应的起始地址（dladdr 的 dli_saddr），用于格式化 "symbol+offset"；
+  // 仅在 FillFrameInfo 成功解析到符号时有效，否则为 0。
+  uintptr_t sym_addr = 0;
+  std::string build_id;
+
+  FrameInfo() : rel_pc(0), load_base(0) {}
+  bool NeedSkip() {
+    return MapNameEndsWith(name, SELF_NAME) ||
+           MapNameEndsWith(name, HOOK_LIB_NAME);
+  }
+
+  bool NeedIgnore() {
+    return MapNameEndsWith(name, LIB_ART) ||
+           MapNameEndsWith(name, OAT_SUFFEX) ||
+           MapNameEndsWith(name, ODEX_SUFFEX) ||
+           MapNameEndsWith(name, DEX_SUFFEX);
+  }
+
+  bool IsSystemFrame() {
+    return !android::base::StartsWith(name, APP_SO_PREFEX);
+  }
 };
 
 // Ordering comparator that returns equivalence for overlapping entries
@@ -85,8 +128,10 @@ class MemoryMap {
   MemoryMap() = default;
   ~MemoryMap();
 
+  bool FillFrameInfo(uintptr_t pc, FrameInfo &frame_info);
   MapEntry *CalculateRelPc(uintptr_t pc, uintptr_t *rel_pc = nullptr);
   std::string FormatSymbol(MapEntry *entry, uintptr_t pc);
+  std::string FormatFrameSymbol(const FrameInfo &frame_info, uintptr_t pc);
 
  private:
   bool ReadMaps();

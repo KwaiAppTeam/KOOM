@@ -33,14 +33,16 @@
 #define CONFUSE(address) (~(address))
 
 namespace kwai {
-namespace leak_monitor {
+namespace memory_monitor {
+enum class InterceptMode : uint8_t { FULL = 0, SAMPLING = 1, STOPPED = 2 };
+
 struct AllocRecord {
   uint64_t index;
   uint32_t size;
+  uint8_t sample_weight = 1;
   intptr_t address;
-  uint32_t num_backtraces;
-  uintptr_t backtrace[kMaxBacktraceSize];
-  char thread_name[kMaxThreadNameLen];
+  std::string thread_name;
+  std::vector<uintptr_t> backtrace;
 };
 
 struct ThreadInfo {
@@ -61,8 +63,12 @@ class LeakMonitor {
                std::vector<std::string> *ignore_list);
   void Uninstall();
   void SetMonitorThreshold(size_t threshold);
+  void SetSamplingWatermark(uint32_t high_watermark, uint32_t low_watermark);
   std::vector<std::shared_ptr<AllocRecord>> GetLeakAllocs();
   uint64_t CurrentAllocIndex();
+  uint8_t CurrentInterceptMode();
+  bool EverSampled();
+  size_t LiveAllocCount();
   void OnMonitor(uintptr_t address, size_t size);
   void RegisterAlloc(uintptr_t address, size_t size);
   void UnregisterAlloc(uintptr_t address);
@@ -82,7 +88,11 @@ class LeakMonitor {
   std::atomic<uint64_t> alloc_index_;
   std::atomic<bool> has_install_monitor_;
   std::atomic<size_t> alloc_threshold_;
+  std::atomic<InterceptMode> intercept_mode_{InterceptMode::FULL};
+  std::atomic<bool> ever_sampled_{false};
+  std::atomic<uint32_t> sampling_high_watermark_{kDefaultSamplingHighWatermark};
+  std::atomic<uint32_t> sampling_low_watermark_{kDefaultSamplingLowWatermark};
 };
-}  // namespace leak_monitor
+}  // namespace memory_monitor
 }  // namespace kwai
 #endif  // KOOM_NATIVE_OOM_SRC_MAIN_JNI_INCLUDE_LEAK_MONITOR_H_

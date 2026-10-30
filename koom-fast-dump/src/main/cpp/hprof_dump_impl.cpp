@@ -23,6 +23,8 @@
 #include <sys/prctl.h>
 #include <sys/wait.h>
 #include <cerrno>
+#include <cstring>
+#include <signal.h>
 
 #include <log/kcheck.h>
 
@@ -32,6 +34,8 @@
 #include "hprof_dump_below_r_impl.h"
 #include "hprof_dump_below_v_impl.h"
 #include "hprof_dump_v_impl.h"
+#include "hprof_dump_b_impl.h"
+#include "hprof_dump_c_impl.h"
 
 #undef LOG_TAG
 #define LOG_TAG "HprofDumpImpl"
@@ -39,15 +43,52 @@
 namespace kwai {
 namespace leak_monitor {
 
+namespace {
+
+constexpr int kChildSignalExitStatusBase = 128;
+
+constexpr int kChildFatalSignals[] = {
+    SIGSEGV,
+    SIGABRT,
+    SIGBUS,
+    SIGILL,
+    SIGFPE,
+    SIGTRAP,
+    SIGSYS,
+    SIGSTKFLT,
+};
+
+void ChildFatalSignalHandler(int signal_number, siginfo_t*, void*) {
+  // Keep this handler async-signal-safe; the parent observes the exit status.
+  _exit(kChildSignalExitStatusBase + signal_number);
+}
+
+void InstallChildFatalSignalHandlers() {
+  struct sigaction action = {};
+  sigemptyset(&action.sa_mask);
+  action.sa_sigaction = ChildFatalSignalHandler;
+  action.sa_flags = SA_SIGINFO;
+  for (const int signal_number : kChildFatalSignals) {
+    (void)sigaction(signal_number, &action, nullptr);
+  }
+}
+
+}  // namespace
+
 HprofDumpImpl &HprofDumpImpl::GetInstance(int android_api) {
   if (android_api < __ANDROID_API_R__) {
     return HprofDumpBelowRImpl::GetInstance();
-  } else if (android_api < __ANDROID_API_V__) {
+  }
+  if (android_api < __ANDROID_API_V__) {
     return HprofDumpBelowVImpl::GetInstance();
-  } else {
-    // hprof_constructor_fnc_ symbol not exists on Android 14
+  }
+  if (android_api == __ANDROID_API_V__) {
     return HprofDumpVImpl::GetInstance();
   }
+  if (android_api == __ANDROID_API_B__) {
+    return HprofDumpBImpl::GetInstance();
+  }
+  return HprofDumpCImpl::GetInstance();
 }
 
 pid_t HprofDumpImpl::Fork() {
@@ -60,7 +101,15 @@ pid_t HprofDumpImpl::SuspendAndFork() {
   }
 
   pid_t pid = Fork();
+  if (pid == -1) {
+    const int fork_errno = errno;
+    ALOGE("Fork dump process failed: %s", std::strerror(fork_errno));
+    Resume();
+    return -1;
+  }
   if (pid == 0) {
+    // Best effort: continue even if a signal handler cannot be installed.
+    InstallChildFatalSignalHandlers();
     // Set timeout for child process
     alarm(60);
     prctl(PR_SET_NAME, "forked-dump-process");
@@ -76,9 +125,16 @@ bool HprofDumpImpl::ResumeAndWait(pid_t pid) {
   int status;
   for (;;) {
     if (waitpid(pid, &status, 0) != -1) {
+      if (WIFSIGNALED(status)) {
+        ALOGE("Child process %d terminated by signal %d", pid, WTERMSIG(status));
+        return false;
+      }
       if (!WIFEXITED(status)) {
-        ALOGE("Child process %d exited with status %d, terminated by signal %d",
-              pid, WEXITSTATUS(status), WTERMSIG(status));
+        ALOGE("Child process %d exited with unexpected wait status %d", pid, status);
+        return false;
+      }
+      if (WEXITSTATUS(status) != 0) {
+        ALOGE("Child process %d exited with status %d", pid, WEXITSTATUS(status));
         return false;
       }
       return true;

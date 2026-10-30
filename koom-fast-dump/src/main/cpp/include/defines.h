@@ -21,6 +21,8 @@
 #define KOOM_DEFINES_H_
 
 #define __ANDROID_API_V__ 35
+#define __ANDROID_API_B__ 36
+#define __ANDROID_API_C__ 37
 
 namespace kwai {
 namespace leak_monitor {
@@ -35,7 +37,7 @@ enum GcCause {
 enum CollectorType {
   // Hprof fake collector.
   // NOTE: Use any fake collector is ok
-  //  on AOSP Android 15, kCollectorTypeHprof = 15,
+  //  on AOSP Android 15 - 17, kCollectorTypeHprof = 15,
   //  but on AOSP older sys version, kCollectorTypeHprof maybe 14 / 13 /...
   kCollectorTypeHprof = 15,
 };

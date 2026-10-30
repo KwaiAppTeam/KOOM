@@ -29,6 +29,11 @@ data class LeakRecord(var index: Long,
   @JvmField
   var tag: String? = null
 
+  /** Use this weight when estimating allocation count and size from sampled records. */
+  @Keep
+  @JvmField
+  var sampleWeight: Int = 1
+
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
     if (javaClass != other?.javaClass) return false
@@ -40,6 +45,7 @@ data class LeakRecord(var index: Long,
     if (threadName != other.threadName) return false
     if (!frames.contentEquals(other.frames)) return false
     if (tag != other.tag) return false
+    if (sampleWeight != other.sampleWeight) return false
 
     return true
   }
@@ -50,6 +56,7 @@ data class LeakRecord(var index: Long,
     result = 31 * result + threadName.hashCode()
     result = 31 * result + frames.contentHashCode()
     result = 31 * result + (tag?.hashCode() ?: 0)
+    result = 31 * result + sampleWeight
     return result
   }
 
@@ -66,6 +73,20 @@ data class LeakRecord(var index: Long,
 }
 
 @Keep
-data class FrameInfo(var relPc: Long, var soName: String) {
+data class FrameInfo @JvmOverloads constructor(var relPc: Long, var soName: String,
+  @JvmField var buildId: String = "") {
+
+  // Preserve the original two-argument copy API for existing consumers.
+  fun copy(relPc: Long, soName: String) = FrameInfo(relPc, soName, buildId)
+
+  companion object {
+    @JvmStatic
+    @JvmName("copy\$default")
+    internal fun copyLegacyDefault(frame: FrameInfo, relPc: Long, soName: String?, mask: Int,
+      unused: Any?): FrameInfo = frame.copy(
+      if (mask and 1 != 0) frame.relPc else relPc,
+      if (mask and 2 != 0) frame.soName else requireNotNull(soName))
+  }
+
   override fun toString(): String = "0x${relPc.toString(16)}  $soName"
 }
