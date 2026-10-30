@@ -44,10 +44,38 @@
 
 #include <vector>
 
+#include "android-base/stringprintf.h"
+
 #if defined(__LP64__)
 #define PAD_PTR "016" PRIxPTR
 #else
 #define PAD_PTR "08" PRIxPTR
+#endif
+
+#ifndef NT_GNU_BUILD_ID
+#define NT_GNU_BUILD_ID 3
+#endif
+
+#ifndef ElfW
+#define ElfW(type) Elf_##type
+#endif
+
+struct BuildIdNote {
+  ElfW(Nhdr) nhdr;
+  char name[4]; /* Note name for build-id is "GNU\0" */
+  uint8_t build_id[0];
+};
+
+struct CallbackData {
+  void *dli_fbase;
+  FrameInfo frame_info;
+
+  CallbackData(void *fbase) : dli_fbase(fbase) {}
+};
+
+#if __ANDROID_API__ < __ANDROID_API_L__
+extern "C" __attribute__((weak)) int dl_iterate_phdr(
+    int (*)(struct dl_phdr_info *, size_t, void *), void *);
 #endif
 
 // Format of /proc/<PID>/maps:
@@ -88,8 +116,10 @@ static MapEntry *ParseLine(char *line) {
   return entry;
 }
 
-// A map entry may become stale before it is validated. Read through
-// /proc/self/mem so an unmapped page does not crash the monitor.
+// Read process memory through /proc/self/mem instead of dereferencing
+// directly. A map entry may become stale (dlclose/munmap) between reading
+// /proc/self/maps and this lazy validation, so a raw dereference can crash
+// with SIGSEGV. pread fails gracefully on unmapped pages.
 static bool SafeReadMap(uintptr_t addr, void *buf, size_t len) {
   static int mem_fd = open("/proc/self/mem", O_RDONLY | O_CLOEXEC);
   if (mem_fd < 0) {
@@ -169,94 +199,6 @@ static void ReadLoadbias(MapEntry *entry) {
   }
 }
 
-struct LoadedObjectInfo {
-  void *dli_fbase;
-  uintptr_t load_base = 0;
-  bool matched = false;
-  bool read_build_id = false;
-  std::string build_id;
-};
-
-static std::string ReadBuildId(const struct dl_phdr_info *info) {
-  static const char hex[] = "0123456789abcdef";
-  for (size_t i = 0; i < info->dlpi_phnum; ++i) {
-    const ElfW(Phdr) &phdr = info->dlpi_phdr[i];
-    if (phdr.p_type != PT_NOTE) {
-      continue;
-    }
-    uintptr_t addr;
-    uintptr_t end;
-    if (__builtin_add_overflow(info->dlpi_addr, phdr.p_vaddr, &addr) ||
-        __builtin_add_overflow(addr, phdr.p_filesz, &end)) {
-      continue;
-    }
-    while (end - addr >= sizeof(ElfW(Nhdr))) {
-      ElfW(Nhdr) note;
-      if (!SafeReadMap(addr, &note, sizeof(note))) {
-        break;
-      }
-      size_t name_size;
-      size_t desc_size;
-      if (__builtin_add_overflow(static_cast<size_t>(note.n_namesz), size_t(3), &name_size) ||
-          __builtin_add_overflow(static_cast<size_t>(note.n_descsz), size_t(3), &desc_size)) {
-        break;
-      }
-      name_size &= ~size_t(3);
-      desc_size &= ~size_t(3);
-      size_t remaining = end - addr - sizeof(note);
-      if (name_size > remaining || desc_size > remaining - name_size) {
-        break;
-      }
-      uintptr_t name_addr = addr + sizeof(note);
-      uintptr_t desc_addr = name_addr + name_size;
-      char name[4];
-      if (note.n_type == NT_GNU_BUILD_ID && note.n_namesz == sizeof(name) &&
-          note.n_descsz != 0 && SafeReadMap(name_addr, name, sizeof(name)) &&
-          memcmp(name, "GNU", sizeof(name)) == 0) {
-        std::vector<uint8_t> bytes(note.n_descsz);
-        if (!SafeReadMap(desc_addr, bytes.data(), bytes.size())) {
-          break;
-        }
-        std::string build_id;
-        for (uint8_t byte : bytes) {
-          build_id += hex[byte >> 4];
-          build_id += hex[byte & 0x0f];
-        }
-        return build_id;
-      }
-      addr = desc_addr + desc_size;
-    }
-  }
-  return {};
-}
-
-static int FindLoadedObject(struct dl_phdr_info *info, size_t, void *data) {
-  if (info == nullptr || info->dlpi_name == nullptr) {
-    return 0;
-  }
-
-  auto *loaded_object = reinterpret_cast<LoadedObjectInfo *>(data);
-  for (size_t i = 0; i < info->dlpi_phnum; ++i) {
-    const ElfW(Phdr) &phdr = info->dlpi_phdr[i];
-    if (phdr.p_type != PT_LOAD) {
-      continue;
-    }
-
-    void *map_start = reinterpret_cast<void *>(info->dlpi_addr + phdr.p_vaddr);
-    if (map_start == loaded_object->dli_fbase) {
-      loaded_object->load_base = info->dlpi_addr;
-      loaded_object->matched = true;
-      if (loaded_object->read_build_id) {
-        loaded_object->build_id = ReadBuildId(info);
-      }
-      return 1;
-    }
-    // The first PT_LOAD is the address used to match dladdr's object base.
-    break;
-  }
-  return 0;
-}
-
 static void inline Init(MapEntry *entry) {
   if (entry->init) {
     return;
@@ -266,6 +208,61 @@ static void inline Init(MapEntry *entry) {
     entry->valid = true;
     ReadLoadbias(entry);
   }
+}
+
+static int FrameInfoCallback(struct dl_phdr_info *info, size_t size,
+                             void *data_) {
+  if (!info || !info->dlpi_name) return 0;
+
+  CallbackData *callback_data = reinterpret_cast<CallbackData *>(data_);
+
+  /* Calculate address where shared object is mapped into the process space.
+   * (Using the base address and the virtual address of the first LOAD segment)
+   */
+  void *map_start = nullptr;
+  for (unsigned i = 0; i < info->dlpi_phnum; i++) {
+    if (info->dlpi_phdr[i].p_type == PT_LOAD) {
+      map_start = (void *)(info->dlpi_addr + info->dlpi_phdr[i].p_vaddr);
+      break;
+    }
+  }
+
+  if (map_start != callback_data->dli_fbase) return 0;
+
+  callback_data->frame_info.load_base = info->dlpi_addr;
+  callback_data->frame_info.name = info->dlpi_name;
+  for (unsigned i = 0; i < info->dlpi_phnum; i++) {
+    if (info->dlpi_phdr[i].p_type != PT_NOTE) continue;
+
+    BuildIdNote *note = reinterpret_cast<BuildIdNote *>(
+        (info->dlpi_addr + info->dlpi_phdr[i].p_vaddr));
+    ptrdiff_t len = info->dlpi_phdr[i].p_filesz;
+
+    while (len >= sizeof(BuildIdNote)) {
+      if (note->nhdr.n_type == NT_GNU_BUILD_ID && note->nhdr.n_descsz != 0 &&
+          note->nhdr.n_namesz == 4 && memcmp(note->name, "GNU", 4) == 0) {
+        std::string raw_build_id;
+        raw_build_id.append(reinterpret_cast<char *>(note->build_id),
+                            note->nhdr.n_descsz);
+
+        for (const char &c : raw_build_id) {
+          // Use %hhx to avoid sign extension on abis that have signed chars.
+          callback_data->frame_info.build_id +=
+              android::base::StringPrintf("%02hhx", c);
+        }
+        return 1;
+      }
+
+#define ALIGN_POT(x, pot_align) (((x) + (pot_align)-1) & ~((pot_align)-1))
+
+      size_t offset = sizeof(ElfW(Nhdr)) + ALIGN_POT(note->nhdr.n_namesz, 4) +
+                      ALIGN_POT(note->nhdr.n_descsz, 4);
+      note = (BuildIdNote *)((char *)note + offset);
+      len -= offset;
+    }
+  }
+
+  return 0;
 }
 
 bool MemoryMap::ReadMaps() {
@@ -300,6 +297,63 @@ MemoryMap::~MemoryMap() {
   entries_.clear();
 }
 
+bool MemoryMap::FillFrameInfo(uintptr_t pc, FrameInfo &frame_info) {
+  Dl_info dl_info;
+
+  if (!dladdr(reinterpret_cast<void *>(pc), &dl_info)) {
+    return false;
+  }
+
+  if (!dl_info.dli_fbase) {
+    return false;
+  }
+
+  CallbackData callback_data(dl_info.dli_fbase);
+
+  if (!dl_iterate_phdr(FrameInfoCallback, &callback_data)) {
+    return false;
+  }
+
+  if (pc <= callback_data.frame_info.load_base) {
+    return false;
+  }
+  callback_data.frame_info.rel_pc = pc - callback_data.frame_info.load_base;
+  frame_info = callback_data.frame_info;
+
+  if (frame_info.IsSystemFrame()) {
+    const char *symbol = dl_info.dli_sname;
+    if (symbol != nullptr) {
+      // 记录符号起始地址，供上层格式化 "symbol+offset"（与原 FormatSymbol 输出对齐）
+      frame_info.sym_addr = reinterpret_cast<uintptr_t>(dl_info.dli_saddr);
+      char *demangled_name =
+          abi::__cxa_demangle(symbol, nullptr, nullptr, nullptr);
+      const char *name;
+      if (demangled_name != nullptr) {
+        name = demangled_name;
+      } else {
+        name = symbol;
+      }
+      frame_info.symbol = name;
+      free(demangled_name);
+    }
+  }
+  return true;
+}
+
+std::string MemoryMap::FormatFrameSymbol(const FrameInfo &frame_info,
+                                          uintptr_t pc) {
+  char buf[1024];
+  if (!frame_info.symbol.empty() && frame_info.sym_addr != 0 &&
+      pc >= frame_info.sym_addr) {
+    snprintf(buf, sizeof(buf), "  %s (%s+%" PRIuPTR ")\n",
+             frame_info.name.c_str(), frame_info.symbol.c_str(),
+             pc - frame_info.sym_addr);
+  } else {
+    snprintf(buf, sizeof(buf), "  %s\n", frame_info.name.c_str());
+  }
+  return buf;
+}
+
 MapEntry *MemoryMap::CalculateRelPc(uintptr_t pc, uintptr_t *rel_pc) {
   MapEntry pc_entry(pc);
 
@@ -327,8 +381,7 @@ MapEntry *MemoryMap::CalculateRelPc(uintptr_t pc, uintptr_t *rel_pc) {
 
         if (prev_entry->valid) {
           entry->elf_start_offset = prev_entry->offset;
-          *rel_pc = pc - entry->start + (entry->offset - prev_entry->offset) +
-                    prev_entry->load_bias;
+          *rel_pc = pc - entry->start + (entry->offset - prev_entry->offset) + prev_entry->load_bias;
           return entry;
         }
       }
@@ -336,35 +389,6 @@ MapEntry *MemoryMap::CalculateRelPc(uintptr_t pc, uintptr_t *rel_pc) {
     *rel_pc = pc - entry->start + entry->load_bias;
   }
   return entry;
-}
-
-bool MemoryMap::CalculateRelPcFromLoader(uintptr_t pc, uintptr_t *rel_pc,
-                                         std::string *build_id) {
-  if (rel_pc == nullptr) {
-    return false;
-  }
-  if (build_id != nullptr) {
-    build_id->clear();
-  }
-
-  Dl_info dl_info;
-  if (dladdr(reinterpret_cast<void *>(pc), &dl_info) == 0 ||
-      dl_info.dli_fbase == nullptr) {
-    return false;
-  }
-
-  LoadedObjectInfo loaded_object{dl_info.dli_fbase};
-  loaded_object.read_build_id = build_id != nullptr;
-  if (!dl_iterate_phdr(FindLoadedObject, &loaded_object) ||
-      !loaded_object.matched || pc <= loaded_object.load_base) {
-    return false;
-  }
-
-  *rel_pc = pc - loaded_object.load_base;
-  if (build_id != nullptr) {
-    *build_id = std::move(loaded_object.build_id);
-  }
-  return true;
 }
 
 std::string MemoryMap::FormatSymbol(MapEntry *entry, uintptr_t pc) {

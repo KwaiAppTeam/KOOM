@@ -47,7 +47,6 @@ namespace {
 
 constexpr int kChildSignalExitStatusBase = 128;
 
-// Keep this list aligned with the fatal signals handled by crash-monitor.
 constexpr int kChildFatalSignals[] = {
     SIGSEGV,
     SIGABRT,

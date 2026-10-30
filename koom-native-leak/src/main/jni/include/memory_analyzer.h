@@ -24,7 +24,7 @@
 #include <vector>
 
 namespace kwai {
-namespace leak_monitor {
+namespace memory_monitor {
 class MemoryAnalyzer {
  public:
   MemoryAnalyzer();
@@ -37,6 +37,6 @@ class MemoryAnalyzer {
   GetUnreachableFn get_unreachable_fn_;
   void *handle_;
 };
-}  // namespace leak_monitor
+}  // namespace memory_monitor
 }  // namespace kwai
 #endif  // KOOM_KOOM_NATIVE_SRC_MAIN_JNI_INCLUDE_MEMORY_ANALYZER_H_

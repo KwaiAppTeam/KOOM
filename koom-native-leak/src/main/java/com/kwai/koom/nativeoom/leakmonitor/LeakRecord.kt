@@ -29,6 +29,11 @@ data class LeakRecord(var index: Long,
   @JvmField
   var tag: String? = null
 
+  /** Use this weight when estimating allocation count and size from sampled records. */
+  @Keep
+  @JvmField
+  var sampleWeight: Int = 1
+
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
     if (javaClass != other?.javaClass) return false
@@ -40,6 +45,7 @@ data class LeakRecord(var index: Long,
     if (threadName != other.threadName) return false
     if (!frames.contentEquals(other.frames)) return false
     if (tag != other.tag) return false
+    if (sampleWeight != other.sampleWeight) return false
 
     return true
   }
@@ -50,6 +56,7 @@ data class LeakRecord(var index: Long,
     result = 31 * result + threadName.hashCode()
     result = 31 * result + frames.contentHashCode()
     result = 31 * result + (tag?.hashCode() ?: 0)
+    result = 31 * result + sampleWeight
     return result
   }
 

@@ -39,8 +39,6 @@ LeakMonitorConfig config = new LeakMonitorConfig.Builder()
 native heap reaches to start monitoring, unit: byte
     .setSelectedSoList(new String[0]) // Set the monitor specific libraries, such as monitoring libcore.so, just write 'libcore'
     .setIgnoredSoList(new String[0]) // Set the libraries that you need to ignore monitoring
-    .setEnableLocalSymbolic(false) // Set enable local symbolic, this is helpful in debug mode. 
-    Not enable in release mode
     .setLeakListener(leaks -> { }) // Set leak listener for receive leak records
     .build();
 MonitorManager.addMonitorConfig(config);

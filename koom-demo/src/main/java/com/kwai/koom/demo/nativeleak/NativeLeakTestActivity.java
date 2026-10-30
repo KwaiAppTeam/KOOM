@@ -76,12 +76,7 @@ public class NativeLeakTestActivity extends AppCompatActivity {
         // the native heap reaches to start monitoring, unit: byte
         .setSelectedSoList(new String[0]) // Set the monitor specific libraries, such as monitoring libcore.so, just write 'libcore'
         .setIgnoredSoList(new String[0]) // Set the libraries that you need to ignore monitoring
-        .setEnableLocalSymbolic(false) // Set enable local symbolic, this is helpful in debug
-        // mode. Not enable in release mode
         .setLeakListener(leaks -> { // Set Leak Listener for receive Leak info
-          if (leaks.isEmpty()) {
-            return;
-          }
           StringBuilder builder = new StringBuilder();
           for (LeakRecord leak : leaks) {
             builder.append(leak.toString());
