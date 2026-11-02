@@ -35,7 +35,7 @@ class ThreadLeakTestActivity : AppCompatActivity() {
     ThreadMonitor.startTrackAsync()
     if (loadSoQuietly("native-leak-test")) {
       mTest1Btn.setOnClickListener {
-        triggerLeak(100)
+        triggerLeak(1000)
       }
       mTest10Btn.setOnClickListener {
         triggerLeak(10 * 1000)
