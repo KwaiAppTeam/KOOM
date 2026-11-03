@@ -6,6 +6,8 @@ apply from: rootProject.file('gradle/common.gradle')
 apply from: rootProject.file('gradle/mavenCentral-android-publish.gradle')
 
 android {
+    ndkVersion "23.1.7779620"
+
     defaultConfig {
         versionCode 1
         versionName "1.0"
@@ -55,7 +57,8 @@ android {
             ext.artifactIdSuffix = ''
             externalNativeBuild {
                 cmake {
-                    arguments = ["-DANDROID_STL=c++_shared"]
+                    // Use NDK 23's static libc++ for ART Java stack ostream compatibility.
+                    arguments = ["-DANDROID_STL=c++_static"]
                 }
             }
         }
